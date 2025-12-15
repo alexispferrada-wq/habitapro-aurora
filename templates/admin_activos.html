@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}| Activos{% endblock %}
+{% block content %}
+<nav class="navbar navbar-glass fixed-top">
+    <div class="container-fluid px-4"><a class="navbar-brand text-white fw-bold" href="/panel-admin"><i class="bi bi-arrow-left"></i> Volver</a></div>
+</nav>
+<div class="container px-4" style="margin-top: 100px;">
+    {% with msgs = get_flashed_messages() %}{% if msgs %}<div class="alert alert-success border-0 bg-success bg-opacity-25 text-white">{{ msgs[0] }}</div>{% endif %}{% endwith %}
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card-glass p-4">
+                <h5 class="text-white fw-bold mb-3">Agregar Activo</h5>
+                <form action="/admin/activos/guardar" method="POST">
+                    <div class="mb-2"><label class="small text-white-50">Nombre</label><input name="nombre" class="form-control" required></div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6"><label class="small text-white-50">Días Periodo</label><input type="number" name="periodicidad" class="form-control" value="30"></div>
+                        <div class="col-6"><label class="small text-white-50">Costo</label><input type="number" name="costo" class="form-control"></div>
+                    </div>
+                    <div class="mb-3"><label class="small text-warning">Última Mantención</label><input type="date" name="ultimo_servicio" class="form-control border-warning" required></div>
+                    <button class="btn btn-success w-100 fw-bold">Guardar</button>
+                </form>
+            </div>
+            <div class="card-glass p-4 mt-3 text-center border-start border-4 border-info">
+                <small class="text-white-50 text-uppercase">Gasto Proyectado (Este Mes)</small>
+                <h2 class="text-info my-2">${{ "{:,.0f}".format(gasto_mes) }}</h2>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card-glass p-0">
+                <div class="p-3 border-bottom border-secondary bg-black bg-opacity-25"><h6 class="m-0 text-white">Inventario</h6></div>
+                <table class="table table-hover mb-0 text-white align-middle">
+                    <thead class="bg-white bg-opacity-05"><tr><th>Activo</th><th>Próxima</th><th>Estado</th><th class="text-end pe-4">Acciones</th></tr></thead>
+                    <tbody>
+                        {% for a in activos %}
+                        <tr>
+                            <td>{{ a.nombre }}</td>
+                            <td>{{ a.prox_fecha }}</td>
+                            <td>{% if a.dias_restantes < 0 %}<span class="badge bg-danger">Vencida</span>{% else %}<span class="badge bg-success">OK</span>{% endif %}</td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-warning border-0 me-2" onclick='abrirEditar({{ a | tojson }})'>
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <a href="/admin/activos/eliminar/{{ a.id }}" class="text-danger" onclick="return confirm('¿Eliminar?')"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-glass border-warning">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-white fw-bold"><i class="bi bi-pencil-square text-warning me-2"></i>Editar Activo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/admin/activos/editar" method="POST">
+                    <input type="hidden" name="activo_id" id="editId">
+                    <div class="mb-3">
+                        <label class="small text-white-50">Nombre</label>
+                        <input type="text" name="nombre" id="editNombre" class="form-control text-white" style="background: rgba(0,0,0,0.3);">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><label class="small text-white-50">Periodo (Días)</label><input type="number" name="periodicidad" id="editPeriodo" class="form-control"></div>
+                        <div class="col-6"><label class="small text-white-50">Costo ($)</label><input type="number" name="costo" id="editCosto" class="form-control"></div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="small text-warning">Última Mantención (Referencia)</label>
+                        <input type="date" name="ultimo_servicio" id="editUltimo" class="form-control border-warning">
+                    </div>
+                    <button class="btn btn-warning w-100 fw-bold">Guardar Cambios</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirEditar(activo) {
+        document.getElementById('editId').value = activo.id;
+        document.getElementById('editNombre').value = activo.nombre;
+        document.getElementById('editPeriodo').value = activo.periodicidad_dias;
+        document.getElementById('editCosto').value = activo.costo_estimado;
+        document.getElementById('editUltimo').value = activo.ultimo_servicio; // Formato YYYY-MM-DD
+        new bootstrap.Modal(document.getElementById('modalEditar')).show();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}| Mando Central{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC08hIbpWi529l6GN6Q4BWknbJV4saTJPM&libraries=places"></script>
+
+<style>
+    /* --- ESTILOS ORIGINALES CONSERVADOS --- */
+    .stat-card { 
+        text-align: center; padding: 20px; border-bottom: 4px solid var(--accent-blue); 
+        border-radius: 12px;
+    }
+    .stat-num { font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; }
+    
+    .log-feed { font-size: 0.85rem; max-height: 400px; overflow-y: auto; }
+    .log-row { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+    .log-row:hover { background: rgba(255,255,255,0.03); }
+    .log-time { width: 70px; font-size: 0.75rem; color: #6c757d; text-align: right; margin-right: 15px; }
+    .log-badge { width: 90px; text-align: center; margin-right: 15px; }
+    .log-content { flex-grow: 1; }
+    .header-dark { background-color: rgba(0, 0, 0, 0.6) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.15); padding: 15px !important; }
+    
+    .global-status-card {
+        background: linear-gradient(135deg, rgba(25, 25, 40, 0.8), rgba(10, 10, 20, 0.8));
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(13, 202, 240, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 0 30px rgba(13, 202, 240, 0.1);
+    }
+    .metric-box { border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 10px; }
+    
+    /* --- NUEVO: TARJETAS DE COBRO POR USUARIO --- */
+    .user-count-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: 0.3s;
+        position: relative; /* <--- ¡ESTO ES LO QUE FALTABA! BLINDA EL CLICK */
+    }
+    .user-count-card:hover { border-color: #0dcaf0; background: rgba(13, 202, 240, 0.05); }
+    .user-badge {
+        font-size: 1.5rem; font-weight: 800; color: #0dcaf0;
+        text-shadow: 0 0 10px rgba(13, 202, 240, 0.3);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0f; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-glass fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
+            <i class="bi bi-cpu-fill text-primary"></i> 
+            <span class="fw-bold">AEXON <span class="fw-light opacity-75">Overlord</span></span>
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            <a href="/logout" class="btn btn-sm btn-glass">Cerrar Sesión</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4" style="margin-top: 90px; padding-bottom: 50px;">
+    
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="global-status-card p-4 h-100">
+                <h5 class="fw-bold text-info mb-3"><i class="bi bi-speedometer2 me-2"></i> Estado Sistema</h5>
+                <div class="metric-box">
+                    <div class="text-white fw-bold mb-1"><span id="server-time">00:00:00</span></div>
+                    <div class="text-white-50 small">Hora Servidor (CL)</div>
+                </div>
+                <div class="metric-box">
+                    <div class="text-white fw-bold mb-1">
+                        NEON DB: <span class="{{ db_info.color }}">{{ db_info.status }}</span>
+                    </div>
+                    <div class="text-white-50 small" style="font-size: 0.7rem;">{{ db_info.version }}</div>
+                </div>
+                <div class="text-center mt-3 text-warning fst-italic small">"Todo bajo control."</div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="row g-4 h-100">
+                <div class="col-md-6"><div class="card-glass stat-card" style="border-color: #60cdff;"><div class="stat-num">{{ stats.edificios }}</div><div class="text-white-50 text-uppercase small ls-1">Edificios Activos</div></div></div>
+                <div class="col-md-6"><div class="card-glass stat-card" style="border-color: #bc13fe;"><div class="stat-num">{{ stats.users }}</div><div class="text-white-50 text-uppercase small ls-1">Usuarios Totales</div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="text-white-50 text-uppercase fw-bold mb-3 ps-2 border-start border-4 border-info">Usuarios por Edificio</h6>
+    <div class="row g-3 mb-5">
+        {% for e in edificios %}
+        <div class="col-md-4 col-xl-3">
+            <div class="user-count-card">
+                <div>
+                    <h6 class="fw-bold text-white mb-1">{{ e.nombre }}</h6>
+                    <div class="text-white-50 small"><i class="bi bi-geo-alt"></i> {{ e.direccion }}</div>
+                </div>
+                <div class="text-end">
+                    <div class="user-badge">{{ e.cantidad_usuarios }}</div>
+                    <div class="text-white-50" style="font-size: 0.65rem;">USUARIOS</div>
+                </div>
+                <a href="/superadmin/detalle_edificio/{{ e.id }}" class="stretched-link"></a>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-muted">No hay edificios registrados.</div>
+        {% endfor %}
+        
+        <div class="col-md-4 col-xl-3">
+            <div class="user-count-card justify-content-center" style="border-style: dashed; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalCrearEdificio">
+                <span class="text-white-50"><i class="bi bi-plus-circle me-2"></i> Nuevo Edificio</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="row mb-4">
+    <div class="col-lg-4">
+        <div class="card-glass p-4 h-100">
+            <h6 class="text-white fw-bold mb-3"><i class="bi bi-houses-fill me-2 text-info"></i> Amenities / Espacios</h6>
+            
+            <ul class="list-group mb-3">
+                {% for e in espacios %}
+                <li class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="text-white">{{ e.nombre }}</strong>
+                        <div class="small text-white-50">Cap: {{ e.capacidad }} | ${{ "{:,.0f}".format(e.precio) }}</div>
+                    </div>
+                    <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></a>
+                </li>
+                {% else %}
+                <li class="list-group-item bg-transparent text-white-50 text-center">Sin espacios creados.</li>
+                {% endfor %}
+            </ul>
+
+            <button class="btn btn-outline-info w-100 btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formEspacio">
+                <i class="bi bi-plus-lg"></i> Nuevo Espacio
+            </button>
+            <div class="collapse mt-3" id="formEspacio">
+                <form action="/admin/espacios/guardar" method="POST">
+                    <input type="text" name="nombre" class="form-control mb-2 form-control-sm" placeholder="Nombre (Ej: Quincho)" required>
+                    <div class="row g-2">
+                        <div class="col"><input type="number" name="capacidad" class="form-control form-control-sm" placeholder="Pers." required></div>
+                        <div class="col"><input type="number" name="precio" class="form-control form-control-sm" placeholder="Precio $" value="0" required></div>
+                    </div>
+                    <button class="btn btn-info w-100 btn-sm mt-2 fw-bold">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card-glass p-0 h-100 overflow-hidden">
+            <div class="header-dark d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-warning"><i class="bi bi-calendar-event me-2"></i> Gestión de Reservas</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 text-white align-middle">
+                    <thead><tr class="text-white-50 small"><th>Fecha</th><th>Espacio</th><th>Unidad</th><th>Estado</th><th>Acción</th></tr></thead>
+                    <tbody>
+                        {% for r in reservas %}
+                        <tr>
+                            <td>{{ r.fecha_uso }}</td>
+                            <td class="fw-bold">{{ r.nombre_espacio }}</td>
+                            <td><span class="badge bg-secondary">U. {{ r.numero_unidad }}</span></td>
+                            <td>
+                                {% if r.estado == 'CONFIRMADA' %}<span class="badge bg-success">OK</span>
+                                {% else %}<span class="badge bg-danger">CANCEL</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if r.estado == 'CONFIRMADA' %}
+                                <form action="/admin/reservas/cancelar" method="POST" class="d-inline" onsubmit="return confirm('¿Cancelar y devolver dinero?');">
+                                    <input type="hidden" name="reserva_id" value="{{ r.id }}">
+                                    <div class="form-check d-inline-block me-2">
+                                        <input class="form-check-input bg-dark border-secondary" type="checkbox" name="reembolsar" id="reembolso{{ r.id }}" checked>
+                                        <label class="form-check-label small text-white-50" for="reembolso{{ r.id }}">Devolver $</label>
+                                    </div>
+                                    <button class="btn btn-sm btn-danger py-0"><i class="bi bi-x-lg"></i></button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-white-50 py-4">No hay reservas registradas.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <div class="col-12">
+            <div class="card-glass p-0 overflow-hidden" style="height: 350px;">
+                <div class="header-dark"><h6 class="m-0 fw-bold"><i class="bi bi-map-fill me-2"></i> Mapa de Operaciones</h6></div>
+                <div id="map" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-glass">
+                <div class="header-dark d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold text-info"><i class="bi bi-eye-fill me-2"></i> Ojo de Dios (Logs)</h6>
+                    <span class="badge bg-dark border border-secondary">En Vivo</span>
+                </div>
+                <div class="log-feed">
+                    {% for log in global_logs %}
+                    <div class="log-row">
+                        <div class="log-time">
+                            <div class="fw-bold text-white">{{ log.tiempo }}</div>
+                            <div style="font-size:0.65rem">{{ log.fecha_full.split(' ')[1] }}</div>
+                        </div>
+                        <div class="log-badge">
+                            {% if log.tipo == 'VISITA' %}<span class="badge bg-primary bg-opacity-25 text-primary w-100">VISITA</span>
+                            {% elif log.tipo == 'PAGO' %}<span class="badge bg-success bg-opacity-25 text-success w-100">PAGO</span>
+                            {% else %}<span class="badge bg-secondary bg-opacity-25 text-white w-100">{{ log.tipo }}</span>{% endif %}
+                        </div>
+                        <div class="log-content">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold text-white">{{ log.detalle }}</span>
+                                <span class="log-actor text-info">{{ log.actor }}</span>
+                            </div>
+                            <span class="log-building"><i class="bi bi-building me-1"></i>{{ log.edificio }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="modalCrearEdificio" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-dark"><h5 class="fw-bold text-white">Nuevo Condominio</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body bg-dark">
+                <form action="/superadmin/crear_edificio" method="POST">
+                    <label class="small text-muted mb-1">Nombre</label>
+                    <input type="text" name="nombre" class="form-control mb-3" required>
+                    <label class="small text-muted mb-1">Dirección</label>
+                    <input type="text" name="direccion" id="googleAddressInput" class="form-control mb-3" required>
+                    <input type="hidden" name="lat" id="latInput"><input type="hidden" name="lon" id="lonInput">
+                    <button class="btn btn-primary w-100 fw-bold">Crear</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateServerTime() { document.getElementById('server-time').textContent = new Date().toLocaleTimeString('es-CL'); }
+    setInterval(updateServerTime, 1000); updateServerTime();
+
+    function initGoogleAutocomplete() {
+        const input = document.getElementById('googleAddressInput');
+        if(!input) return;
+        const autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                document.getElementById('latInput').value = place.geometry.location.lat();
+                document.getElementById('lonInput').value = place.geometry.location.lng();
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        initGoogleAutocomplete();
+        var map = L.map('map').setView([-33.437, -70.650], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        
+        var data = {{ edificios | tojson }};
+        var bounds = [];
+        data.forEach(e => {
+            if(e.lat && e.lon) {
+                L.marker([e.lat, e.lon]).addTo(map).bindPopup(`<b>${e.nombre}</b><br>${e.cantidad_usuarios} Usuarios`);
+                bounds.push([e.lat, e.lon]);
+            }
+        });
+        if(bounds.length) map.fitBounds(bounds, {padding: [50, 50]});
+    });
+
+    function confirmarEliminarEdificio(id, nombre) {
+        // ... (Tu función de eliminar existente) ...
+    }
+</script>
+{% endblock %}

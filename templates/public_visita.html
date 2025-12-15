@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitación | HabitaPro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ESTILO CYBER-GLASS (Igual que el Panel) */
+        :root {
+            --neon-blue: #0dcaf0;
+            --glass-bg: rgba(20, 20, 30, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #050505;
+            /* Fondo Aurora */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(60, 10, 80, 0.3) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(10, 50, 80, 0.3) 0%, transparent 40%);
+            background-attachment: fixed;
+            background-size: cover;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card-glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border-radius: 24px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .header-inv {
+            background: linear-gradient(135deg, rgba(13, 202, 240, 0.15), rgba(13, 110, 253, 0.15));
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .form-control {
+            background-color: rgba(0, 0, 0, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            color: #ffffff !important;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+        .form-control:focus {
+            border-color: var(--neon-blue) !important;
+            box-shadow: 0 0 0 3px rgba(13, 202, 240, 0.2) !important;
+            background-color: rgba(0, 0, 0, 0.6) !important;
+        }
+
+        .btn-neon {
+            background: linear-gradient(135deg, #0dcaf0, #0d6efd);
+            border: none;
+            color: white;
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 16px;
+            width: 100%;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(13, 202, 240, 0.4);
+            transition: transform 0.2s;
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(13, 202, 240, 0.6);
+            color: white;
+        }
+
+        .info-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="card-glass">
+    <div class="header-inv">
+        <div class="mb-3">
+            <i class="bi bi-building-check text-info" style="font-size: 3rem;"></i>
+        </div>
+        <h2 class="fw-bold mb-1 text-white">¡Te han invitado!</h2>
+        <p class="text-white-50 small mb-3">Completa tus datos para ingresar</p>
+        
+        <div class="d-flex justify-content-center gap-2">
+            <div class="info-badge"><i class="bi bi-geo-alt-fill text-warning me-1"></i> {{ edificio }}</div>
+        </div>
+        <div class="mt-2 fw-bold text-white">Depto {{ depto }}</div>
+    </div>
+    
+    <div class="p-4 p-md-5">
+        <div class="text-center mb-4">
+            <small class="text-white-50 text-uppercase ls-1">Anfitrión</small>
+            <div class="fs-5 fw-bold text-white">{{ anfitrion }}</div>
+            
+            <div class="mt-2">
+                {% if tipo == 'VEHICULO' %}
+                    <span class="badge bg-warning text-dark border border-warning"><i class="bi bi-car-front-fill me-1"></i> VISITA EN AUTO</span>
+                {% else %}
+                    <span class="badge bg-success border border-success"><i class="bi bi-person-walking me-1"></i> VISITA A PIE</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form action="/invitacion/guardar" method="POST">
+            <input type="hidden" name="token" value="{{ token }}">
+            
+            <div class="mb-3">
+                <label class="small text-white-50 mb-1 ps-2">Nombre Completo</label>
+                <input type="text" name="nombre" class="form-control" required placeholder="Tu nombre" value="{{ pre_nombre }}">
+            </div>
+            
+            <div class="mb-4">
+                <label class="small text-white-50 mb-1 ps-2">RUT / DNI</label>
+                <input type="text" name="rut" class="form-control" required placeholder="12.345.678-9">
+            </div>
+
+            {% if tipo == 'VEHICULO' %}
+            <div class="mb-4 p-3 bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded-3">
+                <label class="small text-warning fw-bold mb-1 ps-1"><i class="bi bi-car-front me-1"></i> Patente Vehículo</label>
+                <input type="text" name="patente" class="form-control border-warning text-warning fw-bold text-center fs-5" required placeholder="ABCD-12" style="text-transform: uppercase; letter-spacing: 2px;">
+            </div>
+            {% else %}
+            <input type="hidden" name="patente" value="">
+            {% endif %}
+
+            <button class="btn-neon">
+                Generar QR <i class="bi bi-qr-code ms-2"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

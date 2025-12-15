@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}| Módulo Conserjería{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilo Conserjería - Optimizado para Pantallas Táctiles/Monitores */
+    .card-glass { background: rgba(20, 20, 30, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); color: white; }
+    
+    /* Parking Gigante */
+    .parking-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
+    .park-slot { 
+        padding: 15px; border-radius: 12px; text-align: center; height: 110px; cursor: pointer; position: relative;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); transition: 0.2s;
+    }
+    .park-slot:hover { transform: scale(1.05); z-index: 10; border-color: white; }
+    
+    /* Estados Parking */
+    .park-libre i { color: #2ecc71; font-size: 2.5rem; }
+    .park-libre .estado-text { color: #2ecc71; font-weight: bold; }
+    
+    .park-ocupado { background: rgba(241, 196, 15, 0.15); border-color: #f1c40f; }
+    .park-ocupado i { color: #f1c40f; font-size: 2rem; }
+    
+    .park-mantencion { background: rgba(52, 152, 219, 0.15); border-color: #3498db; cursor: not-allowed; opacity: 0.7; }
+    .park-mantencion i { color: #3498db; }
+
+    /* Botones Acción Gigantes */
+    .btn-action-lg {
+        height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        border-radius: 16px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase;
+        border: none; transition: 0.3s; color: white;
+    }
+    .btn-action-lg i { font-size: 3rem; margin-bottom: 10px; }
+    .btn-action-lg:hover { transform: translateY(-5px); filter: brightness(1.2); }
+    
+    .bg-qr { background: linear-gradient(135deg, #6f42c1, #59359a); }
+    .bg-box { background: linear-gradient(135deg, #fd7e14, #d35400); }
+    .bg-log { background: linear-gradient(135deg, #20c997, #198754); }
+    .bg-sos { background: linear-gradient(135deg, #dc3545, #a71d2a); }
+
+    /* Tablas */
+    .table { color: white; }
+    .table tbody tr { background: transparent; }
+    .table tbody td { border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
+    .form-control { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-glass fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
+            <i class="bi bi-shield-lock-fill text-info fs-3"></i> 
+            <span class="fw-bold fs-4">Conserjería <span class="fw-light opacity-50">{{ edificio.nombre }}</span></span>
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-white me-2">{{ session.nombre }}</span>
+            <a href="/logout" class="btn btn-outline-danger border-0"><i class="bi bi-power fs-4"></i></a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4" style="margin-top: 100px; padding-bottom: 50px;">
+    {% with msgs = get_flashed_messages() %}{% if msgs %}{% for m in msgs %}<div class="alert alert-success bg-success bg-opacity-25 text-white border-0">{{ m }}</div>{% endfor %}{% endif %}{% endwith %}
+
+    <div class="card-glass p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="m-0 fw-bold"><i class="bi bi-p-square-fill me-2 text-primary"></i> Control de Estacionamiento</h4>
+            <div class="d-flex gap-3 text-white-50 small">
+                <span><i class="bi bi-circle-fill text-success"></i> Libre</span>
+                <span><i class="bi bi-circle-fill text-warning"></i> Ocupado</span>
+                <span><i class="bi bi-circle-fill text-info"></i> Mantención (Admin)</span>
+            </div>
+        </div>
+        <div class="parking-grid">
+            {% for p in parking %}
+                <div class="park-slot park-{{ p.estado }}" onclick="gestionarParking('{{ p.nombre }}', '{{ p.estado }}', '{{ p.patente }}')">
+                    <div class="fs-5 fw-bold">{{ p.nombre }}</div>
+                    
+                    {% if p.estado == 'libre' %}
+                        <i class="bi bi-check-circle-fill mt-2"></i>
+                        <span class="estado-text mt-1">LIBRE</span>
+                    
+                    {% elif p.estado == 'ocupado' %}
+                        <i class="bi bi-car-front-fill mt-2"></i>
+                        <div class="lh-1 mt-1">
+                            <div class="fw-bold text-white">{{ p.patente }}</div>
+                            <small class="text-white-50" style="font-size: 0.7rem;">{{ p.tiempo }}</small>
+                        </div>
+                    
+                    {% elif p.estado == 'mantencion' %}
+                        <i class="bi bi-cone-striped mt-2"></i>
+                        <span class="small mt-1 fw-bold">MANTENIMIENTO</span>
+                    
+                    {% elif p.estado == 'asignado' %}
+                        <i class="bi bi-house-lock-fill mt-2 text-info"></i>
+                        <span class="small mt-1 text-info">U. {{ p.unidad_numero }}</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-6">
+            <button class="btn-action-lg bg-qr w-100" onclick="abrirEscanerQR()">
+                <i class="bi bi-qr-code-scan"></i> Validación QR
+            </button>
+        </div>
+        <div class="col-lg-3 col-6">
+            <button class="btn-action-lg bg-box w-100" data-bs-toggle="modal" data-bs-target="#modalEncomienda">
+                <i class="bi bi-box-seam"></i> Recepción
+            </button>
+        </div>
+        <div class="col-lg-3 col-6">
+            <button class="btn-action-lg bg-log w-100" data-bs-toggle="modal" data-bs-target="#modalBitacora">
+                <i class="bi bi-journal-text"></i> Bitácora
+            </button>
+        </div>
+        <div class="col-lg-3 col-6">
+            <button class="btn-action-lg bg-sos w-100" onclick="enviarAlerta('emergencia')">
+                <i class="bi bi-megaphone"></i> Alerta SOS
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card-glass p-3 h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-box2-fill text-warning me-2"></i> Por Entregar</h5>
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover align-middle">
+                        <thead><tr class="text-white-50 small"><th>Unidad</th><th>Remitente</th><th>Recepción</th><th>Acción</th></tr></thead>
+                        <tbody>
+                            {% for e in encomiendas %}
+                            <tr>
+                                <td><span class="badge bg-warning text-dark">U. {{ e.unidad }}</span></td>
+                                <td class="fw-bold">{{ e.remitente }}</td>
+                                <td class="small text-white-50">{{ e.recepcion }}</td>
+                                <td>
+                                    <form action="/conserje/encomiendas/entregar" method="POST">
+                                        <input type="hidden" name="encomienda_id" value="{{ e.id }}">
+                                        <button class="btn btn-sm btn-outline-success"><i class="bi bi-check-lg"></i> Entregar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center text-white-50 py-4">No hay paquetes pendientes.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card-glass p-3 h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-people-fill text-info me-2"></i> Directorio Residentes</h5>
+                <input type="text" id="buscadorResidentes" class="form-control mb-3" placeholder="Buscar por depto o nombre...">
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover align-middle" id="tablaResidentes">
+                        <thead><tr class="text-white-50 small"><th>Unidad</th><th>Residente</th><th class="text-end">Contacto</th></tr></thead>
+                        <tbody>
+                            {% for u in unidades %}
+                            <tr>
+                                <td><span class="fs-5 fw-bold text-info">{{ u.numero }}</span></td>
+                                <td>{{ u.residente }}</td>
+                                <td class="text-end">
+                                    {% if u.fono %}
+                                    <a href="https://wa.me/{{ u.fono | replace('+','') | replace(' ','') }}" target="_blank" class="btn btn-success btn-sm fw-bold">
+                                        <i class="bi bi-whatsapp"></i> WhatsApp
+                                    </a>
+                                    {% else %}
+                                    <span class="text-white-50 small">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirEscanerQR() {
+        Swal.fire({
+            title: 'Escanear Invitación',
+            input: 'text',
+            inputLabel: 'Simular escaneo (Ingrese Código 12345)',
+            inputPlaceholder: 'Código QR...',
+            showCancelButton: true,
+            confirmButtonText: 'Validar Acceso',
+            background: '#1a1d24', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('/conserje/visitas/validar_qr', {
+                    method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: `codigo_qr=${result.value}`
+                }).then(r => r.json()).then(d => {
+                    if (d.status === 'success') {
+                        Swal.fire({
+                            title: '¡ACCESO PERMITIDO!',
+                            html: `<div class="text-success display-1"><i class="bi bi-check-circle"></i></div><h3>${d.visita}</h3><p>A Unidad: ${d.unidad}</p>`,
+                            background: '#1a1d24', color: '#fff'
+                        });
+                    } else {
+                        Swal.fire({ title: 'ACCESO DENEGADO', text: d.message, icon: 'error', background: '#1a1d24', color: '#fff' });
+                    }
+                });
+            }
+        });
+    }
+
+    function gestionarParking(nombre, estado, patente) {
+        if (estado === 'mantencion' || estado === 'asignado') return; // Bloqueado
+        
+        if (estado === 'ocupado') {
+            Swal.fire({
+                title: `Liberar ${nombre}?`,
+                text: `Patente actual: ${patente}`,
+                icon: 'question', showCancelButton: true, confirmButtonText: 'Liberar', confirmButtonColor: '#28a745',
+                background: '#1a1d24', color: '#fff'
+            }).then((r) => {
+                if(r.isConfirmed) cambiarEstadoParking(nombre, 'liberar', '');
+            });
+        } else {
+            Swal.fire({
+                title: `Ocupar ${nombre}`,
+                input: 'text', inputLabel: 'Ingrese Patente Visita',
+                showCancelButton: true, confirmButtonText: 'Registrar Ingreso',
+                background: '#1a1d24', color: '#fff'
+            }).then((r) => {
+                if(r.isConfirmed && r.value) cambiarEstadoParking(nombre, 'ocupar', r.value);
+            });
+        }
+    }
+
+    function cambiarEstadoParking(slotId, accion, patente) {
+        fetch('/conserje/parking/toggle', {
+            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `slot_id=${slotId}&accion=${accion}&patente=${patente}`
+        }).then(() => location.reload());
+    }
+
+    // Buscador Residentes
+    document.getElementById('buscadorResidentes').addEventListener('keyup', function() {
+        let val = this.value.toLowerCase();
+        document.querySelectorAll('#tablaResidentes tbody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(val) ? '' : 'none');
+    });
+
+    function enviarAlerta(tipo) {
+        // Misma lógica que admin
+        Swal.fire({ title: 'Enviar Alerta SOS', text: 'Se notificará a todos los residentes.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff' }).then((r) => {
+            if(r.isConfirmed) {
+                // Submit form sim
+                let f = document.createElement('form'); f.method='POST'; f.action='/admin/difusion';
+                let i = document.createElement('input'); i.name='mensaje'; i.value='EMERGENCIA REPORTADA POR CONSERJERÍA';
+                f.appendChild(i); document.body.appendChild(f); f.submit();
+            }
+        });
+    }
+</script>
+<div class="col-12 mb-4">
+        <div class="card-glass p-3">
+            <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-success me-2"></i> Agenda Amenities (Próximos 7 días)</h5>
+            <div class="d-flex gap-2 overflow-auto pb-2">
+                {% for r in reservas_futuras %}
+                <div class="bg-dark border border-secondary p-2 rounded" style="min-width: 150px;">
+                    <div class="text-info fw-bold small">{{ r.fecha_uso }}</div>
+                    <div class="fw-bold text-white">{{ r.nombre_espacio }}</div>
+                    <div class="badge bg-warning text-dark mt-1">U. {{ r.numero_unidad }}</div>
+                </div>
+                {% else %}
+                <div class="text-white-50 small">No hay reservas próximas.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+<div class="modal fade" id="modalEncomienda" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header"><h5 class="modal-title">Registrar Paquete</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <form action="/conserje/encomiendas/guardar" method="POST">
+        <div class="mb-3"><label>Unidad Destino (ID)</label>
+            <select name="unidad_id" class="form-select bg-dark text-white border-secondary">
+                {% for u in unidades %}<option value="{{ u.id }}">{{ u.numero }} - {{ u.residente }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="mb-3"><label>Remitente / Empresa</label><input type="text" name="remitente" class="form-control bg-dark text-white" required></div>
+        <button class="btn btn-warning w-100 fw-bold">Registrar Recepción</button>
+    </form>
+</div></div></div></div>
+
+<div class="modal fade" id="modalBitacora" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header"><h5 class="modal-title">Nueva Incidencia</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <form action="/conserje/incidencias/guardar" method="POST">
+        <div class="mb-3"><label>Título</label><input type="text" name="titulo" class="form-control bg-dark text-white" required placeholder="Ej: Ruidos molestos"></div>
+        <div class="mb-3"><label>Descripción Detallada</label><textarea name="descripcion" class="form-control bg-dark text-white" rows="3" required></textarea></div>
+        <button class="btn btn-info w-100 fw-bold text-dark">Guardar en Bitácora</button>
+    </form>
+</div></div></div></div>
+
+{% endblock %}

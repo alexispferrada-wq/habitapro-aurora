@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block title %}| Mando Admin{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    /* =============================================
+       CORRECCIÓN VISUAL: TARJETAS DARK
+       ============================================= */
+    /* Forzamos fondo oscuro y texto blanco para evitar el "blanco sobre blanco" */
+    .card, .modal-content, .card-glass, .list-group-item {
+        background-color: #1a1d24 !important; /* Gris oscuro sólido */
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: #ffffff !important;
+        border-radius: 16px !important;
+    }
+    
+    /* Textos y Títulos */
+    h1, h2, h3, h4, h5, h6, strong, span, p, div {
+        color: #ffffff !important;
+    }
+    
+    /* Subtítulos suaves */
+    .text-white-50, .small {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    /* Inputs */
+    .form-control, .form-select {
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+    }
+    .form-control:focus {
+        border-color: #0dcaf0 !important;
+        box-shadow: 0 0 0 3px rgba(13, 202, 240, 0.25) !important;
+    }
+
+    /* =============================================
+       ESTILOS ESPECÍFICOS DASHBOARD
+       ============================================= */
+    
+    /* Hero Section */
+    .hero-management { 
+        position: relative; height: 350px; border-radius: 20px; overflow: hidden; margin-bottom: 30px; 
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    #miniMap { width: 100%; height: 100%; filter: grayscale(100%) invert(100%) opacity(0.3); }
+    .hero-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 40px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(90deg, rgba(20,25,35,0.95) 40%, rgba(20,25,35,0.4) 100%); }
+    
+    /* Calendario */
+    .cal-day { height: 45px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; cursor: default; transition: 0.2s; position: relative; }
+    .cal-day:hover { background: rgba(13, 202, 240, 0.2); border-color: #0dcaf0; }
+    .cal-active { background: #0dcaf0 !important; color: #000 !important; font-weight: 800; cursor: pointer !important; }
+    .cal-badge { position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background: #e74c3c; border-radius: 50%; }
+
+    /* PARKING GRID (Arreglado) */
+    .parking-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
+    .park-slot { 
+        height: 100px; border-radius: 12px; background: rgba(255,255,255,0.05); 
+        border: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        font-size: 0.85rem; position: relative; transition: 0.2s; 
+    }
+    
+    /* Estados Parking Visibles */
+    .park-ocupado { border-color: #f1c40f !important; background: rgba(241, 196, 15, 0.15) !important; }
+    .park-ocupado .park-icon { color: #f1c40f; }
+    .park-ocupado .park-status { color: #f1c40f; font-weight: bold; }
+
+    .park-libre { border-color: #2ecc71 !important; }
+    .park-libre .park-icon { color: #2ecc71; }
+    
+    .park-mantencion { border-color: #0dcaf0 !important; background: rgba(13, 202, 240, 0.1) !important; opacity: 0.8; }
+    .park-mantencion .park-icon { color: #0dcaf0; }
+
+    .park-asignado { border-color: #6c757d !important; opacity: 0.5; }
+
+    /* Botón Mantención (Pequeño en la esquina) */
+    .btn-maint { position: absolute; top: 2px; right: 2px; font-size: 0.8rem; color: rgba(255,255,255,0.3); cursor: pointer; transition: 0.2s; background: none; border: none; }
+    .btn-maint:hover { color: #fff; transform: scale(1.2); }
+
+    /* Botones Rápidos */
+    .btn-quick { height: 110px; border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; color: white; text-decoration: none; font-weight: bold; }
+    .btn-quick:hover { background: rgba(255,255,255,0.15); transform: translateY(-5px); border-color: #0dcaf0; }
+    .btn-quick i { font-size: 2.5rem; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-glass fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold text-white" href="#"><i class="bi bi-building me-2 text-info"></i>Admin Panel</a>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-white small fw-bold">{{ session.nombre }}</span>
+            <a href="/logout" class="btn btn-sm btn-danger border-0 shadow"><i class="bi bi-power"></i></a>
+        </div>
+    </div>
+</nav>
+
+<div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
+    {% with messages = get_flashed_messages() %}{% if messages %}{% for msg in messages %}<div class="alert alert-info border-0 text-center mb-4 fw-bold shadow">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="hero-management card p-0 border-0">
+                <div id="miniMap"></div>
+                <div class="hero-content">
+                    <span class="badge bg-success w-auto align-self-start mb-2 shadow">SISTEMA ONLINE</span>
+                    <h1 class="fw-bold mb-0">{{ edificio.nombre }}</h1>
+                    <p class="text-white-50 fs-5">{{ edificio.direccion }}</p>
+                    <div class="mt-4 d-flex gap-5">
+                        <div><div class="display-6 fw-bold">{{ stats.unidades }}</div><small class="text-white-50 text-uppercase fw-bold">Unidades</small></div>
+                        <div><div class="display-6 fw-bold text-success">${{ "{:,.0f}".format(finanzas.saldo) }}</div><small class="text-white-50 text-uppercase fw-bold">Caja Chica</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <a href="?month={{ nav.prev_m }}&year={{ nav.prev_y }}" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-left"></i></a>
+                        <h4 class="fw-bold m-0">{{ mes_actual }} {{ anio_actual }}</h4>
+                        <a href="?month={{ nav.next_m }}&year={{ nav.next_y }}" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                    <a href="/admin/activos" class="btn btn-sm btn-info fw-bold text-dark"><i class="bi bi-gear-fill me-1"></i> Activos</a>
+                </div>
+                
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    {% for semana in calendario %}
+                        {% for dia in semana %}
+                            {% if dia > 0 %}
+                                {% set count = eventos.get(dia, [])|length %}
+                                <div class="cal-day {{ 'cal-active' if count > 0 }}" 
+                                     style="width: 13%;"
+                                     {% if count > 0 %}
+                                     onclick="verDetalleDia({{ dia }}, {{ eventos.get(dia, []) | tojson }})"
+                                     title="Ver eventos"
+                                     {% endif %}>
+                                    {{ dia }}
+                                    {% if count > 0 %}<div class="cal-badge"></div>{% endif %}
+                                </div>
+                            {% else %}<div style="width: 13%;"></div>{% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0"><i class="bi bi-stars text-warning me-2"></i> Amenities</h5>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formEspacio">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="collapse mb-3" id="formEspacio">
+                    <form action="/admin/espacios/guardar" method="POST" class="bg-black bg-opacity-25 p-3 rounded border border-secondary">
+                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre (Ej: Quincho)" required>
+                        <div class="row g-2 mb-2">
+                            <div class="col"><input type="number" name="capacidad" class="form-control" placeholder="Cap." required></div>
+                            <div class="col"><input type="number" name="precio" class="form-control" placeholder="$" value="0"></div>
+                        </div>
+                        <button class="btn btn-success w-100 btn-sm fw-bold">Guardar</button>
+                    </form>
+                </div>
+
+                <div class="list-group list-group-flush">
+                    {% for e in espacios %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom border-white border-opacity-10">
+                        <div>
+                            <div class="fw-bold">{{ e.nombre }}</div>
+                            <small class="text-white-50">Cap: {{ e.capacidad }} | <span class="text-success">${{ "{:,.0f}".format(e.precio) }}</span></small>
+                        </div>
+                        <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('¿Eliminar?')"><i class="bi bi-trash-fill"></i></a>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-white-50 py-3">Sin espacios creados.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card p-0 h-100 overflow-hidden">
+                <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25">
+                    <h5 class="m-0 fw-bold"><i class="bi bi-calendar-check text-info me-2"></i> Reservas Recientes</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead><tr class="text-white-50 small"><th>Fecha</th><th>Espacio</th><th>Unidad</th><th>Estado</th><th>Acción</th></tr></thead>
+                        <tbody>
+                            {% for r in reservas %}
+                            <tr>
+                                <td class="fw-bold">{{ r.fecha_uso }}</td>
+                                <td class="text-info fw-bold">{{ r.nombre_espacio }}</td>
+                                <td><span class="badge bg-light text-dark border border-white">U. {{ r.numero_unidad }}</span></td>
+                                <td>
+                                    {% if r.estado == 'CONFIRMADA' %}<span class="badge bg-success shadow-sm">OK</span>
+                                    {% else %}<span class="badge bg-danger shadow-sm">CANCEL</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if r.estado == 'CONFIRMADA' %}
+                                    <form action="/admin/reservas/cancelar" method="POST" class="d-inline" onsubmit="return confirm('¿Cancelar y devolver dinero?');">
+                                        <input type="hidden" name="reserva_id" value="{{ r.id }}">
+                                        <input type="hidden" name="reembolsar" value="on">
+                                        <button class="btn btn-sm btn-danger py-0 fw-bold" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-5 text-white-50">Sin reservas activas.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4 mb-4">
+        <h5 class="fw-bold mb-4">🅿️ Estado Estacionamientos (En Vivo)</h5>
+        <div class="parking-grid">
+            {% for p in parking %}
+            <div class="park-slot park-{{ p.estado }}">
+                <form action="/admin/parking/maintenance" method="POST">
+                    <input type="hidden" name="slot_id" value="{{ p.id }}">
+                    <input type="hidden" name="accion" value="{{ 'desactivar' if p.estado == 'mantencion' else 'activar' }}">
+                    <button class="btn-maint" title="Activar/Desactivar Mantención">
+                        <i class="bi bi-cone-striped"></i>
+                    </button>
+                </form>
+
+                <div class="fw-bold">{{ p.nombre }}</div>
+                
+                {% if p.estado == 'ocupado' %}
+                    <i class="bi bi-car-front-fill park-icon fs-4 my-1"></i>
+                    <div class="text-warning fw-bold small">{{ p.patente }}</div>
+                    <small class="text-white-50" style="font-size: 0.65rem;">{{ p.tiempo }}</small>
+                
+                {% elif p.estado == 'libre' %}
+                    <i class="bi bi-check-circle park-icon fs-3 my-1"></i>
+                    <small class="text-success fw-bold" style="font-size: 0.7rem;">LIBRE</small>
+                
+                {% elif p.estado == 'mantencion' %}
+                    <i class="bi bi-tools park-icon fs-4 my-1"></i>
+                    <small class="text-info fw-bold" style="font-size: 0.7rem;">MANT.</small>
+                
+                {% else %}
+                    <i class="bi bi-lock-fill park-icon fs-4 my-1"></i>
+                    <small class="text-white-50" style="font-size: 0.7rem;">U. {{ p.unidad_numero }}</small>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-wallet2 text-success"></i><span>Gastos</span></a></div>
+        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i class="bi bi-person-badge-fill text-info"></i><span>Conserjes</span></a></div>
+        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i class="bi bi-journal-text text-warning"></i><span>Bitácora</span></a></div>
+        <div class="col-6 col-md-3"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i class="bi bi-whatsapp text-success"></i><span>Soporte</span></a></div>
+    </div>
+
+    <div class="card p-0 overflow-hidden">
+        <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25 d-flex justify-content-between align-items-center">
+            <h5 class="m-0 fw-bold">Directorio Residentes</h5>
+            <input type="text" id="buscador" class="form-control form-control-sm w-auto bg-black bg-opacity-25" placeholder="Buscar unidad...">
+        </div>
+        <div class="table-responsive" style="max-height: 400px;">
+            <table class="table table-hover mb-0 align-middle" id="tablaResidentes">
+                <thead><tr class="text-white-50 small"><th>Unidad</th><th>Residente</th><th>Contacto</th><th class="text-end">Acción</th></tr></thead>
+                <tbody>
+                    {% for u in unidades %}
+                    <tr>
+                        <td class="ps-4"><span class="badge bg-primary fs-6 shadow-sm">{{ u.numero }}</span></td>
+                        <td>
+                            <div class="fw-bold">{{ u.propietario }}</div>
+                            <small class="text-info fw-bold">{{ u.tenant.nombre or '' }}</small>
+                        </td>
+                        <td class="small text-white-50">{{ u.owner.email }}</td>
+                        <td class="pe-4 text-end">
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick='abrirEditar({{ u | tojson }})'><i class="bi bi-pencil-fill"></i></button>
+                            <button class="btn btn-sm btn-outline-info" onclick="resetClave({{ u.id }})"><i class="bi bi-key-fill"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="modalEditarUnidad" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Editar Unidad</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/admin/residentes/guardar_edicion" method="POST"><input type="hidden" name="unidad_id" id="editUnitId"><div class="row g-2 mb-3"><div class="col"><label class="text-white-50 small">Piso</label><input type="number" name="piso" id="editPiso" class="form-control"></div><div class="col"><label class="text-white-50 small">Prorrateo</label><input type="text" name="prorrateo" id="editProrrateo" class="form-control"></div></div><h6 class="text-info border-bottom border-white border-opacity-10 pb-2 mb-3">Residente Actual</h6><input type="text" name="tenant_nombre" id="editTenantNombre" class="form-control mb-2" placeholder="Nombre"><input type="text" name="tenant_rut" id="editTenantRut" class="form-control mb-2" placeholder="RUT"><input type="email" name="tenant_email" id="editTenantEmail" class="form-control mb-2" placeholder="Email"><input type="text" name="tenant_fono" id="editTenantFono" class="form-control" placeholder="Teléfono"><button class="btn btn-warning w-100 mt-4 fw-bold">Guardar Cambios</button></form></div></div></div></div>
+
+<div class="modal fade" id="modalConserjes" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Equipo de Conserjería</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-2 mb-4 bg-black bg-opacity-25 p-3 rounded"><div class="col"><input id="newCRut" class="form-control" placeholder="RUT Nuevo"></div><div class="col"><input id="newCNombre" class="form-control" placeholder="Nombre"></div><div class="col-auto"><button class="btn btn-success fw-bold" onclick="crearConserje()"><i class="bi bi-plus-lg"></i> Agregar</button></div></div><div id="listaConserjes"></div></div></div></div></div>
+
+<div class="modal fade" id="modalLogs" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Bitácora de Eventos</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center text-white-50"><i class="bi bi-cone-striped fs-1 mb-3 d-block"></i>Módulo en desarrollo...</div></div></div></div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var map = L.map('miniMap', {zoomControl: false}).setView([{{ edificio.lat | default(-33.4) }}, {{ edificio.lon | default(-70.6) }}], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    });
+
+    function verDetalleDia(dia, eventos) {
+        let html = '';
+        if(eventos.length === 0) {
+            html = '<p class="text-white-50">Sin eventos este día.</p>';
+        } else {
+            eventos.forEach(e => {
+                html += `<div class="text-start border-bottom border-white border-opacity-10 py-2">
+                            <strong class="text-info">${e.nombre}</strong>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-white-50 small">Costo Est.</span>
+                                <span class="text-success fw-bold">$${parseInt(e.costo).toLocaleString()}</span>
+                            </div>
+                         </div>`;
+            });
+        }
+        Swal.fire({ 
+            title: `Agenda Día ${dia}`, 
+            html: html, 
+            background: '#1a1d24', color: '#fff',
+            confirmButtonText: 'Cerrar'
+        });
+    }
+
+    function abrirEditar(u) {
+        document.getElementById('editUnitId').value = u.id;
+        document.getElementById('editPiso').value = u.piso;
+        document.getElementById('editProrrateo').value = u.prorrateo;
+        document.getElementById('editTenantNombre').value = u.tenant.nombre || '';
+        document.getElementById('editTenantRut').value = u.tenant.rut || '';
+        document.getElementById('editTenantEmail').value = u.tenant.email || '';
+        document.getElementById('editTenantFono').value = u.tenant.fono || '';
+        new bootstrap.Modal(document.getElementById('modalEditarUnidad')).show();
+    }
+
+    function resetClave(uid) {
+        if(!confirm('¿Generar nueva contraseña para este residente?')) return;
+        fetch('/admin/residentes/reset_clave', {
+            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `unidad_id=${uid}`
+        })
+        .then(r => r.json())
+        .then(d => {
+            if(d.status === 'success') {
+                Swal.fire({
+                    title: '¡Clave Generada!',
+                    html: `<p class="text-white-50">Usuario: <strong class="text-white">${d.residente_nombre}</strong></p>
+                           <div class="bg-white text-dark p-3 rounded fs-2 fw-bold select-all border border-primary">${d.password}</div>
+                           <p class="small text-white-50 mt-2">Copia y envía esta clave.</p>`,
+                    icon: 'success', background: '#1a1d24', color: '#fff'
+                });
+            } else {
+                Swal.fire({ title: 'Error', text: d.message, icon: 'error', background: '#1a1d24', color: '#fff' });
+            }
+        });
+    }
+
+    function abrirModalConserjes() {
+        new bootstrap.Modal(document.getElementById('modalConserjes')).show();
+        cargarConserjes();
+    }
+
+    function cargarConserjes() {
+        fetch('/admin/conserjes/listar').then(r => r.json()).then(data => {
+            let html = '<ul class="list-group list-group-flush">';
+            data.forEach(c => html += `<li class="list-group-item bg-transparent d-flex justify-content-between align-items-center text-white px-0 border-bottom border-white border-opacity-10">
+                <div><span class="fw-bold">${c.nombre}</span> <span class="small text-white-50">(${c.rut})</span></div>
+                <button class="btn btn-sm btn-outline-danger border-0" onclick="eliminarConserje('${c.rut}')"><i class="bi bi-trash-fill"></i></button></li>`);
+            html += '</ul>';
+            document.getElementById('listaConserjes').innerHTML = html;
+        });
+    }
+
+    function crearConserje() {
+        let r = document.getElementById('newCRut').value;
+        let n = document.getElementById('newCNombre').value;
+        if(!r || !n) return alert('Datos incompletos');
+        fetch('/admin/conserjes/crear', {
+            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `rut=${r}&nombre=${n}&email=staff@habita.cl`
+        }).then(res => res.json()).then(d => {
+            if(d.status==='success') {
+                Swal.fire({title: 'Conserje Creado', html: `Contraseña: <strong>${d.password}</strong>`, icon: 'success', background:'#1a1d24', color:'#fff'});
+                cargarConserjes(); document.getElementById('newCRut').value='';
+            } else alert('Error al crear');
+        });
+    }
+
+    function eliminarConserje(rut) {
+        if(confirm('¿Eliminar acceso a este conserje?')) fetch('/admin/conserjes/eliminar', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `rut=${rut}` }).then(() => cargarConserjes());
+    }
+
+    function abrirModalLogs() { new bootstrap.Modal(document.getElementById('modalLogs')).show(); }
+
+    document.getElementById('buscador').addEventListener('keyup', function() {
+        let val = this.value.toLowerCase();
+        document.querySelectorAll('#tablaResidentes tbody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(val) ? '' : 'none');
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}| Finanzas{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-glass fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2 text-white" href="/admin">
+            <i class="bi bi-arrow-left-circle text-info"></i> Volver
+        </a>
+        <span class="text-white opacity-75 small d-none d-md-block">Gestión Financiera</span>
+    </div>
+</nav>
+
+<div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}{% for message in messages %}<div class="alert alert-success border-0 bg-success bg-opacity-25 text-white mb-4">{{ message }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <div class="row g-4">
+        
+        <div class="col-lg-4">
+            <div class="card-glass p-4 text-center mb-4">
+                <h6 class="text-uppercase opacity-75 ls-1">Saldo Disponible</h6>
+                <h1 class="display-5 fw-bold text-success my-2">${{ "{:,.0f}".format(saldo).replace(',', '.') }}</h1>
+            </div>
+
+            <div class="card-glass p-4 mb-4 border-start border-4 border-warning">
+                <h5 class="fw-bold mb-3">Cierre Mensual</h5>
+                <p class="small text-white-50">Calcula y distribuye los gastos del mes a todas las unidades.</p>
+                <form action="/admin/calcular_prorrateo" method="POST">
+                    <button class="btn btn-warning w-100 fw-bold text-dark py-2">
+                        <i class="bi bi-calculator me-2"></i> Calcular Prorrateo
+                    </button>
+                </form>
+            </div>
+
+            <div class="card-glass p-4">
+                <h5 class="fw-bold mb-3 pb-2 border-bottom border-white border-opacity-10 text-danger">
+                    <i class="bi bi-cart-dash"></i> Registrar Gasto
+                </h5>
+                <form action="/admin/gasto/nuevo" method="POST">
+                    <div class="mb-2"><label>Fecha</label><input type="date" name="fecha" class="form-control" required></div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6"><label>Categoría</label><select name="categoria" class="form-select"><option>Mantención</option><option>Servicios</option><option>Insumos</option><option>Otros</option></select></div>
+                        <div class="col-6"><label>Monto</label><input type="number" name="monto" class="form-control" required></div>
+                    </div>
+                    <div class="mb-3"><label>Descripción</label><input type="text" name="descripcion" class="form-control" required></div>
+                    <button class="btn btn-danger w-100 fw-bold">GUARDAR GASTO</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card-glass h-100 p-0 overflow-hidden">
+                <div class="p-3 border-bottom border-white border-opacity-10 bg-white bg-opacity-05 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold m-0"><i class="bi bi-clock-history text-info"></i> Movimientos</h5>
+                    <span class="badge bg-white bg-opacity-10">{{ movimientos|length }} Reg.</span>
+                </div>
+                <div class="table-responsive" style="max-height: 600px;">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-white bg-opacity-05"><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th class="text-end pe-3">Monto</th></tr></thead>
+                        <tbody>
+                            {% for m in movimientos %}
+                            <tr>
+                                <td class="opacity-75 small">{{ m.fecha }}</td>
+                                <td>
+                                    {% if m.tipo == 'ingreso' %}
+                                        <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">Ingreso</span>
+                                    {% else %}
+                                        <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25">Egreso</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ m.descripcion }}</td>
+                                <td class="text-end pe-3 fw-bold {{ 'text-success' if m.tipo=='ingreso' else 'text-danger' }}">
+                                    ${{ "{:,.0f}".format(m.monto).replace(',', '.') }}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center py-5 opacity-50">Sin movimientos.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

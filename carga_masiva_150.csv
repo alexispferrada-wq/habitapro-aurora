@@ -1,0 +1,151 @@
+numero,piso,metraje,prorrateo,estacionamiento,bodega,owner_rut,owner_nombre,owner_email,owner_fono,tenant_rut,tenant_nombre,tenant_email,tenant_fono,broker_rut,broker_nombre,broker_email,broker_fono
+101,1,140.5,1.127,E-270,B-297,13.130.952-3,Luis Gomez,contacto@mail.com,+56911112222,26.208.370-9,Carlos Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+102,1,140.5,2.01,E-229,B-155,18.485.506-7,Jose Gomez,contacto@mail.com,+56911112222,21.915.412-7,Ana Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+103,1,50.5,1.666,E-174,B-100,11.993.824-7,Jose Muñoz,contacto@mail.com,+56911112222,11.993.824-7,Jose Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+104,1,70.2,1.681,E-270,B-263,16.394.545-3,Maria Gomez,contacto@mail.com,+56911112222,21.864.901-0,Roberto Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+105,1,90.0,2.208,E-215,B-298,15.801.949-8,Carlos Gonzalez,contacto@mail.com,+56911112222,23.485.372-7,Maria Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+106,1,140.5,0.74,E-206,B-262,20.879.406-1,Carlos Gomez,contacto@mail.com,+56911112222,24.873.195-5,Carlos Gonzalez,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+107,1,70.2,1.938,E-119,B-169,17.723.579-9,Jose Gonzalez,contacto@mail.com,+56911112222,29.718.997-9,Maria Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+108,1,140.5,1.986,E-266,B-236,19.634.462-9,Roberto Diaz,contacto@mail.com,+56911112222,28.179.631-2,Ana Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+109,1,50.5,0.586,E-234,B-239,17.154.512-5,Ana Perez,contacto@mail.com,+56911112222,17.154.512-5,Ana Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+110,1,70.2,0.541,E-247,B-189,14.613.714-0,Elena Rojas,contacto@mail.com,+56911112222,22.832.234-7,Roberto Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+201,2,140.5,1.557,E-159,B-228,12.648.985-0,Carlos Gomez,contacto@mail.com,+56911112222,27.134.112-4,Elena Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+202,2,70.2,1.656,E-249,B-238,13.670.205-5,Ana Silva,contacto@mail.com,+56911112222,29.151.256-7,Ana Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+203,2,50.5,2.448,E-192,B-257,11.779.422-1,Roberto Perez,contacto@mail.com,+56911112222,23.565.510-6,Carlos Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+204,2,50.5,1.043,E-246,B-114,15.169.255-4,Jose Gonzalez,contacto@mail.com,+56911112222,26.605.864-6,Luis Gonzalez,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+205,2,70.2,1.807,E-251,B-109,10.281.540-5,Carlos Muñoz,contacto@mail.com,+56911112222,10.281.540-5,Carlos Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+206,2,90.0,0.609,E-187,B-211,17.898.372-9,Maria Gomez,contacto@mail.com,+56911112222,17.898.372-9,Maria Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+207,2,50.5,2.255,E-125,B-179,15.821.448-7,Roberto Gonzalez,contacto@mail.com,+56911112222,15.821.448-7,Roberto Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+208,2,90.0,0.596,E-233,B-169,20.377.429-3,Carlos Silva,contacto@mail.com,+56911112222,24.542.462-0,Maria Rojas,residente@mail.com,+56933334444,76.123.456-K,Propiedades Pro,contacto@propiedades.cl,+5622222222
+209,2,70.2,0.618,E-292,B-255,20.251.270-2,Jose Gonzalez,contacto@mail.com,+56911112222,21.846.476-6,Jose Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+210,2,90.0,0.773,E-146,B-151,11.387.161-2,Ana Diaz,contacto@mail.com,+56911112222,29.757.734-5,Carlos Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+301,3,140.5,1.866,E-116,B-246,11.768.396-3,Maria Silva,contacto@mail.com,+56911112222,11.768.396-3,Maria Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+302,3,70.2,1.245,E-147,B-107,13.606.536-2,Roberto Diaz,contacto@mail.com,+56911112222,13.606.536-2,Roberto Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+303,3,140.5,1.5,E-147,B-106,20.676.926-3,Elena Gonzalez,contacto@mail.com,+56911112222,22.755.616-5,Roberto Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+304,3,90.0,0.639,E-157,B-189,12.571.102-9,Jose Diaz,contacto@mail.com,+56911112222,23.607.748-2,Roberto Perez,residente@mail.com,+56933334444,76.123.456-K,Propiedades Pro,contacto@propiedades.cl,+5622222222
+305,3,90.0,0.821,E-153,B-275,16.998.456-6,Carlos Muñoz,contacto@mail.com,+56911112222,16.998.456-6,Carlos Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+306,3,140.5,2.325,E-211,B-119,11.662.114-8,Maria Perez,contacto@mail.com,+56911112222,23.306.253-6,Maria Gomez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+307,3,70.2,1.231,E-184,B-182,17.801.721-6,Carlos Gonzalez,contacto@mail.com,+56911112222,17.801.721-6,Carlos Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+308,3,90.0,1.162,E-274,B-156,16.669.605-6,Maria Rojas,contacto@mail.com,+56911112222,29.788.820-3,Ana Rojas,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+309,3,70.2,2.027,E-221,B-208,14.205.339-2,Elena Perez,contacto@mail.com,+56911112222,30.278.656-6,Maria Gomez,residente@mail.com,+56933334444,76.123.456-K,Propiedades Pro,contacto@propiedades.cl,+5622222222
+310,3,140.5,2.334,E-205,B-272,12.349.401-9,Roberto Perez,contacto@mail.com,+56911112222,12.349.401-9,Roberto Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+401,4,140.5,0.576,E-286,B-219,17.297.771-7,Ana Gomez,contacto@mail.com,+56911112222,17.297.771-7,Ana Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+402,4,140.5,1.892,E-182,B-104,14.314.468-6,Maria Gomez,contacto@mail.com,+56911112222,14.314.468-6,Maria Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+403,4,50.5,1.076,E-300,B-298,17.349.107-0,Jose Gomez,contacto@mail.com,+56911112222,17.349.107-0,Jose Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+404,4,70.2,0.705,E-277,B-217,17.716.718-6,Carlos Diaz,contacto@mail.com,+56911112222,25.802.138-2,Carlos Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+405,4,90.0,0.887,E-216,B-217,14.142.267-9,Roberto Muñoz,contacto@mail.com,+56911112222,29.338.873-9,Elena Gomez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+406,4,50.5,1.634,E-113,B-118,14.253.843-3,Jose Muñoz,contacto@mail.com,+56911112222,28.558.371-7,Carlos Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+407,4,90.0,1.703,E-262,B-222,15.192.949-2,Elena Rojas,contacto@mail.com,+56911112222,26.459.208-1,Jose Gomez,residente@mail.com,+56933334444,76.123.456-K,Propiedades Pro,contacto@propiedades.cl,+5622222222
+408,4,50.5,2.318,E-167,B-170,17.820.956-6,Roberto Perez,contacto@mail.com,+56911112222,29.206.870-2,Luis Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+409,4,140.5,0.589,E-242,B-166,15.299.425-0,Roberto Rojas,contacto@mail.com,+56911112222,15.299.425-0,Roberto Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+410,4,90.0,2.361,E-126,B-166,11.390.918-7,Maria Perez,contacto@mail.com,+56911112222,28.841.180-8,Luis Rojas,residente@mail.com,+56933334444,76.123.456-K,Propiedades Pro,contacto@propiedades.cl,+5622222222
+501,5,140.5,2.091,E-176,B-155,17.861.640-0,Ana Muñoz,contacto@mail.com,+56911112222,17.861.640-0,Ana Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+502,5,90.0,0.911,E-260,B-143,12.403.913-0,Elena Muñoz,contacto@mail.com,+56911112222,12.403.913-0,Elena Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+503,5,140.5,1.273,E-291,B-155,10.852.491-9,Roberto Perez,contacto@mail.com,+56911112222,10.852.491-9,Roberto Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+504,5,90.0,0.975,E-250,B-162,14.575.652-1,Carlos Rojas,contacto@mail.com,+56911112222,14.575.652-1,Carlos Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+505,5,90.0,0.585,E-258,B-173,20.656.962-4,Ana Gonzalez,contacto@mail.com,+56911112222,20.656.962-4,Ana Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+506,5,50.5,1.711,E-270,B-159,20.396.271-6,Jose Silva,contacto@mail.com,+56911112222,27.425.408-3,Carlos Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+507,5,70.2,1.599,E-198,B-244,17.515.213-2,Ana Gomez,contacto@mail.com,+56911112222,29.238.240-3,Maria Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+508,5,70.2,0.969,E-292,B-263,19.683.922-1,Ana Diaz,contacto@mail.com,+56911112222,27.117.241-1,Roberto Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+509,5,140.5,1.309,E-211,B-290,14.937.568-5,Luis Gonzalez,contacto@mail.com,+56911112222,26.164.586-6,Roberto Muñoz,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+510,5,140.5,1.738,E-210,B-259,10.639.242-8,Jose Diaz,contacto@mail.com,+56911112222,10.639.242-8,Jose Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+601,6,50.5,1.083,E-258,B-282,17.385.308-8,Jose Silva,contacto@mail.com,+56911112222,17.385.308-8,Jose Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+602,6,50.5,1.433,E-108,B-269,18.562.561-0,Roberto Silva,contacto@mail.com,+56911112222,18.562.561-0,Roberto Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+603,6,50.5,1.901,E-148,B-250,13.733.261-1,Roberto Gomez,contacto@mail.com,+56911112222,13.733.261-1,Roberto Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+604,6,140.5,1.086,E-253,B-300,19.504.735-4,Luis Gonzalez,contacto@mail.com,+56911112222,19.504.735-4,Luis Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+605,6,140.5,1.079,E-192,B-267,20.277.248-4,Maria Perez,contacto@mail.com,+56911112222,20.277.248-4,Maria Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+606,6,50.5,2.26,E-207,B-284,19.625.603-1,Jose Gonzalez,contacto@mail.com,+56911112222,19.625.603-1,Jose Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+607,6,70.2,1.755,E-280,B-126,15.940.867-9,Roberto Gomez,contacto@mail.com,+56911112222,22.151.945-6,Elena Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+608,6,90.0,1.429,E-183,B-197,16.356.746-6,Elena Gomez,contacto@mail.com,+56911112222,30.669.715-0,Ana Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+609,6,140.5,1.654,E-183,B-103,10.217.843-5,Maria Diaz,contacto@mail.com,+56911112222,10.217.843-5,Maria Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+610,6,70.2,1.597,E-139,B-109,10.558.446-4,Luis Gomez,contacto@mail.com,+56911112222,10.558.446-4,Luis Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+701,7,50.5,1.015,E-288,B-260,17.171.642-4,Luis Muñoz,contacto@mail.com,+56911112222,17.171.642-4,Luis Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+702,7,70.2,0.927,E-283,B-258,11.570.592-1,Ana Muñoz,contacto@mail.com,+56911112222,26.250.401-4,Maria Gonzalez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+703,7,50.5,0.689,E-150,B-101,17.863.234-1,Carlos Perez,contacto@mail.com,+56911112222,17.863.234-1,Carlos Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+704,7,140.5,1.216,E-123,B-105,15.876.606-1,Carlos Gomez,contacto@mail.com,+56911112222,15.876.606-1,Carlos Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+705,7,140.5,1.626,E-293,B-178,19.378.543-6,Maria Perez,contacto@mail.com,+56911112222,19.378.543-6,Maria Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+706,7,50.5,1.696,E-109,B-161,13.734.221-5,Jose Muñoz,contacto@mail.com,+56911112222,27.133.941-1,Maria Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+707,7,140.5,1.371,E-240,B-134,11.898.107-6,Ana Diaz,contacto@mail.com,+56911112222,21.479.253-8,Luis Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+708,7,70.2,1.131,E-274,B-127,19.346.600-5,Luis Diaz,contacto@mail.com,+56911112222,19.346.600-5,Luis Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+709,7,70.2,0.897,E-123,B-262,15.838.238-3,Luis Gomez,contacto@mail.com,+56911112222,21.285.518-6,Luis Muñoz,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+710,7,50.5,1.679,E-154,B-272,18.597.114-7,Maria Gonzalez,contacto@mail.com,+56911112222,21.414.243-5,Carlos Diaz,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+801,8,50.5,1.373,E-260,B-171,13.396.531-9,Jose Silva,contacto@mail.com,+56911112222,13.396.531-9,Jose Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+802,8,70.2,0.665,E-212,B-186,17.805.469-8,Ana Gonzalez,contacto@mail.com,+56911112222,26.368.274-8,Ana Perez,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+803,8,140.5,0.675,E-186,B-204,10.932.117-6,Carlos Gomez,contacto@mail.com,+56911112222,28.141.859-8,Maria Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+804,8,90.0,2.033,E-267,B-235,10.638.920-1,Jose Rojas,contacto@mail.com,+56911112222,29.616.474-2,Ana Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+805,8,70.2,1.588,E-208,B-264,11.113.534-7,Jose Gonzalez,contacto@mail.com,+56911112222,11.113.534-7,Jose Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+806,8,50.5,0.98,E-168,B-161,13.275.997-2,Ana Diaz,contacto@mail.com,+56911112222,29.814.481-8,Maria Silva,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+807,8,140.5,1.743,E-237,B-295,10.677.418-1,Maria Rojas,contacto@mail.com,+56911112222,10.677.418-1,Maria Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+808,8,90.0,1.763,E-111,B-221,19.817.657-0,Jose Diaz,contacto@mail.com,+56911112222,23.548.513-0,Roberto Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+809,8,90.0,2.31,E-226,B-122,10.167.942-7,Carlos Silva,contacto@mail.com,+56911112222,24.871.189-1,Jose Diaz,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+810,8,90.0,0.921,E-102,B-113,12.917.705-8,Jose Muñoz,contacto@mail.com,+56911112222,22.670.914-5,Jose Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+901,9,140.5,1.213,E-264,B-104,13.409.872-3,Luis Gomez,contacto@mail.com,+56911112222,13.409.872-3,Luis Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+902,9,90.0,1.479,E-273,B-140,19.613.142-9,Elena Diaz,contacto@mail.com,+56911112222,26.822.913-9,Maria Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+903,9,70.2,0.886,E-117,B-250,15.914.899-5,Luis Rojas,contacto@mail.com,+56911112222,25.540.899-3,Carlos Gonzalez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+904,9,50.5,2.464,E-219,B-185,13.530.660-4,Elena Perez,contacto@mail.com,+56911112222,13.530.660-4,Elena Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+905,9,50.5,2.286,E-127,B-248,13.158.266-7,Roberto Muñoz,contacto@mail.com,+56911112222,13.158.266-7,Roberto Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+906,9,90.0,1.341,E-177,B-223,17.297.868-5,Elena Muñoz,contacto@mail.com,+56911112222,17.297.868-5,Elena Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+907,9,70.2,1.238,E-163,B-106,13.260.509-8,Ana Perez,contacto@mail.com,+56911112222,13.260.509-8,Ana Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+908,9,50.5,2.37,E-295,B-260,10.164.357-9,Ana Diaz,contacto@mail.com,+56911112222,22.300.921-7,Roberto Gonzalez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+909,9,70.2,0.604,E-214,B-214,17.802.746-6,Elena Muñoz,contacto@mail.com,+56911112222,17.802.746-6,Elena Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+910,9,90.0,0.608,E-107,B-184,18.369.624-8,Jose Gomez,contacto@mail.com,+56911112222,18.369.624-8,Jose Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1001,10,50.5,1.924,E-253,B-200,15.750.697-0,Jose Silva,contacto@mail.com,+56911112222,26.765.334-3,Luis Silva,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+1002,10,50.5,0.681,E-160,B-140,14.197.932-5,Carlos Muñoz,contacto@mail.com,+56911112222,14.197.932-5,Carlos Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1003,10,140.5,2.145,E-126,B-156,13.107.512-9,Maria Gonzalez,contacto@mail.com,+56911112222,27.641.420-3,Ana Diaz,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+1004,10,90.0,2.372,E-115,B-121,19.792.692-5,Ana Silva,contacto@mail.com,+56911112222,19.792.692-5,Ana Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1005,10,70.2,2.05,E-127,B-215,15.805.909-1,Luis Muñoz,contacto@mail.com,+56911112222,15.805.909-1,Luis Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1006,10,140.5,1.845,E-213,B-106,16.211.565-3,Carlos Gonzalez,contacto@mail.com,+56911112222,16.211.565-3,Carlos Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1007,10,140.5,1.474,E-158,B-236,20.760.921-0,Jose Perez,contacto@mail.com,+56911112222,26.760.369-1,Maria Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1008,10,50.5,1.613,E-238,B-291,14.989.514-3,Jose Diaz,contacto@mail.com,+56911112222,22.974.817-4,Roberto Gonzalez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+1009,10,90.0,1.556,E-169,B-294,19.115.710-6,Luis Rojas,contacto@mail.com,+56911112222,19.115.710-6,Luis Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1010,10,70.2,1.866,E-143,B-248,10.146.234-2,Luis Rojas,contacto@mail.com,+56911112222,10.146.234-2,Luis Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1101,11,140.5,1.467,E-260,B-284,12.312.503-3,Luis Silva,contacto@mail.com,+56911112222,12.312.503-3,Luis Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1102,11,70.2,1.267,E-117,B-117,16.632.516-5,Roberto Silva,contacto@mail.com,+56911112222,16.632.516-5,Roberto Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1103,11,90.0,0.575,E-192,B-133,14.304.578-7,Carlos Rojas,contacto@mail.com,+56911112222,28.499.710-2,Jose Perez,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+1104,11,140.5,1.667,E-183,B-235,17.651.559-0,Ana Perez,contacto@mail.com,+56911112222,26.185.387-8,Elena Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1105,11,140.5,1.294,E-116,B-232,16.687.334-9,Maria Diaz,contacto@mail.com,+56911112222,27.557.413-3,Jose Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1106,11,140.5,1.31,E-109,B-246,13.460.257-0,Jose Silva,contacto@mail.com,+56911112222,24.445.324-5,Carlos Gonzalez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+1107,11,50.5,0.571,E-155,B-258,12.349.604-6,Jose Perez,contacto@mail.com,+56911112222,25.950.331-4,Roberto Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1108,11,70.2,0.671,E-299,B-116,19.128.207-7,Elena Muñoz,contacto@mail.com,+56911112222,19.128.207-7,Elena Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1109,11,50.5,0.778,E-190,B-168,14.274.379-8,Ana Diaz,contacto@mail.com,+56911112222,26.999.938-4,Maria Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1110,11,70.2,2.456,E-180,B-159,19.606.468-0,Jose Perez,contacto@mail.com,+56911112222,25.952.568-6,Roberto Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1201,12,70.2,2.238,E-190,B-255,10.829.135-2,Carlos Silva,contacto@mail.com,+56911112222,29.845.290-0,Carlos Gomez,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+1202,12,50.5,1.653,E-177,B-188,18.438.182-5,Ana Perez,contacto@mail.com,+56911112222,21.913.391-8,Elena Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1203,12,70.2,2.103,E-185,B-294,17.197.933-3,Elena Diaz,contacto@mail.com,+56911112222,17.197.933-3,Elena Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1204,12,140.5,1.272,E-136,B-290,19.978.872-3,Maria Silva,contacto@mail.com,+56911112222,23.917.513-7,Jose Silva,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+1205,12,140.5,1.647,E-200,B-231,17.697.392-3,Elena Muñoz,contacto@mail.com,+56911112222,17.697.392-3,Elena Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1206,12,90.0,1.189,E-130,B-264,12.563.210-5,Carlos Perez,contacto@mail.com,+56911112222,12.563.210-5,Carlos Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1207,12,90.0,1.111,E-139,B-104,18.610.227-0,Elena Rojas,contacto@mail.com,+56911112222,18.610.227-0,Elena Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1208,12,70.2,2.33,E-169,B-130,10.392.875-6,Roberto Muñoz,contacto@mail.com,+56911112222,30.245.405-6,Ana Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1209,12,90.0,2.182,E-241,B-110,15.227.866-8,Roberto Gomez,contacto@mail.com,+56911112222,15.227.866-8,Roberto Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1210,12,50.5,1.292,E-174,B-141,18.355.346-6,Elena Muñoz,contacto@mail.com,+56911112222,18.355.346-6,Elena Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1301,13,50.5,1.3,E-146,B-131,11.198.927-2,Luis Muñoz,contacto@mail.com,+56911112222,11.198.927-2,Luis Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1302,13,140.5,2.361,E-127,B-128,18.850.449-0,Jose Rojas,contacto@mail.com,+56911112222,30.401.521-8,Luis Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1303,13,70.2,2.171,E-257,B-291,16.842.710-5,Maria Perez,contacto@mail.com,+56911112222,21.434.274-0,Ana Muñoz,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+1304,13,90.0,2.131,E-161,B-195,16.455.146-1,Roberto Perez,contacto@mail.com,+56911112222,16.455.146-1,Roberto Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1305,13,90.0,1.697,E-286,B-104,13.264.498-4,Roberto Perez,contacto@mail.com,+56911112222,30.171.371-1,Elena Rojas,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+1306,13,50.5,1.053,E-137,B-248,10.395.693-4,Ana Rojas,contacto@mail.com,+56911112222,21.889.276-2,Luis Rojas,residente@mail.com,+56933334444,76.123.456-K,Propiedades Pro,contacto@propiedades.cl,+5622222222
+1307,13,50.5,0.849,E-159,B-187,16.243.464-4,Jose Muñoz,contacto@mail.com,+56911112222,16.243.464-4,Jose Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1308,13,90.0,1.115,E-259,B-220,15.249.795-6,Jose Muñoz,contacto@mail.com,+56911112222,15.249.795-6,Jose Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1309,13,90.0,1.174,E-139,B-288,12.681.874-9,Ana Silva,contacto@mail.com,+56911112222,12.681.874-9,Ana Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1310,13,70.2,0.765,E-275,B-106,13.979.199-0,Jose Muñoz,contacto@mail.com,+56911112222,13.979.199-0,Jose Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1401,14,90.0,0.755,E-204,B-228,16.494.132-5,Ana Diaz,contacto@mail.com,+56911112222,28.544.540-7,Carlos Gomez,residente@mail.com,+56933334444,76.123.456-K,Propiedades Pro,contacto@propiedades.cl,+5622222222
+1402,14,90.0,2.229,E-158,B-297,17.410.567-1,Elena Perez,contacto@mail.com,+56911112222,29.418.123-3,Elena Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1403,14,70.2,0.685,E-247,B-227,16.437.781-3,Jose Rojas,contacto@mail.com,+56911112222,16.437.781-3,Jose Rojas,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1404,14,70.2,1.339,E-152,B-283,11.957.330-5,Jose Gomez,contacto@mail.com,+56911112222,27.352.757-9,Maria Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1405,14,140.5,1.51,E-243,B-112,14.465.996-3,Roberto Perez,contacto@mail.com,+56911112222,14.465.996-3,Roberto Perez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1406,14,50.5,0.883,E-208,B-213,20.512.679-5,Maria Gomez,contacto@mail.com,+56911112222,24.257.290-7,Carlos Gonzalez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1407,14,50.5,1.492,E-257,B-247,19.174.175-2,Roberto Gonzalez,contacto@mail.com,+56911112222,25.106.878-4,Elena Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1408,14,140.5,1.108,E-182,B-170,13.496.195-8,Ana Muñoz,contacto@mail.com,+56911112222,13.496.195-8,Ana Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1409,14,70.2,2.389,E-107,B-149,17.250.751-6,Carlos Diaz,contacto@mail.com,+56911112222,29.589.768-1,Ana Perez,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+1410,14,50.5,2.182,E-219,B-169,16.345.971-3,Luis Gomez,contacto@mail.com,+56911112222,16.345.971-3,Luis Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1501,15,140.5,1.29,E-117,B-170,11.339.472-7,Carlos Rojas,contacto@mail.com,+56911112222,30.454.953-1,Maria Diaz,residente@mail.com,+56933334444,76.123.456-K,Gestión Global,contacto@propiedades.cl,+5622222222
+1502,15,70.2,2.32,E-241,B-225,14.328.968-2,Roberto Muñoz,contacto@mail.com,+56911112222,29.898.904-7,Roberto Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1503,15,90.0,0.992,E-244,B-229,11.407.945-5,Carlos Diaz,contacto@mail.com,+56911112222,27.731.645-0,Jose Muñoz,residente@mail.com,+56933334444,76.123.456-K,City Home,contacto@propiedades.cl,+5622222222
+1504,15,140.5,1.576,E-246,B-244,11.553.719-5,Roberto Diaz,contacto@mail.com,+56911112222,22.159.509-8,Carlos Gomez,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1505,15,90.0,1.734,E-113,B-147,13.972.338-7,Luis Diaz,contacto@mail.com,+56911112222,13.972.338-7,Luis Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1506,15,140.5,2.483,E-253,B-298,10.618.821-7,Elena Gonzalez,contacto@mail.com,+56911112222,21.195.536-5,Carlos Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1507,15,90.0,0.527,E-236,B-155,19.588.282-8,Ana Silva,contacto@mail.com,+56911112222,27.474.964-6,Maria Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1508,15,90.0,1.0,E-124,B-202,14.783.955-4,Luis Muñoz,contacto@mail.com,+56911112222,14.783.955-4,Luis Muñoz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1509,15,50.5,0.871,E-243,B-273,10.156.632-4,Ana Gonzalez,contacto@mail.com,+56911112222,25.351.315-1,Luis Diaz,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
+1510,15,70.2,2.432,E-294,B-253,17.697.792-5,Elena Silva,contacto@mail.com,+56911112222,17.697.792-5,Elena Silva,residente@mail.com,+56933334444,,,contacto@propiedades.cl,+5622222222
