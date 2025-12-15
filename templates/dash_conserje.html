@@ -1,49 +1,38 @@
 {% extends "base.html" %}
-{% block title %}| Módulo Conserjería{% endblock %}
+{% block title %}| Conserjería{% endblock %}
 
 {% block styles %}
-<style>
-    /* Estilo Conserjería - Optimizado para Pantallas Táctiles/Monitores */
-    .card-glass { background: rgba(20, 20, 30, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); color: white; }
-    
-    /* Parking Gigante */
-    .parking-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
-    .park-slot { 
-        padding: 15px; border-radius: 12px; text-align: center; height: 110px; cursor: pointer; position: relative;
-        display: flex; flex-direction: column; justify-content: center; align-items: center;
-        border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); transition: 0.2s;
-    }
-    .park-slot:hover { transform: scale(1.05); z-index: 10; border-color: white; }
-    
-    /* Estados Parking */
-    .park-libre i { color: #2ecc71; font-size: 2.5rem; }
-    .park-libre .estado-text { color: #2ecc71; font-weight: bold; }
-    
-    .park-ocupado { background: rgba(241, 196, 15, 0.15); border-color: #f1c40f; }
-    .park-ocupado i { color: #f1c40f; font-size: 2rem; }
-    
-    .park-mantencion { background: rgba(52, 152, 219, 0.15); border-color: #3498db; cursor: not-allowed; opacity: 0.7; }
-    .park-mantencion i { color: #3498db; }
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-    /* Botones Acción Gigantes */
-    .btn-action-lg {
-        height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;
-        border-radius: 16px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase;
-        border: none; transition: 0.3s; color: white;
-    }
-    .btn-action-lg i { font-size: 3rem; margin-bottom: 10px; }
-    .btn-action-lg:hover { transform: translateY(-5px); filter: brightness(1.2); }
+<style>
+    /* Estilos Conserjería */
+    .card-glass { background: rgba(20, 20, 30, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); color: white; }
     
+    /* Parking Grid */
+    .parking-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+    .park-slot { height: 110px; border-radius: 12px; position: relative; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 8px; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); transition: 0.2s; overflow: hidden; }
+    .park-slot:hover { transform: scale(1.05); z-index: 10; border-color: white; }
+    .slot-name { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .slot-icon { font-size: 2rem; line-height: 1; }
+    .slot-timer { font-family: 'Courier New', monospace; background: rgba(0, 0, 0, 0.6); border-radius: 4px; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; color: #ffc107; width: 100%; text-align: center; }
+
+    /* Estados Parking */
+    .park-libre { border-color: #2ecc71; color: #2ecc71; } .park-libre .slot-icon { color: #2ecc71; }
+    .park-ocupado { background: rgba(241, 196, 15, 0.15); border-color: #f1c40f; color: white; } .park-ocupado .slot-icon { color: #f1c40f; }
+    .park-mantencion { background: rgba(52, 152, 219, 0.15); border-color: #3498db; opacity: 0.7; color: #3498db; }
+
+    /* Botones Grandes */
+    .btn-action-lg { height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 16px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase; border: none; transition: 0.3s; color: white; }
+    .btn-action-lg i { font-size: 3rem; margin-bottom: 10px; }
     .bg-qr { background: linear-gradient(135deg, #6f42c1, #59359a); }
     .bg-box { background: linear-gradient(135deg, #fd7e14, #d35400); }
     .bg-log { background: linear-gradient(135deg, #20c997, #198754); }
     .bg-sos { background: linear-gradient(135deg, #dc3545, #a71d2a); }
 
-    /* Tablas */
     .table { color: white; }
-    .table tbody tr { background: transparent; }
     .table tbody td { border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
-    .form-control { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; }
+    .form-control, .form-select { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; }
+    #reader { width: 100%; border-radius: 12px; border: 2px solid #0dcaf0; }
 </style>
 {% endblock %}
 
@@ -70,83 +59,84 @@
             <div class="d-flex gap-3 text-white-50 small">
                 <span><i class="bi bi-circle-fill text-success"></i> Libre</span>
                 <span><i class="bi bi-circle-fill text-warning"></i> Ocupado</span>
-                <span><i class="bi bi-circle-fill text-info"></i> Mantención (Admin)</span>
+                <span><i class="bi bi-circle-fill text-info"></i> Mantención</span>
             </div>
         </div>
         <div class="parking-grid">
             {% for p in parking %}
-                <div class="park-slot park-{{ p.estado }}" onclick="gestionarParking('{{ p.nombre }}', '{{ p.estado }}', '{{ p.patente }}')">
-                    <div class="fs-5 fw-bold">{{ p.nombre }}</div>
-                    
-                    {% if p.estado == 'libre' %}
-                        <i class="bi bi-check-circle-fill mt-2"></i>
-                        <span class="estado-text mt-1">LIBRE</span>
-                    
-                    {% elif p.estado == 'ocupado' %}
-                        <i class="bi bi-car-front-fill mt-2"></i>
-                        <div class="lh-1 mt-1">
-                            <div class="fw-bold text-white">{{ p.patente }}</div>
-                            <small class="text-white-50" style="font-size: 0.7rem;">{{ p.tiempo }}</small>
+                <div class="park-slot park-{{ p.estado }}" onclick="gestionarParking('{{ p.id }}', '{{ p.nombre }}', '{{ p.estado }}', '{{ p.patente }}')">
+                    <div class="slot-name">{{ p.nombre }}</div>
+                    <div class="slot-icon">
+                        {% if p.estado == 'libre' %}<i class="bi bi-check-circle"></i>
+                        {% elif p.estado == 'ocupado' %}<i class="bi bi-car-front-fill"></i>
+                        {% elif p.estado == 'mantencion' %}<i class="bi bi-cone-striped"></i>
+                        {% elif p.estado == 'asignado' %}<i class="bi bi-house-lock"></i>{% endif %}
+                    </div>
+                    {% if p.estado == 'ocupado' %}
+                        <div class="lh-1 text-center w-100">
+                            <div class="fw-bold text-warning small mb-1">{{ p.patente }}</div>
+                            <div class="slot-timer" id="timer-{{ p.id }}" data-elapsed="{{ p.tiempo }}">Calculando...</div>
                         </div>
-                    
-                    {% elif p.estado == 'mantencion' %}
-                        <i class="bi bi-cone-striped mt-2"></i>
-                        <span class="small mt-1 fw-bold">MANTENIMIENTO</span>
-                    
-                    {% elif p.estado == 'asignado' %}
-                        <i class="bi bi-house-lock-fill mt-2 text-info"></i>
-                        <span class="small mt-1 text-info">U. {{ p.unidad_numero }}</span>
-                    {% endif %}
+                    {% elif p.estado == 'libre' %}<small class="fw-bold">LIBRE</small>
+                    {% elif p.estado == 'mantencion' %}<small class="fw-bold" style="font-size:0.6rem">MANTENCIÓN</small>
+                    {% else %}<small class="text-info fw-bold">U. {{ p.unidad_numero }}</small>{% endif %}
                 </div>
             {% endfor %}
         </div>
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-lg-3 col-6">
-            <button class="btn-action-lg bg-qr w-100" onclick="abrirEscanerQR()">
-                <i class="bi bi-qr-code-scan"></i> Validación QR
-            </button>
-        </div>
-        <div class="col-lg-3 col-6">
-            <button class="btn-action-lg bg-box w-100" data-bs-toggle="modal" data-bs-target="#modalEncomienda">
-                <i class="bi bi-box-seam"></i> Recepción
-            </button>
-        </div>
-        <div class="col-lg-3 col-6">
-            <button class="btn-action-lg bg-log w-100" data-bs-toggle="modal" data-bs-target="#modalBitacora">
-                <i class="bi bi-journal-text"></i> Bitácora
-            </button>
-        </div>
-        <div class="col-lg-3 col-6">
-            <button class="btn-action-lg bg-sos w-100" onclick="enviarAlerta('emergencia')">
-                <i class="bi bi-megaphone"></i> Alerta SOS
-            </button>
-        </div>
+        <div class="col-lg-3 col-6"><button class="btn-action-lg bg-qr w-100" data-bs-toggle="modal" data-bs-target="#modalQR"><i class="bi bi-qr-code-scan"></i> Escanear Pase</button></div>
+        <div class="col-lg-3 col-6"><button class="btn-action-lg bg-box w-100" data-bs-toggle="modal" data-bs-target="#modalEncomienda"><i class="bi bi-box-seam"></i> Recepción</button></div>
+        <div class="col-lg-3 col-6"><button class="btn-action-lg bg-log w-100" data-bs-toggle="modal" data-bs-target="#modalBitacora"><i class="bi bi-journal-text"></i> Bitácora</button></div>
+        <div class="col-lg-3 col-6"><button class="btn-action-lg bg-sos w-100" onclick="enviarAlerta()"><i class="bi bi-megaphone"></i> Alerta SOS</button></div>
     </div>
 
     <div class="row g-4">
+        <div class="col-lg-12">
+            <div class="card-glass p-3 mb-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-success me-2"></i> Agenda Amenities</h5>
+                <div class="d-flex gap-2 overflow-auto pb-2">
+                    {% for r in reservas_futuras %}
+                    <div class="bg-dark border border-secondary p-2 rounded text-center" style="min-width: 160px;">
+                        <div class="text-white fw-bold">{{ r.nombre_espacio }}</div>
+                        <div class="text-info fw-bold small my-1">
+                            {{ r.fecha_uso }} 
+                            <br>
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-clock"></i> {{ r.hora_inicio or '--:--' }}
+                            </span>
+                        </div>
+                        <div class="small text-white-50">U. {{ r.numero_unidad }}</div>
+                    </div>
+                    {% else %}
+                    <div class="text-white-50 small">No hay reservas próximas.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
         <div class="col-lg-6">
             <div class="card-glass p-3 h-100">
                 <h5 class="fw-bold mb-3"><i class="bi bi-box2-fill text-warning me-2"></i> Por Entregar</h5>
                 <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-hover align-middle">
-                        <thead><tr class="text-white-50 small"><th>Unidad</th><th>Remitente</th><th>Recepción</th><th>Acción</th></tr></thead>
+                        <thead><tr class="text-white-50 small"><th>U.</th><th>Remitente</th><th>Hora</th><th>Acción</th></tr></thead>
                         <tbody>
                             {% for e in encomiendas %}
                             <tr>
-                                <td><span class="badge bg-warning text-dark">U. {{ e.unidad }}</span></td>
+                                <td><span class="badge bg-warning text-dark">{{ e.unidad }}</span></td>
                                 <td class="fw-bold">{{ e.remitente }}</td>
-                                <td class="small text-white-50">{{ e.recepcion }}</td>
+                                <td class="small text-white-50">{{ e.recepcion.strftime('%H:%M') }}</td>
                                 <td>
                                     <form action="/conserje/encomiendas/entregar" method="POST">
                                         <input type="hidden" name="encomienda_id" value="{{ e.id }}">
-                                        <button class="btn btn-sm btn-outline-success"><i class="bi bi-check-lg"></i> Entregar</button>
+                                        <button class="btn btn-sm btn-outline-success"><i class="bi bi-check-lg"></i></button>
                                     </form>
                                 </td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="4" class="text-center text-white-50 py-4">No hay paquetes pendientes.</td></tr>
+                            <tr><td colspan="4" class="text-center text-white-50 py-4">No hay paquetes.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -157,23 +147,45 @@
         <div class="col-lg-6">
             <div class="card-glass p-3 h-100">
                 <h5 class="fw-bold mb-3"><i class="bi bi-people-fill text-info me-2"></i> Directorio Residentes</h5>
-                <input type="text" id="buscadorResidentes" class="form-control mb-3" placeholder="Buscar por depto o nombre...">
+                <input type="text" id="buscadorResidentes" class="form-control mb-3" placeholder="Buscar unidad o nombre...">
                 <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-hover align-middle" id="tablaResidentes">
-                        <thead><tr class="text-white-50 small"><th>Unidad</th><th>Residente</th><th class="text-end">Contacto</th></tr></thead>
+                        <thead><tr class="text-white-50 small"><th>Depto</th><th>Residente</th><th>Rol</th><th class="text-end">Acciones</th></tr></thead>
                         <tbody>
                             {% for u in unidades %}
                             <tr>
-                                <td><span class="fs-5 fw-bold text-info">{{ u.numero }}</span></td>
-                                <td>{{ u.residente }}</td>
-                                <td class="text-end">
-                                    {% if u.fono %}
-                                    <a href="https://wa.me/{{ u.fono | replace('+','') | replace(' ','') }}" target="_blank" class="btn btn-success btn-sm fw-bold">
-                                        <i class="bi bi-whatsapp"></i> WhatsApp
-                                    </a>
+                                <td><span class="fs-6 fw-bold text-info">{{ u.numero }}</span></td>
+                                <td>
+                                    <div class="small fw-bold">{{ u.residente }}</div>
+                                    <div class="small text-white-50" style="font-size: 0.75rem;">{{ u.email }}</div>
+                                </td>
+                                <td>
+                                    {% if u.tenant.nombre %}
+                                        <span class="badge bg-info text-dark" style="font-size: 0.65rem;">ARRENDATARIO</span>
                                     {% else %}
-                                    <span class="text-white-50 small">-</span>
+                                        <span class="badge bg-primary bg-opacity-50" style="font-size: 0.65rem;">PROPIETARIO</span>
                                     {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        {% if u.fono %}
+                                        <a href="https://wa.me/{{ u.fono | replace('+','') | replace(' ','') }}" target="_blank" class="btn btn-sm btn-success" title="WhatsApp">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <button class="btn btn-sm btn-outline-warning" onclick='abrirEditarCompleto({{ u | tojson }})' title="Editar Ficha">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+
+                                        <button class="btn btn-sm btn-outline-danger" onclick="abrirMulta({{ u.id }}, '{{ u.numero }}')" title="Multar">
+                                            <i class="bi bi-receipt"></i>
+                                        </button>
+
+                                        <button class="btn btn-sm btn-outline-info" onclick="resetClave({{ u.id }}, '{{ u.rut }}')" title="Reset Clave">
+                                            <i class="bi bi-key-fill"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -185,120 +197,217 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalEditarCompleto" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0"><h5 class="modal-title fw-bold">Editar Ficha Residente</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <form action="/admin/residentes/guardar_edicion" method="POST">
+                    <input type="hidden" name="unidad_id" id="editFullId">
+                    <div class="row g-2 mb-3">
+                        <div class="col"><label class="small text-white-50">Piso</label><input type="number" name="piso" id="editFullPiso" class="form-control"></div>
+                        <div class="col"><label class="small text-white-50">Prorrateo %</label><input type="text" name="prorrateo" id="editFullProrrateo" class="form-control"></div>
+                    </div>
+                    <hr class="border-secondary">
+                    <h6 class="text-info small mb-3">Datos de Contacto</h6>
+                    <div class="mb-2"><label class="small text-muted">Nombre</label><input type="text" name="tenant_nombre" id="editFullNombre" class="form-control"></div>
+                    <div class="mb-2"><label class="small text-muted">RUT</label><input type="text" name="tenant_rut" id="editFullRut" class="form-control"></div>
+                    <div class="mb-2"><label class="small text-muted">Email</label><input type="email" name="tenant_email" id="editFullEmail" class="form-control"></div>
+                    <div class="mb-3"><label class="small text-muted">Teléfono / WhatsApp</label><input type="text" name="tenant_fono" id="editFullFono" class="form-control"></div>
+                    <button class="btn btn-warning w-100 fw-bold">Guardar Cambios</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMultar" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header border-0 bg-danger bg-opacity-25"><h6 class="modal-title">Aplicar Multa U.<span id="multaUnitNum"></span></h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/admin/residentes/multar" method="POST"><input type="hidden" name="unidad_id" id="multaUnitId"><div class="mb-2"><label class="small">Motivo</label><input type="text" name="motivo" class="form-control" placeholder="Ej: Ruidos" required></div><div class="mb-3"><label class="small">Monto ($)</label><input type="number" name="monto_multa" class="form-control" required></div><button class="btn btn-danger w-100 btn-sm fw-bold">Multar</button></form></div></div></div></div>
+
+<div class="modal fade" id="modalQR" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header border-0"><h5 class="modal-title">Escanear Pase</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="stopScanner()"></button></div><div class="modal-body text-center"><div id="reader"></div><div id="scanResult" class="mt-3 fw-bold text-warning"></div></div></div></div></div>
+
+<div class="modal fade" id="modalEncomienda" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header"><h5 class="modal-title">Registrar Paquete</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/conserje/encomiendas/guardar" method="POST"><div class="mb-3"><label>Unidad Destino</label><select name="unidad_id" class="form-select bg-dark text-white border-secondary">{% for u in unidades %}<option value="{{ u.id }}">{{ u.numero }} - {{ u.residente }}</option>{% endfor %}</select></div><div class="mb-3"><label>Remitente</label><input type="text" name="remitente" class="form-control bg-dark text-white" required></div><button class="btn btn-warning w-100 fw-bold">Registrar</button></form></div></div></div></div>
+
+<div class="modal fade" id="modalBitacora" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header"><h5 class="modal-title">Bitácora</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/conserje/incidencias/guardar" method="POST"><div class="mb-3"><label>Título</label><input type="text" name="titulo" class="form-control bg-dark text-white" required></div><div class="mb-3"><label>Descripción</label><textarea name="descripcion" class="form-control bg-dark text-white" rows="3" required></textarea></div><button class="btn btn-info w-100 fw-bold text-dark">Guardar</button></form></div></div></div></div>
+
 <script>
-    function abrirEscanerQR() {
+    // TIMER
+    document.addEventListener("DOMContentLoaded", function() {
+        const slots = document.querySelectorAll('.slot-timer');
+        slots.forEach(slot => {
+            const elapsedStr = slot.getAttribute('data-elapsed'); 
+            if (!elapsedStr) return;
+            let elapsedMinutes = 0;
+            const parts = elapsedStr.split(' ');
+            parts.forEach(p => {
+                if(p.includes('h')) elapsedMinutes += parseInt(p) * 60;
+                if(p.includes('m')) elapsedMinutes += parseInt(p);
+            });
+            const limitMinutes = 300; 
+            const remaining = limitMinutes - elapsedMinutes;
+            if (remaining > 0) {
+                const h = Math.floor(remaining / 60); const m = remaining % 60;
+                slot.innerHTML = `<i class="bi bi-hourglass-split"></i> ${h}h ${m}m`;
+                if (remaining < 60) slot.style.color = '#ff4757';
+            } else { slot.innerHTML = "¡TIEMPO AGOTADO!"; slot.style.backgroundColor = "#dc3545"; slot.style.color = "white"; }
+        });
+    });
+
+    // ABRE EL MODAL DE EDICIÓN COMPLETA
+    function abrirEditarCompleto(u) {
+        document.getElementById('editFullId').value = u.id;
+        document.getElementById('editFullPiso').value = u.piso || '';
+        document.getElementById('editFullProrrateo').value = u.prorrateo || '';
+        document.getElementById('editFullNombre').value = u.residente;
+        document.getElementById('editFullRut').value = u.rut;
+        document.getElementById('editFullEmail').value = u.email;
+        document.getElementById('editFullFono').value = u.fono;
+        new bootstrap.Modal(document.getElementById('modalEditarCompleto')).show();
+    }
+
+    function abrirMulta(uid, numero) {
+        document.getElementById('multaUnitId').value = uid;
+        document.getElementById('multaUnitNum').innerText = numero;
+        new bootstrap.Modal(document.getElementById('modalMultar')).show();
+    }
+
+    function resetClave(uid, rutUsuario) {
+        if(!confirm('¿Generar nueva contraseña?')) return;
+        fetch('/admin/residentes/reset_clave', { 
+            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
+            body: `unidad_id=${uid}` 
+        })
+        .then(r => r.json())
+        .then(d => {
+            if(d.status === 'success') {
+                Swal.fire({ 
+                    title: '¡Clave Generada!', 
+                    html: `
+                        <p class="text-white-50">Usuario: <strong class="text-white fs-5">${rutUsuario}</strong></p>
+                        <h2 class="text-warning border p-2 rounded">${d.password}</h2>
+                        <button class="btn btn-sm btn-outline-light mt-2" onclick="navigator.clipboard.writeText('${d.password}')">Copiar</button>
+                    `, 
+                    icon: 'success', background: '#1a1d24', color: '#fff' 
+                });
+            } else { Swal.fire({ title: 'Error', text: d.message, icon: 'error', background: '#1a1d24', color: '#fff' }); }
+        });
+    }
+
+    // QR & OTROS
+    let html5QrcodeScanner;
+    document.getElementById('modalQR').addEventListener('shown.bs.modal', function () { html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }); html5QrcodeScanner.render(onScanSuccess); });
+    document.getElementById('modalQR').addEventListener('hidden.bs.modal', stopScanner);
+    function stopScanner() { if (html5QrcodeScanner) html5QrcodeScanner.clear().catch(e=>console.error(e)); }
+function onScanSuccess(decodedText) {
+        html5QrcodeScanner.clear();
+        
         Swal.fire({
-            title: 'Escanear Invitación',
-            input: 'text',
-            inputLabel: 'Simular escaneo (Ingrese Código 12345)',
-            inputPlaceholder: 'Código QR...',
-            showCancelButton: true,
-            confirmButtonText: 'Validar Acceso',
+            title: 'Validando...',
+            didOpen: () => { Swal.showLoading() },
             background: '#1a1d24', color: '#fff'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch('/conserje/visitas/validar_qr', {
-                    method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: `codigo_qr=${result.value}`
-                }).then(r => r.json()).then(d => {
-                    if (d.status === 'success') {
-                        Swal.fire({
-                            title: '¡ACCESO PERMITIDO!',
-                            html: `<div class="text-success display-1"><i class="bi bi-check-circle"></i></div><h3>${d.visita}</h3><p>A Unidad: ${d.unidad}</p>`,
-                            background: '#1a1d24', color: '#fff'
-                        });
-                    } else {
-                        Swal.fire({ title: 'ACCESO DENEGADO', text: d.message, icon: 'error', background: '#1a1d24', color: '#fff' });
+        });
+
+        fetch('/conserje/visitas/validar_qr', { 
+            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, 
+            body: `codigo_qr=${decodedText}` 
+        })
+        .then(r => r.json()).then(d => {
+            bootstrap.Modal.getInstance(document.getElementById('modalQR')).hide();
+            
+            // CASO A: REQUIERE SELECCIÓN DE PARKING (VEHÍCULO)
+            if (d.status === 'parking_selection') {
+                
+                // Generamos las opciones del Select
+                let opcionesHTML = '';
+                if(d.slots.length > 0){
+                    d.slots.forEach(s => {
+                        opcionesHTML += `<option value="${s.id}">${s.nombre}</option>`;
+                    });
+                } else {
+                    opcionesHTML = '<option value="">⚠️ NO HAY CUPOS</option>';
+                }
+
+                Swal.fire({
+                    title: 'Asignar Estacionamiento',
+                    html: `
+                        <div class="text-start bg-dark p-3 rounded mb-3 border border-secondary">
+                            <h5 class="text-warning mb-1"><i class="bi bi-car-front-fill"></i> ${d.patente}</h5>
+                            <small class="text-white-50">Visita: ${d.visita}</small>
+                        </div>
+                        <label class="text-white mb-2">Seleccione ubicación:</label>
+                        <select id="parkingSelect" class="form-select bg-black text-white border-info text-center fs-5 mb-3">
+                            ${opcionesHTML}
+                        </select>
+                    `,
+                    background: '#1a1d24', color: '#fff',
+                    showCancelButton: true,
+                    confirmButtonText: 'Confirmar Ingreso',
+                    confirmButtonColor: '#0dcaf0',
+                    preConfirm: () => {
+                        const pid = document.getElementById('parkingSelect').value;
+                        if (!pid) { Swal.showValidationMessage('Debes seleccionar un estacionamiento o cancelar'); }
+                        return pid;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Enviamos la elección al servidor
+                        confirmarVehiculo(d.token_invitacion, result.value);
                     }
                 });
+
+            } 
+            // CASO B: ÉXITO DIRECTO (PEATÓN)
+            else if (d.status === 'success') {
+                Swal.fire({ 
+                    title: '¡ACCESO PEATONAL!', 
+                    html: `<h3 class="text-success">${d.visita}</h3><p>A: Depto ${d.unidad}</p>`, 
+                    icon: 'success', background: '#1a1d24', color: '#fff', timer: 3000 
+                });
+            } 
+            // CASO C: ERROR
+            else {
+                Swal.fire({ title: 'Error', text: d.message, icon: 'error', background: '#1a1d24', color: '#fff' });
             }
         });
     }
 
-    function gestionarParking(nombre, estado, patente) {
-        if (estado === 'mantencion' || estado === 'asignado') return; // Bloqueado
-        
+    // Función auxiliar para enviar la confirmación final
+    function confirmarVehiculo(token, parkingId) {
+        fetch('/conserje/visitas/confirmar_vehiculo', {
+            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `token=${token}&parking_id=${parkingId}`
+        })
+        .then(r => r.json()).then(final => {
+            if(final.status === 'success') {
+                Swal.fire({
+                    title: '¡INGRESO REGISTRADO!',
+                    html: `
+                        <div class="display-1 text-warning"><i class="bi bi-car-front-fill"></i></div>
+                        <h2 class="text-white mt-3">PUESTO: ${final.parking_nombre}</h2>
+                        <p class="text-white-50">Visita: ${final.visita}</p>
+                    `,
+                    background: '#1a1d24', color: '#fff', confirmButtonColor: '#28a745'
+                }).then(() => location.reload()); // Recargar para ver el estacionamiento ocupado en el tablero
+            }
+        });
+    }
+    
+    function gestionarParking(id, nombre, estado, patente) {
+        if (estado === 'mantencion' || estado === 'asignado') return;
         if (estado === 'ocupado') {
-            Swal.fire({
-                title: `Liberar ${nombre}?`,
-                text: `Patente actual: ${patente}`,
-                icon: 'question', showCancelButton: true, confirmButtonText: 'Liberar', confirmButtonColor: '#28a745',
-                background: '#1a1d24', color: '#fff'
-            }).then((r) => {
-                if(r.isConfirmed) cambiarEstadoParking(nombre, 'liberar', '');
-            });
+            Swal.fire({ title: `Liberar ${nombre}?`, text: `Patente actual: ${patente}`, showCancelButton: true, confirmButtonText: 'Liberar', confirmButtonColor: '#28a745', background: '#1a1d24', color: '#fff' }).then((r) => { if(r.isConfirmed) cambiarEstadoParking(id, 'liberar', ''); });
         } else {
-            Swal.fire({
-                title: `Ocupar ${nombre}`,
-                input: 'text', inputLabel: 'Ingrese Patente Visita',
-                showCancelButton: true, confirmButtonText: 'Registrar Ingreso',
-                background: '#1a1d24', color: '#fff'
-            }).then((r) => {
-                if(r.isConfirmed && r.value) cambiarEstadoParking(nombre, 'ocupar', r.value);
-            });
+            Swal.fire({ title: `Ocupar ${nombre}`, input: 'text', inputLabel: 'Patente Visita', showCancelButton: true, confirmButtonText: 'Registrar', background: '#1a1d24', color: '#fff' }).then((r) => { if(r.isConfirmed && r.value) cambiarEstadoParking(id, 'ocupar', r.value); });
         }
     }
-
-    function cambiarEstadoParking(slotId, accion, patente) {
-        fetch('/conserje/parking/toggle', {
-            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `slot_id=${slotId}&accion=${accion}&patente=${patente}`
-        }).then(() => location.reload());
+    function cambiarEstadoParking(id, acc, pat) { fetch('/conserje/parking/toggle', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `slot_id=${id}&accion=${acc}&patente=${pat}` }).then(() => location.reload()); }
+    
+    function enviarAlerta() {
+        Swal.fire({ title: 'Enviar Alerta SOS', text: 'Se notificará a todos.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff' }).then((r) => { if(r.isConfirmed) { let f=document.createElement('form');f.method='POST';f.action='/admin/difusion';let i=document.createElement('input');i.name='mensaje';i.value='EMERGENCIA';f.appendChild(i);document.body.appendChild(f);f.submit(); }});
     }
 
-    // Buscador Residentes
     document.getElementById('buscadorResidentes').addEventListener('keyup', function() {
         let val = this.value.toLowerCase();
         document.querySelectorAll('#tablaResidentes tbody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(val) ? '' : 'none');
     });
-
-    function enviarAlerta(tipo) {
-        // Misma lógica que admin
-        Swal.fire({ title: 'Enviar Alerta SOS', text: 'Se notificará a todos los residentes.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff' }).then((r) => {
-            if(r.isConfirmed) {
-                // Submit form sim
-                let f = document.createElement('form'); f.method='POST'; f.action='/admin/difusion';
-                let i = document.createElement('input'); i.name='mensaje'; i.value='EMERGENCIA REPORTADA POR CONSERJERÍA';
-                f.appendChild(i); document.body.appendChild(f); f.submit();
-            }
-        });
-    }
 </script>
-<div class="col-12 mb-4">
-        <div class="card-glass p-3">
-            <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-success me-2"></i> Agenda Amenities (Próximos 7 días)</h5>
-            <div class="d-flex gap-2 overflow-auto pb-2">
-                {% for r in reservas_futuras %}
-                <div class="bg-dark border border-secondary p-2 rounded" style="min-width: 150px;">
-                    <div class="text-info fw-bold small">{{ r.fecha_uso }}</div>
-                    <div class="fw-bold text-white">{{ r.nombre_espacio }}</div>
-                    <div class="badge bg-warning text-dark mt-1">U. {{ r.numero_unidad }}</div>
-                </div>
-                {% else %}
-                <div class="text-white-50 small">No hay reservas próximas.</div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    
-<div class="modal fade" id="modalEncomienda" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header"><h5 class="modal-title">Registrar Paquete</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
-    <form action="/conserje/encomiendas/guardar" method="POST">
-        <div class="mb-3"><label>Unidad Destino (ID)</label>
-            <select name="unidad_id" class="form-select bg-dark text-white border-secondary">
-                {% for u in unidades %}<option value="{{ u.id }}">{{ u.numero }} - {{ u.residente }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="mb-3"><label>Remitente / Empresa</label><input type="text" name="remitente" class="form-control bg-dark text-white" required></div>
-        <button class="btn btn-warning w-100 fw-bold">Registrar Recepción</button>
-    </form>
-</div></div></div></div>
-
-<div class="modal fade" id="modalBitacora" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header"><h5 class="modal-title">Nueva Incidencia</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
-    <form action="/conserje/incidencias/guardar" method="POST">
-        <div class="mb-3"><label>Título</label><input type="text" name="titulo" class="form-control bg-dark text-white" required placeholder="Ej: Ruidos molestos"></div>
-        <div class="mb-3"><label>Descripción Detallada</label><textarea name="descripcion" class="form-control bg-dark text-white" rows="3" required></textarea></div>
-        <button class="btn btn-info w-100 fw-bold text-dark">Guardar en Bitácora</button>
-    </form>
-</div></div></div></div>
-
 {% endblock %}

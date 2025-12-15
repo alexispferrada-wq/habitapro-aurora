@@ -77,105 +77,158 @@ def home():
         else: session.clear(); return redirect(url_for('home'))
     return render_template('login.html')
 
-# --- LOGIN BLINDADO (CORREGIDO) ---
-@app.route('/login', methods=['POST'])
-def login():
-    try:
-        data = request.json
-        rut_input = data.get('rut', '').strip()
-        password = data.get('password', '').strip()
-        
-        # 1. Versión Limpia del RUT (para residentes)
-        rut_clean = formatear_rut(rut_input)
-        
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # ESTRATEGIA DOBLE CHECK:
-        # A) Buscar EXACTO (para 'admin', 'superadmin' o RUTs bien escritos)
-        cur.execute("SELECT * FROM usuarios WHERE rut = %s", (rut_input,))
-        user = cur.fetchone()
-        
-        # B) Si no existe, buscar versión LIMPIA (para residentes con puntos)
-        if not user:
-            cur.execute("SELECT * FROM usuarios WHERE rut = %s", (rut_clean,))
-            user = cur.fetchone()
-            # Si lo encontramos así, actualizamos la variable local para usarla después
-            if user: rut_input = user['rut']
 
-        if user and user['password'] == password:
-            if user.get('activo') is False: 
-                cur.close(); conn.close()
-                return jsonify({"status": "error", "message": "🚫 Cuenta Bloqueada"})
-            
-            # Validar Edificio Activo (Excepto SuperAdmin)
-            if user['rol'] != 'superadmin':
-                cur.execute("SELECT activo FROM edificios WHERE id = %s", (user['edificio_id'],))
-                ed_status = cur.fetchone()
-                if not ed_status or ed_status['activo'] is False:
-                    cur.close(); conn.close()
-                    return jsonify({"status": "error", "message": "🚫 Edificio Inactivo"})
+# --- NUEVAS RUTAS PARA LA SELECCIÓN MÚLTIPLE ---
 
-            # Crear Sesión
-            session['user_id'] = user['rut']
-            session['rol'] = user['rol']
-            session['nombre'] = user['nombre']
-            session['edificio_id'] = user['edificio_id']
-            
-            # Lógica Residente: Buscar unidad
-            if user['rol'] == 'residente':
-                # Buscamos coincidencias en el JSON usando el RUT LIMPIO (que es el estándar)
-                query_unidad = """
-                    SELECT id FROM unidades 
-                    WHERE edificio_id = %s 
-                    AND (owner_json::text ILIKE %s OR tenant_json::text ILIKE %s)
-                    LIMIT 1
-                """
-                # Usamos % para buscar el RUT dentro del string JSON
-                cur.execute(query_unidad, (user['edificio_id'], f'%{rut_clean}%', f'%{rut_clean}%'))
-                u_data = cur.fetchone()
-                
-                if u_data:
-                    session['unidad_id_residente'] = u_data['id']
-                else:
-                    # Fallback: Si no encuentra por RUT limpio, intentar con el input original
-                    cur.execute(query_unidad, (user['edificio_id'], f'%{rut_input}%', f'%{rut_input}%'))
-                    u_data_fallback = cur.fetchone()
-                    if u_data_fallback:
-                        session['unidad_id_residente'] = u_data_fallback['id']
-                    else:
-                        print(f"⚠️ Residente {user['rut']} sin unidad asignada.")
-            
-            cur.close(); conn.close()
-            return jsonify({"status": "success", "redirect_url": url_for('home')})
-        
-        cur.close(); conn.close()
-        return jsonify({"status": "error", "message": "Credenciales incorrectas"})
-        
-    except Exception as e:
-        print(f"Login Error: {e}")
-        return jsonify({"status": "error", "message": "Error interno"})
+@app.route('/seleccionar_unidad')
+def seleccionar_unidad():
+    opciones = session.get('opciones_login')
+    if not opciones:
+        return redirect(url_for('home'))
+    return render_template('select_unit.html', opciones=opciones)
+
+@app.route('/set_unidad/<int:uid>')
+def set_unidad(uid):
+    opciones = session.get('opciones_login')
+    if not opciones: return redirect(url_for('home'))
+    
+    # Buscar la unidad seleccionada en las opciones guardadas (por seguridad)
+    seleccionada = next((item for item in opciones if item["id"] == uid), None)
+    
+    if seleccionada:
+        session['rol'] = 'residente'
+        session['unidad_id_residente'] = seleccionada['id']
+        session['edificio_id'] = seleccionada['edificio_id']
+        session['nombre'] = seleccionada['nombre_usuario']
+        session['numero_unidad'] = seleccionada['numero']
+        session.pop('opciones_login', None) # Limpiar temp
+        return redirect(url_for('panel_residente'))
+    
+    return redirect(url_for('home'))
 
 @app.route('/logout')
 def logout(): session.clear(); return redirect(url_for('home'))
 
 # --- UTILIDADES PARKING ---
+# --- LÓGICA DE PARKING REAL (CONECTADA A BD) ---
+# --- LÓGICA DE PARKING REAL (CORREGIDA) ---
 def obtener_estado_parking_real(edificio_id):
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("SELECT v.id, v.estacionamiento_id, v.patente, v.ingreso, u.numero as unidad_numero FROM visitas v LEFT JOIN unidades u ON v.unidad_id = u.id WHERE v.edificio_id = %s AND v.salida IS NULL AND v.estacionamiento_id IS NOT NULL", (edificio_id,))
-    visitas = cur.fetchall(); ocupados = {v['estacionamiento_id']: v for v in visitas}
-    cur.execute("SELECT id, numero, estacionamiento FROM unidades WHERE edificio_id = %s AND estacionamiento IS NOT NULL AND estacionamiento != ''", (edificio_id,))
-    asignados = {u['estacionamiento']: u for u in cur.fetchall()}
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # 1. Traemos los espacios configurados
+    cur.execute("SELECT * FROM estacionamientos_visita WHERE edificio_id = %s ORDER BY id ASC", (edificio_id,))
+    slots_db = cur.fetchall()
+    
+    # Si no existen, creamos 5 por defecto
+    if not slots_db:
+        for i in range(1, 6):
+            cur.execute("INSERT INTO estacionamientos_visita (edificio_id, nombre, estado) VALUES (%s, %s, 'libre')", (edificio_id, f"V-{i}"))
+        conn.commit()
+        cur.execute("SELECT * FROM estacionamientos_visita WHERE edificio_id = %s ORDER BY id ASC", (edificio_id,))
+        slots_db = cur.fetchall()
+
+    # 2. Buscamos visitas activas usando la columna CORRECTA (parking_id)
+    cur.execute("""
+        SELECT v.parking_id, v.patente, v.ingreso, v.nombre_visita, u.numero as unidad
+        FROM visitas v 
+        LEFT JOIN unidades u ON v.unidad_id = u.id 
+        WHERE v.edificio_id = %s AND v.salida IS NULL AND v.parking_id IS NOT NULL
+    """, (edificio_id,))
+    
+    # Convertimos a diccionario usando el ID como clave (string)
+    visitas_activas = {str(v['parking_id']): v for v in cur.fetchall()}
+    
     mapa = []
-    for i in range(1, 21):
-        sid = f"E-{100+i}"; est = 'libre'; pat = None; t = ''; unum = ''
-        if sid in MANTENCION_DB: est = 'mantencion'
-        elif sid in ocupados:
-            v = ocupados[sid]; pat = v['patente']; unum = v['unidad_numero']; est = 'ocupado'
-            h, m = divmod(int((datetime.now() - v['ingreso']).total_seconds()/60), 60); t = f"{h}h {m}m"
-        elif sid in asignados: est = 'asignado'; unum = asignados[sid]['numero']
-        mapa.append({'id': sid, 'nombre': sid, 'estado': est, 'patente': pat, 'tiempo': t, 'unidad_numero': unum})
-    cur.close(); conn.close(); return mapa
+    for slot in slots_db:
+        s_id = str(slot['id'])
+        
+        # Estado base desde la tabla de estacionamientos (Forzamos minúsculas para CSS)
+        estado_bd = str(slot['estado']).lower()
+        estado_final = 'libre'
+        
+        patente = None
+        tiempo = ''
+        unidad = ''
+
+        # PRIORIDAD 1: MANTENCIÓN
+        if estado_bd == 'mantencion':
+            estado_final = 'mantencion'
+        
+        # PRIORIDAD 2: OCUPADO POR VISITA ACTIVA (Esto pinta el mapa)
+        elif s_id in visitas_activas:
+            v = visitas_activas[s_id]
+            estado_final = 'ocupado'
+            patente = v['patente']
+            unidad = v['unidad']
+            # Calcular tiempo
+            minutos = int((datetime.now() - v['ingreso']).total_seconds() / 60)
+            h, m = divmod(minutos, 60)
+            tiempo = f"{h}h {m}m"
+            
+        # PRIORIDAD 3: OCUPADO MANUALMENTE (Sin visita, pero marcado ocupado)
+        elif estado_bd == 'ocupado':
+             estado_final = 'ocupado'
+             patente = slot.get('patente', 'OCUPADO')
+
+        mapa.append({
+            'id': slot['id'], 
+            'nombre': slot['nombre'], 
+            'estado': estado_final, # 'libre', 'ocupado', 'mantencion'
+            'patente': patente, 
+            'tiempo': tiempo, 
+            'unidad_numero': unidad
+        })
+        
+    cur.close()
+    conn.close()
+    return mapa
+# --- RUTAS DE GESTIÓN (AGREGAR Y ELIMINAR) ---
+
+@app.route('/admin/parking/agregar', methods=['POST'])
+def admin_parking_agregar():
+    if session.get('rol') != 'admin': return jsonify({'status':'error'})
+    nombre = request.form.get('nombre', '').upper()
+    eid = session.get('edificio_id')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO estacionamientos_visita (edificio_id, nombre) VALUES (%s, %s)", (eid, nombre))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('panel_admin'))
+
+@app.route('/admin/parking/eliminar', methods=['POST'])
+def admin_parking_eliminar():
+    if session.get('rol') != 'admin': return jsonify({'status':'error'})
+    pid = request.form.get('id')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM estacionamientos_visita WHERE id = %s", (pid,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('panel_admin'))
+
+@app.route('/admin/parking/maintenance', methods=['POST'])
+def parking_maintenance():
+    if session.get('rol') != 'admin': return redirect(url_for('home'))
+    sid = request.form.get('slot_id') 
+    accion = request.form.get('accion') 
+    
+    # Actualizamos el estado en la BD real
+    nuevo_estado = 'MANTENCION' if accion == 'activar' else 'LIBRE'
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE estacionamientos_visita SET estado = %s WHERE id = %s", (nuevo_estado, sid))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('panel_admin'))
+
+
 
 # ==========================================
 # RUTAS CONSERJE
@@ -184,39 +237,42 @@ def obtener_estado_parking_real(edificio_id):
 def panel_conserje():
     if session.get('rol') != 'conserje': return redirect(url_for('home'))
     eid = session.get('edificio_id'); conn = get_db_connection(); cur = conn.cursor()
+    
     cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,)); edificio = cur.fetchone()
+    
+    # 1. PAQUETES PENDIENTES
     cur.execute("SELECT e.id, u.numero as unidad, e.remitente, e.recepcion FROM encomiendas e JOIN unidades u ON e.unidad_id = u.id WHERE e.edificio_id = %s AND e.entrega IS NULL ORDER BY e.recepcion DESC", (eid,))
     encomiendas = cur.fetchall()
     
-    # --- NUEVO: RESERVAS FUTURAS PARA CONSERJERÍA ---
+    # 2. RESERVAS (SOLO HOY Y FUTURO)
+    # La clave es: r.fecha_uso >= CURRENT_DATE
     cur.execute("""
-        SELECT r.fecha_uso, e.nombre as nombre_espacio, u.numero as numero_unidad 
+        SELECT r.fecha_uso, r.hora_inicio, e.nombre as nombre_espacio, u.numero as numero_unidad 
         FROM reservas r 
         JOIN espacios e ON r.espacio_id = e.id 
         JOIN unidades u ON r.unidad_id = u.id 
-        WHERE e.edificio_id = %s AND r.fecha_uso >= CURRENT_DATE AND r.estado = 'CONFIRMADA'
-        ORDER BY r.fecha_uso ASC LIMIT 10
+        WHERE e.edificio_id = %s 
+        AND r.fecha_uso >= CURRENT_DATE 
+        AND r.estado = 'CONFIRMADA'
+        ORDER BY r.fecha_uso ASC, r.hora_inicio ASC LIMIT 10
     """, (eid,))
     reservas_futuras = cur.fetchall()
     
-    cur.execute("SELECT id, numero, owner_json, tenant_json FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (eid,)); raw = cur.fetchall()
+    # 3. UNIDADES (ORDENADAS Y COMPLETAS PARA EDITAR)
+    cur.execute("SELECT id, numero, owner_json, tenant_json FROM unidades WHERE edificio_id = %s ORDER BY LENGTH(numero), numero ASC", (eid,))
+    raw = cur.fetchall()
     u_proc = []
     for u in raw:
         o = parse_json_field(u.get('owner_json')); t = parse_json_field(u.get('tenant_json'))
-        u_proc.append({'id': u['id'], 'numero': u['numero'], 'residente': t.get('nombre') or o.get('nombre','S/D'), 'fono': t.get('fono') or o.get('fono','')})
+        nombre = t.get('nombre') or o.get('nombre','S/D')
+        fono = t.get('fono') or o.get('fono','')
+        email = t.get('email') or o.get('email','')
+        rut = t.get('rut') or o.get('rut','')
+        u_proc.append({'id': u['id'], 'numero': u['numero'], 'residente': nombre, 'fono': fono, 'email': email, 'rut': rut, 'owner': o, 'tenant': t})
     
     cur.close(); conn.close()
     return render_template('dash_conserje.html', edificio=dict(edificio), parking=obtener_estado_parking_real(eid), encomiendas=encomiendas, unidades=u_proc, reservas_futuras=reservas_futuras)
 
-@app.route('/conserje/visitas/validar_qr', methods=['POST'])
-def conserje_validar_qr():
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("SELECT i.*, u.numero FROM invitaciones i JOIN unidades u ON i.unidad_id = u.id WHERE i.token = %s AND i.estado = 'LISTO'", (request.form.get('codigo_qr'),))
-    inv = cur.fetchone()
-    if inv:
-        cur.execute("UPDATE invitaciones SET estado = 'USADO', fecha_uso = NOW() WHERE id = %s", (inv['id'],)); conn.commit(); cur.close(); conn.close()
-        return jsonify({'status': 'success', 'visita': inv['nombre_visita'], 'unidad': inv['numero'], 'patente': inv['patente'] or 'A Pie'})
-    cur.close(); conn.close(); return jsonify({'status': 'error', 'message': 'QR Inválido'})
 
 @app.route('/conserje/parking/toggle', methods=['POST'])
 def conserje_parking_toggle():
@@ -245,37 +301,66 @@ def conserje_guardar_incidencia():
 @app.route('/manifest.json')
 def manifest(): return jsonify({"name": "HabitaPro", "short_name": "HabitaPro", "start_url": "/panel-residente", "display": "standalone", "background_color": "#1a1d24", "theme_color": "#0dcaf0", "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/555/555545.png", "sizes": "192x192", "type": "image/png"}]})
 
+
 @app.route('/panel-residente')
 def panel_residente():
+    import json
+    from datetime import date, datetime
+    
     if session.get('rol') != 'residente': return redirect(url_for('home'))
     
     uid = session.get('unidad_id_residente')
     eid = session.get('edificio_id')
     
-    conn = get_db_connection(); cur = conn.cursor()
+    conn = get_db_connection()
+    cur = conn.cursor()
     
-    # 1. Datos Unidad y Usuario
-    cur.execute("SELECT * FROM unidades WHERE id = %s", (uid,)); u = cur.fetchone()
-    cur.execute("SELECT * FROM usuarios WHERE rut = %s", (session.get('user_id'),)); usr = cur.fetchone()
+    # 1. Datos Básicos
+    cur.execute("SELECT * FROM unidades WHERE id = %s", (uid,))
+    u = cur.fetchone()
+    cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,))
+    edificio = cur.fetchone()
     
-    # 2. Datos Edificio (NUEVO)
-    cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,)); edificio = cur.fetchone()
+    # 2. Perfil User
+    t = u['tenant_json'] if isinstance(u['tenant_json'], dict) else json.loads(u['tenant_json'] or '{}')
+    o = u['owner_json'] if isinstance(u['owner_json'], dict) else json.loads(u['owner_json'] or '{}')
+    user_data = {'email': t.get('email') or o.get('email') or '', 'telefono': t.get('fono') or o.get('fono') or ''}
+
+    # 3. Datos Dashboard
+    cur.execute("SELECT * FROM espacios WHERE edificio_id = %s AND activo = TRUE", (eid,))
+    espacios = cur.fetchall()
+
+    # Encomiendas
+    cur.execute("SELECT * FROM encomiendas WHERE unidad_id = %s AND entrega IS NULL", (uid,))
+    encomiendas = cur.fetchall()
     
-    # 3. Encomiendas
-    cur.execute("SELECT * FROM encomiendas WHERE unidad_id = %s AND entrega IS NULL", (uid,)); enc = cur.fetchall()
-    
-    # 4. Reservas y Espacios
-    hoy = date.today().strftime('%Y-%m-%d')
-    cur.execute("SELECT * FROM espacios WHERE edificio_id = %s AND activo = TRUE", (eid,)); espacios = cur.fetchall()
-    cur.execute("SELECT r.*, e.nombre as nombre_espacio FROM reservas r JOIN espacios e ON r.espacio_id = e.id WHERE r.unidad_id = %s AND r.fecha_uso >= %s AND r.estado = 'CONFIRMADA' ORDER BY r.fecha_uso ASC", (uid, hoy))
+    # Reservas
+    cur.execute("SELECT r.*, e.nombre as nombre_espacio FROM reservas r JOIN espacios e ON r.espacio_id = e.id WHERE r.unidad_id = %s AND r.fecha_uso >= CURRENT_DATE AND r.estado = 'CONFIRMADA' ORDER BY r.fecha_uso ASC", (uid,))
     mis_reservas = cur.fetchall()
-    
+
+    # --- NUEVO: VISITAS ACTIVAS (Para ver tiempo restante) ---
+    # Asumimos que la visita dura 5 horas (300 min) desde el ingreso
+    cur.execute("""
+        SELECT v.*, p.nombre as parking_nombre,
+        EXTRACT(EPOCH FROM (NOW() - v.ingreso))/60 as minutos_transcurridos
+        FROM visitas v
+        LEFT JOIN parking p ON v.parking_id = p.id
+        WHERE v.unidad_id = %s AND v.egreso IS NULL
+    """, (uid,))
+    visitas_activas = cur.fetchall()
+
+    # --- NUEVO: MULTAS IMPAGAS ---
+    # Usamos try/except por si no creaste la tabla aún, para que no se caiga
+    try:
+        cur.execute("SELECT * FROM multas WHERE unidad_id = %s AND pagada = FALSE", (uid,))
+        multas = cur.fetchall()
+    except:
+        multas = [] # Si falla, lista vacía
+
     cur.close(); conn.close()
     
-    return render_template('dash_residente.html', 
-        u=u, user=usr, edificio=dict(edificio), 
-        encomiendas=enc, espacios=espacios, mis_reservas=mis_reservas, hoy=hoy
-    )
+    return render_template('dash_residente.html', u=u, user=user_data, edificio=edificio, espacios=espacios, encomiendas=encomiendas, mis_reservas=mis_reservas, visitas_activas=visitas_activas, multas=multas, hoy=date.today())
+
 
 
 @app.route('/residente/perfil/editar', methods=['POST'])
@@ -294,88 +379,114 @@ def residente_pagar_deuda():
 
 @app.route('/residente/invitar/generar', methods=['POST'])
 def generar_link_invitacion():
-    t = f"{random.randint(100000,999999)}{session.get('unidad_id_residente')}"
-    tipo = request.form.get('tipo', 'PEATON') # PEATON o VEHICULO
-    nombre = request.form.get('nombre', '')   # Nombre pre-llenado por el residente
+    import secrets
     
-    conn = get_db_connection(); cur = conn.cursor()
+    # Verificación de sesión
+    if session.get('rol') != 'residente': 
+        return jsonify({'status': 'error', 'message': 'No autorizado'})
+    
+    eid = session.get('edificio_id')
+    uid = session.get('unidad_id_residente')
+    
+    # Datos del formulario del modal
+    tipo = request.form.get('tipo') # PEATON o VEHICULO
+    pre_nombre = request.form.get('nombre') # Opcional
+    
+    # Generar Token único para el link
+    t = secrets.token_urlsafe(16)
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Guardar la pre-invitación en la base de datos
     cur.execute("""
-        INSERT INTO invitaciones (token, edificio_id, unidad_id, estado, tipo, pre_nombre) 
-        VALUES (%s, %s, %s, 'PENDIENTE', %s, %s)
-    """, (t, session.get('edificio_id'), session.get('unidad_id_residente'), tipo, nombre))
-    conn.commit(); cur.close(); conn.close()
+        INSERT INTO invitaciones (token, edificio_id, unidad_id, tipo, pre_nombre, estado)
+        VALUES (%s, %s, %s, %s, %s, 'PENDIENTE')
+    """, (t, eid, uid, tipo, pre_nombre))
     
-    return jsonify({'status': 'success', 'link': url_for('vista_invitado_form', token=t, _external=True)})
-
-
-@app.route('/invitacion/<token>')
-def vista_invitado_form(token):
-    conn = get_db_connection(); cur = conn.cursor()
-    query = """
-        SELECT i.*, u.numero, u.owner_json, u.tenant_json, e.direccion, e.nombre as nombre_edificio 
-        FROM invitaciones i 
-        JOIN unidades u ON i.unidad_id = u.id 
-        JOIN edificios e ON i.edificio_id = e.id 
-        WHERE i.token = %s AND i.estado = 'PENDIENTE'
-    """
-    cur.execute(query, (token,)); invitacion = cur.fetchone()
-    cur.close(); conn.close()
+    conn.commit()
+    cur.close()
+    conn.close()
     
-    if not invitacion: return "<h1>Invitación inválida, expirada o ya utilizada.</h1>"
+    # --- AQUÍ ESTABA EL ERROR ---
+    # Cambiamos 'vista_invitado_form' por 'public_invitacion' que es el nombre real de la función
+    link_final = url_for('public_invitacion', token=t, _external=True)
     
-    # Determinar anfitrión
-    o = parse_json_field(invitacion.get('owner_json')); t = parse_json_field(invitacion.get('tenant_json'))
-    anfitrion = t.get('nombre') if t.get('nombre') else o.get('nombre', 'Residente')
+    return jsonify({'status': 'success', 'link': link_final})
+
     
-    return render_template('public_visita.html', 
-        token=token, 
-        anfitrion=anfitrion, 
-        depto=invitacion['numero'], 
-        direccion=invitacion['direccion'], 
-        edificio=invitacion['nombre_edificio'],
-        tipo=invitacion.get('tipo', 'PEATON'),      # Importante: Tipo de invitación
-        pre_nombre=invitacion.get('pre_nombre', '') # Importante: Nombre pre-llenado
-    )
-
-
-@app.route('/invitacion/guardar', methods=['POST'])
-def guardar_datos_invitado():
-    t = request.form.get('token'); n = request.form.get('nombre'); conn = get_db_connection(); cur = conn.cursor()
-    r = formatear_rut(request.form.get('rut'))
-    cur.execute("UPDATE invitaciones SET nombre_visita=%s, rut_visita=%s, patente=%s, estado='LISTO' WHERE token=%s RETURNING id", (n, r, request.form.get('patente'), t)); res = cur.fetchone(); conn.commit(); cur.close(); conn.close()
-    return render_template('public_qr_exito.html', qr_content=t, nombre=n) if res else "Error"
-
+    # Actualizar estado a LISTO
+    cur.execute("""
+        UPDATE invitaciones 
+        SET nombre_visita = %s, rut_visita = %s, patente = %s, estado = 'LISTO' 
+        WHERE token = %s
+    """, (nombre, rut, patente, token))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    # Renderizar el HTML de éxito que acabamos de crear
+    return render_template('public_qr_exito.html', 
+                           token=token, 
+                           nombre=nombre, 
+                           rut=rut)
 # ==========================================
 # PANEL ADMIN
 # ==========================================
 @app.route('/panel-admin')
+@app.route('/panel-admin')
 def panel_admin():
     if session.get('rol') != 'admin': return redirect(url_for('home'))
-    eid = session.get('edificio_id'); conn = get_db_connection(); cur = conn.cursor()
     
-    cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,)); ed = cur.fetchone()
-    cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (eid,)); units = cur.fetchall()
+    eid = session.get('edificio_id')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # 1. Datos del Edificio y Unidades
+    cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,))
+    ed = cur.fetchone()
+    
+    cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (eid,))
+    units = cur.fetchall()
+    
     deuda_aexon = ed.get('deuda_omnisoft', 0)
     
+    # 2. Fechas y Navegación
     y, m = get_safe_date_params()
     mes_nombre = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m]
     nav = calcular_navegacion(m, y)
     
-    cur.execute("SELECT SUM(monto) as t FROM gastos WHERE edificio_id=%s AND mes=%s AND anio=%s", (eid, m, y)); g = cur.fetchone(); tg = g['t'] if g and g['t'] else 0
-    cur.execute("""SELECT SUM(monto) as t FROM historial_pagos WHERE edificio_id=%s AND ((mes_periodo=%s AND anio_periodo=%s) OR (mes_periodo IS NULL AND EXTRACT(MONTH FROM fecha)=%s AND EXTRACT(YEAR FROM fecha)=%s))""", (eid, m, y, m, y)); i = cur.fetchone(); ti = i['t'] if i and i['t'] else 0
+    # 3. Finanzas del Mes (Ingresos vs Egresos)
+    cur.execute("SELECT SUM(monto) as t FROM gastos WHERE edificio_id=%s AND mes=%s AND anio=%s", (eid, m, y))
+    g = cur.fetchone()
+    tg = g['t'] if g and g['t'] else 0
+    
+    cur.execute("""SELECT SUM(monto) as t FROM historial_pagos WHERE edificio_id=%s AND ((mes_periodo=%s AND anio_periodo=%s) OR (mes_periodo IS NULL AND EXTRACT(MONTH FROM fecha)=%s AND EXTRACT(YEAR FROM fecha)=%s))""", (eid, m, y, m, y))
+    i = cur.fetchone()
+    ti = i['t'] if i and i['t'] else 0
+    
     fin = {'ingresos': ti, 'egresos': tg, 'saldo': ti - tg}
     
-    cur.execute("SELECT e.id, u.numero as unidad, e.remitente, e.recepcion FROM encomiendas e JOIN unidades u ON e.unidad_id = u.id WHERE e.edificio_id = %s AND e.entrega IS NULL ORDER BY e.recepcion DESC", (eid,)); enc = cur.fetchall()
-    cur.execute("SELECT * FROM activos WHERE edificio_id = %s", (eid,)); activos = cur.fetchall(); eventos = {}
-    f_ini = date(y, m, 1); f_fin = date(y, m, calendar.monthrange(y, m)[1])
+    # 4. Encomiendas Pendientes
+    cur.execute("SELECT e.id, u.numero as unidad, e.remitente, e.recepcion FROM encomiendas e JOIN unidades u ON e.unidad_id = u.id WHERE e.edificio_id = %s AND e.entrega IS NULL ORDER BY e.recepcion DESC", (eid,))
+    enc = cur.fetchall()
+    
+    # 5. Activos y Calendario de Mantenciones
+    cur.execute("SELECT * FROM activos WHERE edificio_id = %s", (eid,))
+    activos = cur.fetchall()
+    eventos = {}
+    f_ini = date(y, m, 1)
+    f_fin = date(y, m, calendar.monthrange(y, m)[1])
+    
     for a in activos:
         if a['ultimo_servicio']:
-            f = a['ultimo_servicio']; 
+            f = a['ultimo_servicio']
             while f <= f_fin:
                 if f >= f_ini: eventos.setdefault(f.day, []).append({'nombre': a['nombre'], 'costo': a['costo_estimado']})
                 f += timedelta(days=a['periodicidad_dias'])
     
-    # --- CARGAR DATOS DE ESPACIOS Y RESERVAS ---
+    # 6. Espacios Comunes y Reservas
     cur.execute("SELECT * FROM espacios WHERE edificio_id = %s AND activo = TRUE", (eid,))
     espacios = cur.fetchall()
     
@@ -389,15 +500,57 @@ def panel_admin():
     """, (eid,))
     reservas = cur.fetchall()
     
-    cur.close(); conn.close()
+    cur.close()
+    conn.close()
     
+    # 7. Procesar Unidades (JSON)
     u_proc = []
     for u in units:
-        o = parse_json_field(u.get('owner_json')); t = parse_json_field(u.get('tenant_json'))
-        u_proc.append({'id': u['id'], 'numero': u['numero'], 'propietario': o.get('nombre'), 'owner': o, 'tenant': t, 'deuda_actual': u.get('deuda_monto', 0), 'metraje': u['metraje'], 'piso': u['piso'], 'prorrateo': u['prorrateo']})
+        o = parse_json_field(u.get('owner_json'))
+        t = parse_json_field(u.get('tenant_json'))
+        u_proc.append({
+            'id': u['id'], 'numero': u['numero'], 'propietario': o.get('nombre'), 
+            'owner': o, 'tenant': t, 'deuda_actual': u.get('deuda_monto', 0), 
+            'metraje': u['metraje'], 'piso': u['piso'], 'prorrateo': u['prorrateo']
+        })
         
-    return render_template('dash_admin.html', edificio=dict(ed), unidades=u_proc, finanzas=fin, stats={'unidades': len(u_proc)}, calendario=calendar.monthcalendar(y, m), eventos=eventos, mes_actual=mes_nombre, anio_actual=y, nav=nav, encomiendas=enc, parking=obtener_estado_parking_real(eid), deuda_aexon=deuda_aexon, espacios=espacios, reservas=reservas, whatsapp_soporte="56912345678", new_credentials=session.pop('new_credentials_unidad', None))
+    # --- 8. NUEVA LÓGICA: ALERTA DE DEUDA AEXON ---
+    dias_restantes = 0
+    alerta_deuda = None
+    
+    # Si hay deuda mayor a 0 y no está pagada
+    if ed['deuda_omnisoft'] > 0 and ed['estado_pago'] != 'PAGADO':
+        if ed['deuda_vencimiento']:
+            hoy = date.today()
+            delta = ed['deuda_vencimiento'] - hoy
+            dias_restantes = delta.days
+            
+            # Definir nivel de alerta según los días
+            if dias_restantes < 0: alerta_deuda = "VENCIDO"
+            elif dias_restantes <= 3: alerta_deuda = "CRITICO"
+            else: alerta_deuda = "NORMAL"
 
+    return render_template('dash_admin.html', 
+        edificio=dict(ed), 
+        unidades=u_proc, 
+        finanzas=fin, 
+        stats={'unidades': len(u_proc)}, 
+        calendario=calendar.monthcalendar(y, m), 
+        eventos=eventos, 
+        mes_actual=mes_nombre, 
+        anio_actual=y, 
+        nav=nav, 
+        encomiendas=enc, 
+        parking=obtener_estado_parking_real(eid), 
+        deuda_aexon=deuda_aexon, 
+        espacios=espacios, 
+        reservas=reservas, 
+        whatsapp_soporte="56912345678", 
+        new_credentials=session.pop('new_credentials_unidad', None),
+        # Variables nuevas para la alerta
+        dias_restantes=dias_restantes,
+        alerta_deuda=alerta_deuda
+    )
 @app.route('/admin/gastos')
 def admin_gastos():
     if session.get('rol') != 'admin': return redirect(url_for('home'))
@@ -463,19 +616,85 @@ def eliminar_conserje():
 def reset_clave_conserje():
     np = f"Conserje{random.randint(1000,9999)}"; conn = get_db_connection(); cur = conn.cursor()
     cur.execute("UPDATE usuarios SET password = %s WHERE rut = %s", (np, request.form.get('rut'))); conn.commit(); cur.close(); conn.close(); return jsonify({'status': 'success', 'password': np})
+@app.route('/admin/residentes/reset_clave', methods=['POST'])
+def reset_clave_residente():
+    import json
+    import random
+    
+    if session.get('rol') not in ['admin', 'conserje', 'superadmin']: 
+        return jsonify({'status': 'error', 'message': 'No autorizado'})
+    
+    uid = request.form.get('unidad_id')
+    
+    # Generar clave numérica simple de 4 dígitos (STRING LIMPIO)
+    new_pass = str(random.randint(1000, 9999)).strip()
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        # ACTUALIZAMOS LA CLAVE
+        print(f"🛠 RESETEANDO Unidad {uid} a Clave: '{new_pass}'")
+        cur.execute("UPDATE unidades SET password = %s WHERE id = %s", (new_pass, uid))
+        conn.commit()
+        
+        # VERIFICAMOS QUE SE HAYA GUARDADO (Doble chequeo)
+        cur.execute("SELECT password, tenant_json, owner_json, numero FROM unidades WHERE id = %s", (uid,))
+        u = cur.fetchone()
+        
+        clave_guardada = str(u['password']).strip()
+        print(f"   -> Verificación DB: La clave guardada es '{clave_guardada}'")
+        
+        # OBTENER DATOS USUARIO PARA EL POPUP
+        t = u['tenant_json'] if isinstance(u['tenant_json'], dict) else json.loads(u['tenant_json'] or '{}')
+        o = u['owner_json'] if isinstance(u['owner_json'], dict) else json.loads(u['owner_json'] or '{}')
+        
+        rut_usuario = t.get('rut') or o.get('rut') or "Sin RUT"
+        nombre_usuario = t.get('nombre') or o.get('nombre') or f"Depto {u['numero']}"
+
+        return jsonify({
+            'status': 'success', 
+            'password': new_pass, 
+            'rut_usuario': rut_usuario, 
+            'residente_nombre': nombre_usuario 
+        })
+        
+    except Exception as e:
+        print(f"🔥 ERROR RESET CLAVE: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+        
+    finally:
+        cur.close()
+        conn.close()
+
 
 @app.route('/admin/residentes/registrar_pago', methods=['POST'])
 def registrar_pago_residente():
     if session.get('rol') != 'admin': return redirect(url_for('home'))
-    uid = request.form.get('unidad_id'); m_str = request.form.get('monto_pago')
-    if not uid or not m_str: flash("Datos incompletos"); return redirect(url_for('panel_admin'))
+    
+    uid = request.form.get('unidad_id')
+    monto = int(request.form.get('monto_pago'))
+    archivo = request.files.get('comprobante') # CAPTURAR FOTO
+    
+    filename = 'manual.jpg'
+    if archivo:
+        filename = f"pago_residente_{uid}_{random.randint(1000,9999)}.jpg"
+        archivo.save(os.path.join(app.root_path, 'static', 'uploads', filename))
+
     eid = session.get('edificio_id'); conn = get_db_connection(); cur = conn.cursor()
+    
+    # Lógica de mes (igual que antes)
     cur.execute("SELECT mes, anio FROM cierres_mes WHERE edificio_id = %s ORDER BY anio DESC, mes DESC LIMIT 1", (eid,)); uc = cur.fetchone()
     if uc: mp, ap = (uc['mes']+1, uc['anio']) if uc['mes'] < 12 else (1, uc['anio']+1)
     else: now = datetime.now(); mp, ap = now.month, now.year
-    cur.execute("UPDATE unidades SET deuda_monto = GREATEST(0, deuda_monto - %s) WHERE id = %s", (int(m_str), uid))
-    cur.execute("INSERT INTO historial_pagos (edificio_id, unidad_id, monto, metodo, comprobante_url, mes_periodo, anio_periodo) VALUES (%s, %s, %s, 'TRANSFERENCIA', 'manual', %s, %s)", (eid, uid, int(m_str), mp, ap))
-    conn.commit(); cur.close(); conn.close(); flash("Pago registrado"); return redirect(url_for('panel_admin'))
+    
+    cur.execute("UPDATE unidades SET deuda_monto = GREATEST(0, deuda_monto - %s) WHERE id = %s", (monto, uid))
+    # GUARDAMOS LA URL DE LA FOTO
+    cur.execute("INSERT INTO historial_pagos (edificio_id, unidad_id, monto, metodo, comprobante_url, mes_periodo, anio_periodo) VALUES (%s, %s, %s, 'TRANSFERENCIA', %s, %s, %s)", (eid, uid, monto, filename, mp, ap))
+    
+    conn.commit(); cur.close(); conn.close()
+    flash("Pago registrado con comprobante."); return redirect(url_for('panel_admin'))
+
 
 @app.route('/admin/residentes/multar', methods=['POST'])
 def multar_residente():
@@ -492,13 +711,7 @@ def historial_residente(id):
     cur.execute("SELECT fecha, monto, metodo FROM historial_pagos WHERE unidad_id = %s ORDER BY fecha DESC LIMIT 5", (id,)); pag = cur.fetchall()
     cur.close(); conn.close(); return jsonify({'encomiendas': enc, 'pagos': [{'fecha': p['fecha'].strftime('%d/%m'), 'monto': p['monto'], 'metodo': p['metodo']} for p in pag]})
 
-@app.route('/admin/parking/maintenance', methods=['POST'])
-def parking_maintenance():
-    if session.get('rol') != 'admin': return redirect(url_for('home'))
-    sid = request.form.get('slot_id'); acc = request.form.get('accion')
-    if acc == 'activar': MANTENCION_DB.add(sid)
-    else: MANTENCION_DB.discard(sid)
-    return redirect(url_for('panel_admin'))
+
 
 @app.route('/admin/gestionar-estacionamiento', methods=['POST'])
 def gestionar_estacionamiento():
@@ -511,17 +724,49 @@ def gestionar_estacionamiento():
 @app.route('/admin/activos')
 def admin_activos():
     if session.get('rol') != 'admin': return redirect(url_for('home'))
-    eid = session.get('edificio_id'); conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("SELECT * FROM activos WHERE edificio_id = %s ORDER BY nombre", (eid,)); activos = cur.fetchall()
-    gasto_mes = 0; hoy = date.today()
+    
+    eid = session.get('edificio_id')
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM activos WHERE edificio_id = %s ORDER BY nombre", (eid,))
+    activos = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    gasto_mes = 0
+    hoy = date.today()
+    
+    # Obtenemos el último día del mes actual para saber el límite
+    ultimo_dia_mes = date(hoy.year, hoy.month, calendar.monthrange(hoy.year, hoy.month)[1])
+
     for a in activos:
         if a['ultimo_servicio']:
-            prox = a['ultimo_servicio']; 
-            while prox < hoy: prox += timedelta(days=a['periodicidad_dias'])
-            a['prox_fecha'] = prox.strftime('%d/%m/%Y'); a['dias_restantes'] = (prox - hoy).days
-            if prox.month == hoy.month and prox.year == hoy.year: gasto_mes += a['costo_estimado']
-    cur.close(); conn.close()
+            prox = a['ultimo_servicio']
+            periodo = a['periodicidad_dias']
+            costo = a['costo_estimado']
+
+            # 1. Avanzamos la fecha hasta llegar al futuro (próxima mantención real)
+            while prox < hoy:
+                prox += timedelta(days=periodo)
+            
+            # Guardamos esta fecha para mostrarla en la tabla (la más próxima)
+            a['prox_fecha'] = prox.strftime('%d/%m/%Y')
+            a['dias_restantes'] = (prox - hoy).days
+
+            # 2. CALCULO DE PROYECCIÓN (Aquí está la corrección)
+            # Usamos una variable temporal para ver cuántas veces cae en ESTE mes
+            temp_date = prox
+            
+            # Mientras la fecha caiga dentro de este mes y año...
+            while temp_date <= ultimo_dia_mes:
+                if temp_date.month == hoy.month and temp_date.year == hoy.year:
+                    gasto_mes += costo # Sumamos el costo
+                
+                # Avanzamos al siguiente periodo para ver si cabe otra mantención
+                temp_date += timedelta(days=periodo)
+
     return render_template('admin_activos.html', activos=activos, gasto_mes=gasto_mes)
+
 
 @app.route('/admin/activos/guardar', methods=['POST'])
 def guardar_activo():
@@ -629,29 +874,30 @@ def admin_cancelar_reserva():
 def residente_crear_reserva():
     if session.get('rol') != 'residente': return redirect(url_for('home'))
     uid = session.get('unidad_id_residente'); eid = session.get('edificio_id')
-    espacio_id = request.form.get('espacio_id'); fecha = request.form.get('fecha')
+    espacio_id = request.form.get('espacio_id')
+    fecha = request.form.get('fecha')
+    hora = request.form.get('hora') # <--- CAPTURAMOS LA HORA
     
     conn = get_db_connection(); cur = conn.cursor()
     try:
-        # Validar si ya está ocupado
-        cur.execute("SELECT id FROM reservas WHERE espacio_id=%s AND fecha_uso=%s AND estado='CONFIRMADA'", (espacio_id, fecha))
-        if cur.fetchone(): flash("⛔ Fecha no disponible."); return redirect(url_for('panel_residente'))
+        # Validar disponibilidad
+        cur.execute("SELECT id FROM reservas WHERE espacio_id=%s AND fecha_uso=%s AND hora_inicio=%s AND estado='CONFIRMADA'", (espacio_id, fecha, hora))
+        if cur.fetchone(): flash("⛔ Horario no disponible."); return redirect(url_for('panel_residente'))
 
-        # Obtener precio
         cur.execute("SELECT precio, nombre FROM espacios WHERE id=%s", (espacio_id,))
         espacio = cur.fetchone()
         
-        # Crear Reserva
-        cur.execute("INSERT INTO reservas (espacio_id, unidad_id, fecha_uso) VALUES (%s, %s, %s)", (espacio_id, uid, fecha))
+        # INSERTAMOS CON LA HORA
+        cur.execute("INSERT INTO reservas (espacio_id, unidad_id, fecha_uso, hora_inicio, estado) VALUES (%s, %s, %s, %s, 'CONFIRMADA')", (espacio_id, uid, fecha, hora))
         
-        # Cargar Deuda Automática
         if espacio['precio'] > 0:
             cur.execute("UPDATE unidades SET deuda_monto = deuda_monto + %s WHERE id = %s", (espacio['precio'], uid))
             
-        conn.commit(); flash(f"✅ Reserva Confirmada: {espacio['nombre']} (${espacio['precio']})")
+        conn.commit(); flash(f"✅ Reserva: {espacio['nombre']} a las {hora}")
     except Exception as e: print(e); flash("❌ Error al reservar")
     finally: cur.close(); conn.close()
     return redirect(url_for('panel_residente'))
+
 
 # --- MÓDULO SUPER ADMIN (QUE FALTABA) ---
 @app.route('/panel-superadmin')
@@ -698,11 +944,85 @@ def super_detalle_edificio(id):
         u_proc.append({'id': u['id'], 'numero': u['numero'], 'owner': o, 'tenant': t, 'metraje': u['metraje'], 'prorrateo': u['prorrateo'], 'estado_deuda': u.get('estado_deuda', 'AL_DIA')})
     return render_template('super_detalle_edificio.html', e=ed_full, admins=admins, unidades=u_proc)
 
+# 1. REEMPLAZAR ESTA RUTA (SUPER ADMIN ENVÍA COBRO)
 @app.route('/superadmin/enviar_cobro', methods=['POST'])
 def enviar_cobro():
+    if session.get('rol') != 'superadmin': return redirect(url_for('home'))
+    
+    eid = request.form.get('edificio_id')
+    monto_raw = request.form.get('monto') # Recibe "100.000"
+    desc = request.form.get('descripcion')
+    vence = request.form.get('vencimiento')
+    
+    # --- CORRECCIÓN: LIMPIEZA DE MONTO ---
+    # Eliminamos puntos y comas para dejar solo el número puro
+    try:
+        if monto_raw:
+            monto = int(str(monto_raw).replace('.', '').replace(',', ''))
+        else:
+            monto = 0
+    except ValueError:
+        flash("Error: El monto ingresado no es válido.")
+        return redirect(url_for('super_detalle_edificio', id=eid))
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("""
+        UPDATE edificios 
+        SET deuda_omnisoft = %s, 
+            deuda_descripcion = %s, 
+            deuda_vencimiento = %s, 
+            estado_pago = 'PENDIENTE',
+            deuda_comprobante_url = NULL 
+        WHERE id = %s
+    """, (monto, desc, vence, eid))
+    
+    conn.commit(); cur.close(); conn.close()
+    flash("Cobro enviado al edificio.")
+    return redirect(url_for('super_detalle_edificio', id=eid))
+
+
+# --- REEMPLAZAR ESTA FUNCIÓN EN APP.PY ---
+@app.route('/admin/pagar_servicio', methods=['POST'])
+def admin_pagar_servicio():
+    if session.get('rol') != 'admin': return redirect(url_for('home'))
+    
+    eid = session.get('edificio_id')
+    file = request.files.get('comprobante')
+    
+    if not file:
+        flash("Debes subir una foto del comprobante.")
+        return redirect(url_for('panel_admin'))
+    
+    # 1. Definir nombre y ruta (Guardamos en static/uploads)
+    filename = f"pago_{eid}_{random.randint(1000,9999)}.jpg"
+    
+    # Asegúrate de que esta carpeta exista o créala
+    upload_folder = os.path.join(app.root_path, 'static', 'uploads')
+    os.makedirs(upload_folder, exist_ok=True) # Crea la carpeta si no existe
+    
+    # 2. Guardar el archivo físicamente
+    try:
+        file.save(os.path.join(upload_folder, filename))
+    except Exception as e:
+        flash(f"Error al guardar imagen: {e}")
+        return redirect(url_for('panel_admin'))
+    
+    # 3. Guardar referencia en BD
     conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("UPDATE edificios SET deuda_omnisoft = %s, estado_pago = 'PENDIENTE' WHERE id = %s", (request.form.get('monto'), request.form.get('edificio_id')))
-    conn.commit(); cur.close(); conn.close(); flash("Cobro generado"); return redirect(url_for('super_detalle_edificio', id=request.form.get('edificio_id')))
+    cur.execute("""
+        UPDATE edificios 
+        SET estado_pago = 'REVISION', 
+            deuda_comprobante_url = %s 
+        WHERE id = %s
+    """, (filename, eid))
+    conn.commit(); cur.close(); conn.close()
+    
+    flash("Comprobante enviado. Esperando validación de Aexon.")
+    return redirect(url_for('panel_admin'))
+
+
 
 @app.route('/superadmin/registrar_pago_edificio', methods=['POST'])
 def registrar_pago_edificio():
@@ -739,9 +1059,128 @@ def reset_pass_admin():
     cur.execute("UPDATE usuarios SET password=%s WHERE rut=%s", (np, request.form.get('rut_admin')))
     conn.commit(); cur.close(); conn.close(); flash(f"NEW_ADMIN_PASS:{np}"); return redirect(url_for('super_detalle_edificio', id=request.form.get('edificio_id')))
 
-@app.route('/superadmin/crear_edificio', methods=['POST'])
-def crear_edificio():
-    conn=get_db_connection(); cur=conn.cursor(); cur.execute("INSERT INTO edificios (nombre,direccion,activo) VALUES (%s,%s,TRUE)",(request.form.get('nombre').upper(),request.form.get('direccion'))); conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_superadmin'))
+# --- CORRECCIÓN SUPER ADMIN: PREVENIR DUPLICADOS ---
+
+@app.route('/login', methods=['POST'])
+def login():
+    import json
+    
+    # 1. DATOS DEL FORMULARIO
+    usuario_input = request.form.get('email') or request.form.get('username') or request.form.get('rut')
+    password = request.form.get('password')
+    
+    # Limpiamos los datos de entrada
+    pass_input = str(password).strip()
+    # Limpiamos el RUT (sin puntos, sin guión, mayúsculas)
+    rut_input_clean = str(usuario_input).replace('.', '').replace('-', '').strip().upper()
+
+    print(f"\n🚀 LOGIN INTENTO: Usuario='{usuario_input}' (Clean: {rut_input_clean}) | Clave='{pass_input}'")
+
+    conn = None
+    cur = None
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # ----------------------------------------
+        # A. INTENTO STAFF (Tabla Usuarios)
+        # ----------------------------------------
+        cur.execute("SELECT * FROM usuarios WHERE email = %s OR rut = %s OR nombre = %s", (usuario_input, usuario_input, usuario_input))
+        user = cur.fetchone()
+        
+        if user:
+            pass_db = str(user.get('password', '')).strip()
+            if pass_db == pass_input:
+                session.clear()
+                # Parche para ID
+                user_id = user.get('id') or user.get('user_id') or user.get('rut')
+                session['user_id'] = user_id
+                session['nombre'] = user.get('nombre', 'Staff')
+                session['rol'] = user.get('rol', 'conserje')
+                session['edificio_id'] = user.get('edificio_id')
+                
+                print(f"✅ STAFF AUTORIZADO: {session['rol']}")
+                if session['rol'] == 'superadmin': return redirect(url_for('panel_superadmin'))
+                if session['rol'] == 'admin': return redirect(url_for('panel_admin'))
+                if session['rol'] == 'conserje': return redirect(url_for('panel_conserje'))
+            else:
+                print(f"❌ STAFF FALLÓ CLAVE. DB: '{pass_db}' vs Input: '{pass_input}'")
+
+        # ----------------------------------------
+        # B. INTENTO RESIDENTE (Tabla Unidades)
+        # ----------------------------------------
+        # Traemos TODO para buscar en los JSON
+        cur.execute("SELECT u.*, e.nombre as edificio_nombre FROM unidades u JOIN edificios e ON u.edificio_id = e.id")
+        all_units = cur.fetchall()
+        
+        coincidencias = []
+        rut_encontrado = False # Para depuración
+
+        for unit in all_units:
+            try:
+                # Extraemos JSONs
+                t_json = unit['tenant_json']
+                o_json = unit['owner_json']
+                tenant = t_json if isinstance(t_json, dict) else json.loads(t_json or '{}')
+                owner = o_json if isinstance(o_json, dict) else json.loads(o_json or '{}')
+                
+                # Extraemos RUTs de la BD y limpiamos
+                t_rut = str(tenant.get('rut', '')).replace('.', '').replace('-', '').strip().upper()
+                o_rut = str(owner.get('rut', '')).replace('.', '').replace('-', '').strip().upper()
+                
+                # 1. CHEQUEAR RUT
+                if (t_rut == rut_input_clean) or (o_rut == rut_input_clean):
+                    rut_encontrado = True
+                    pass_db_unit = str(unit['password']).strip()
+                    
+                    print(f"🔎 RUT ENCONTRADO en Depto {unit['numero']}. Clave DB: '{pass_db_unit}' vs Input: '{pass_input}'")
+                    
+                    # 2. CHEQUEAR CLAVE
+                    if pass_db_unit == pass_input:
+                        nombre_res = tenant.get('nombre') or owner.get('nombre') or 'Residente'
+                        coincidencias.append({
+                            'id': unit['id'], 'numero': unit['numero'],
+                            'edificio': unit['edificio_nombre'], 'edificio_id': unit['edificio_id'],
+                            'nombre_usuario': nombre_res
+                        })
+                    else:
+                        print("   -> ⛔ Clave no coincide.")
+            except Exception as e_loop:
+                continue
+
+        # RESULTADOS
+        if len(coincidencias) == 1:
+            u_data = coincidencias[0]
+            session['rol'] = 'residente'
+            session['unidad_id_residente'] = u_data['id']
+            session['edificio_id'] = u_data['edificio_id']
+            session['nombre'] = u_data['nombre_usuario']
+            session['numero_unidad'] = u_data['numero']
+            print("✅ RESIDENTE AUTORIZADO")
+            return redirect(url_for('panel_residente'))
+            
+        elif len(coincidencias) > 1:
+            session['opciones_login'] = coincidencias
+            return redirect(url_for('seleccionar_unidad'))
+
+        if rut_encontrado:
+            print("❌ El RUT existe, pero la contraseña no coincidió en ninguna unidad.")
+        else:
+            print("❌ El RUT no se encontró en ningún registro.")
+
+        flash("Usuario o contraseña incorrectos.")
+        return redirect(url_for('home'))
+
+    except Exception as e:
+        print(f"🔥 ERROR FATAL EN LOGIN: {e}")
+        flash("Error interno.")
+        return redirect(url_for('home'))
+        
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
 
 @app.route('/superadmin/eliminar_edificio', methods=['POST'])
 def eliminar_edificio():
@@ -778,6 +1217,260 @@ def fix_residente_demo():
         conn.commit(); return f"OK: {rut_demo}"
     except Exception as e: return f"Error {e}"
     finally: cur.close(); conn.close()
+# --- NUEVA RUTA PARA BITÁCORA / AUDITORÍA ---
+@app.route('/admin/logs/listar')
+def admin_logs_listar():
+    if session.get('rol') != 'admin': return jsonify([])
+    
+    eid = session.get('edificio_id')
+    # Capturamos filtros del frontend
+    filtro_fecha = request.args.get('fecha')
+    filtro_unidad = request.args.get('unidad') # Opcional
+
+    # Si no envían fecha, usamos HOY por defecto
+    if not filtro_fecha:
+        filtro_fecha = date.today().strftime('%Y-%m-%d')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Usamos una subconsulta (CTE) para filtrar limpiamente sobre el resultado unido
+    query = """
+        SELECT * FROM (
+            (SELECT 'VISITA' as tipo, v.ingreso as fecha_full, v.ingreso::date as fecha_dia, CONCAT('Entrada: ', v.nombre_visita) as detalle, v.patente as extra, u.numero as unidad 
+             FROM visitas v LEFT JOIN unidades u ON v.unidad_id = u.id WHERE v.edificio_id = %s)
+            UNION ALL
+            (SELECT 'INCIDENCIA', fecha, fecha::date, titulo, autor, '-' FROM incidencias WHERE edificio_id = %s)
+            UNION ALL
+            (SELECT 'PAGO', h.fecha, h.fecha::date, CONCAT('Abono $', h.monto), h.metodo, u.numero 
+             FROM historial_pagos h JOIN unidades u ON h.unidad_id = u.id WHERE h.edificio_id = %s)
+            UNION ALL
+            (SELECT 'ENCOMIENDA', enc.recepcion, enc.recepcion::date, CONCAT('Paquete: ', enc.remitente), 'Conserjería', u.numero 
+             FROM encomiendas enc JOIN unidades u ON enc.unidad_id = u.id WHERE enc.edificio_id = %s)
+        ) as master_log
+        WHERE fecha_dia = %s
+    """
+    params = [eid, eid, eid, eid, filtro_fecha]
+
+    # Si el usuario escribió un depto, agregamos ese filtro extra
+    if filtro_unidad:
+        query += " AND unidad = %s"
+        params.append(filtro_unidad)
+
+    query += " ORDER BY fecha_full DESC"
+
+    cur.execute(query, tuple(params))
+    logs = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    data = []
+    for l in logs:
+        data.append({
+            'tipo': l['tipo'],
+            'fecha': l['fecha_full'].strftime('%H:%M') if l['fecha_full'] else '-', # Solo mostramos hora porque ya filtramos por día
+            'detalle': l['detalle'],
+            'extra': l['extra'] or '-',
+            'unidad': l['unidad'] or '-'
+        })
+    return jsonify(data)
+
+# --- RUTA PÚBLICA PARA VER LA INVITACIÓN (CÓDIGO QR / ACCESO) ---
+@app.route('/invitacion/<token>')
+def public_invitacion(token):
+    import json
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Buscamos la invitación cruzando datos con la Unidad y el Edificio
+    cur.execute("""
+        SELECT i.*, u.numero as numero_depto, u.tenant_json, u.owner_json, e.nombre as nombre_edificio
+        FROM invitaciones i
+        JOIN unidades u ON i.unidad_id = u.id
+        JOIN edificios e ON i.edificio_id = e.id
+        WHERE i.token = %s
+    """, (token,))
+    
+    data = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if not data:
+        return "<h1>Invitación no encontrada o expirada 🚫</h1>", 404
+        
+    # Calcular nombre del anfitrión (Residente)
+    t = data['tenant_json'] if isinstance(data['tenant_json'], dict) else json.loads(data['tenant_json'] or '{}')
+    o = data['owner_json'] if isinstance(data['owner_json'], dict) else json.loads(data['owner_json'] or '{}')
+    nombre_anfitrion = t.get('nombre') or o.get('nombre') or "Residente"
+
+    # Renderizamos pasando TODAS las variables que pide el HTML
+    return render_template('public_visita.html',
+        token=token,
+        edificio=data['nombre_edificio'], # <--- AQUÍ ESTÁ LA SOLUCIÓN AL ERROR
+        depto=data['numero_depto'],
+        anfitrion=nombre_anfitrion,
+        tipo=data['tipo'],
+        pre_nombre=data['pre_nombre'] or ''
+    )
+# --- 1. VALIDAR QR Y DEVOLVER OPCIONES (MODIFICADO) ---
+
+           
+
+# --- 2. NUEVA RUTA: CONFIRMAR INGRESO VEHICULAR CON PARKING ELEGIDO ---
+
+@app.route('/conserje/visitas/confirmar_vehiculo', methods=['POST'])
+def confirmar_ingreso_vehiculo():
+    token = request.form.get('token')
+    parking_id = request.form.get('parking_id')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT * FROM invitaciones WHERE token = %s", (token,))
+    inv = cur.fetchone()
+    
+    parking_nombre = "Sin Asignar"
+    if parking_id:
+        # ACTUALIZAMOS A 'ocupado' (minúscula)
+        cur.execute("UPDATE estacionamientos_visita SET estado = 'ocupado', patente = %s WHERE id = %s RETURNING nombre", (inv['patente'], parking_id))
+        res_park = cur.fetchone()
+        if res_park: parking_nombre = res_park['nombre']
+
+    # INSERTAMOS USANDO parking_id (CORRECTO)
+    cur.execute("""
+        INSERT INTO visitas (edificio_id, unidad_id, rut, nombre_visita, patente, parking_id, ingreso)
+        VALUES (%s, %s, %s, %s, %s, %s, NOW())
+    """, (inv['edificio_id'], inv['unidad_id'], inv['rut_visita'], inv['nombre_visita'], inv['patente'], parking_id))
+    
+    cur.execute("UPDATE invitaciones SET estado = 'USADO', fecha_uso = NOW() WHERE id = %s", (inv['id'],))
+    
+    conn.commit()
+    cur.close(); conn.close()
+    
+    return jsonify({'status': 'success', 'parking_nombre': parking_nombre, 'visita': inv['nombre_visita']})
+
+# --- RUTA PARA GUARDAR LOS DATOS DE LA VISITA Y GENERAR EL QR FINAL ---
+@app.route('/invitacion/guardar', methods=['POST'])
+def guardar_invitacion_visita():
+    token = request.form.get('token')
+    nombre = request.form.get('nombre')
+    rut = request.form.get('rut')
+    
+    # Capturamos la patente, quitamos espacios y convertimos a mayúsculas
+    raw_patente = request.form.get('patente', '')
+    patente = raw_patente.strip().upper()
+    
+    # DEBUG: Ver qué llega del formulario
+    print(f"--- GUARDANDO VISITA ---")
+    print(f"Nombre: {nombre}")
+    print(f"Patente recibida (Raw): '{raw_patente}'")
+    print(f"Patente a guardar: '{patente}'")
+    
+    # Si la patente es muy corta (ej: usuario puso un espacio), la dejamos nula
+    if len(patente) < 2:
+        patente = None
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Actualizamos asegurando que la patente se escriba
+    cur.execute("""
+        UPDATE invitaciones 
+        SET nombre_visita = %s, rut_visita = %s, patente = %s, estado = 'LISTO' 
+        WHERE token = %s
+    """, (nombre, rut, patente, token))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return render_template('public_qr_exito.html', 
+                           token=token, 
+                           nombre=nombre, 
+                           rut=rut)
+
+# --- VERSIÓN DEFINITIVA Y FORZADA ---
+# --- VERSIÓN DEFINITIVA Y FORZADA ---
+@app.route('/conserje/visitas/validar_qr', methods=['POST'])
+def validar_qr_visita():
+    codigo = request.form.get('codigo_qr')
+    print(f"\n⚡ VALIDANDO QR: {codigo}") 
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # 1. BUSCAMOS LA INVITACIÓN
+    cur.execute("""
+        SELECT i.*, u.numero as unidad_numero 
+        FROM invitaciones i 
+        JOIN unidades u ON i.unidad_id = u.id 
+        WHERE i.token = %s
+    """, (codigo,))
+    inv = cur.fetchone()
+    
+    if not inv:
+        cur.close(); conn.close()
+        return jsonify({'status': 'error', 'message': 'QR No existe 🚫'})
+
+    if inv['estado'] == 'USADO':
+        cur.close(); conn.close()
+        return jsonify({'status': 'error', 'message': 'Este pase YA FUE USADO ⚠️'})
+
+    # 2. ANÁLISIS DE PATENTE
+    patente_db = inv.get('patente')
+    patente_limpia = str(patente_db if patente_db else '').strip().upper()
+    
+    # LÓGICA: Si tiene más de 2 caracteres, ES AUTO.
+    es_vehiculo = len(patente_limpia) > 2
+    
+    if es_vehiculo:
+        print("   ✅ ES VEHÍCULO -> Buscando parking libres...")
+        
+        # AQUÍ ESTÁ EL FILTRO CORREGIDO: Buscamos 'libre' O 'LIBRE'
+        # Y cruzamos con visitas para asegurarnos que NO esté ocupado realmente
+        cur.execute("""
+            SELECT e.id, e.nombre 
+            FROM estacionamientos_visita e
+            LEFT JOIN visitas v ON e.id = v.parking_id AND v.salida IS NULL
+            WHERE e.edificio_id = %s 
+            AND (e.estado = 'LIBRE' OR e.estado = 'libre')
+            AND v.id IS NULL -- Asegura que no haya visita activa ahí
+            ORDER BY e.id ASC
+        """, (inv['edificio_id'],))
+        
+        slots_libres = cur.fetchall()
+        
+        cur.close(); conn.close()
+        
+        return jsonify({
+            'status': 'parking_selection',
+            'token_invitacion': codigo,
+            'visita': inv['nombre_visita'],
+            'patente': patente_limpia,
+            'slots': slots_libres # Solo enviará los realmente vacíos
+        })
+        
+    else:
+        print("   🚶 ES PEATÓN -> Ingreso directo.")
+        cur.execute("""
+            INSERT INTO visitas (edificio_id, unidad_id, rut, nombre_visita, patente, ingreso)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+        """, (inv['edificio_id'], inv['unidad_id'], inv['rut_visita'], inv['nombre_visita'], 'PEATON'))
+        
+        cur.execute("UPDATE invitaciones SET estado = 'USADO', fecha_uso = NOW() WHERE id = %s", (inv['id'],))
+        conn.commit()
+        cur.close(); conn.close()
+        
+        return jsonify({
+            'status': 'success', 
+            'tipo': 'PEATON',
+            'visita': inv['nombre_visita'],
+            'unidad': inv['unidad_numero']
+        })
+
+
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5003)
+    app.run(debug=True, port=5004)

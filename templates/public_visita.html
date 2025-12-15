@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* ESTILO CYBER-GLASS (Igual que el Panel) */
         :root {
             --neon-blue: #0dcaf0;
             --glass-bg: rgba(20, 20, 30, 0.75);
@@ -19,7 +18,6 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #050505;
-            /* Fondo Aurora */
             background-image: 
                 radial-gradient(circle at 10% 20%, rgba(60, 10, 80, 0.3) 0%, transparent 40%),
                 radial-gradient(circle at 90% 80%, rgba(10, 50, 80, 0.3) 0%, transparent 40%);
@@ -96,6 +94,18 @@
             margin-top: 10px;
             border: 1px solid rgba(255,255,255,0.1);
         }
+        
+        /* Switch personalizado */
+        .form-switch .form-check-input {
+            width: 3em; height: 1.5em;
+            background-color: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.1);
+            cursor: pointer;
+        }
+        .form-switch .form-check-input:checked {
+            background-color: #0dcaf0;
+            border-color: #0dcaf0;
+        }
     </style>
 </head>
 <body>
@@ -118,14 +128,6 @@
         <div class="text-center mb-4">
             <small class="text-white-50 text-uppercase ls-1">Anfitrión</small>
             <div class="fs-5 fw-bold text-white">{{ anfitrion }}</div>
-            
-            <div class="mt-2">
-                {% if tipo == 'VEHICULO' %}
-                    <span class="badge bg-warning text-dark border border-warning"><i class="bi bi-car-front-fill me-1"></i> VISITA EN AUTO</span>
-                {% else %}
-                    <span class="badge bg-success border border-success"><i class="bi bi-person-walking me-1"></i> VISITA A PIE</span>
-                {% endif %}
-            </div>
         </div>
 
         <form action="/invitacion/guardar" method="POST">
@@ -141,21 +143,49 @@
                 <input type="text" name="rut" class="form-control" required placeholder="12.345.678-9">
             </div>
 
-            {% if tipo == 'VEHICULO' %}
-            <div class="mb-4 p-3 bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded-3">
-                <label class="small text-warning fw-bold mb-1 ps-1"><i class="bi bi-car-front me-1"></i> Patente Vehículo</label>
-                <input type="text" name="patente" class="form-control border-warning text-warning fw-bold text-center fs-5" required placeholder="ABCD-12" style="text-transform: uppercase; letter-spacing: 2px;">
+            <div class="d-flex align-items-center justify-content-between p-3 bg-white bg-opacity-10 rounded-3 mb-3 border border-secondary border-opacity-25">
+                <label class="form-check-label text-white fw-bold small" for="checkAuto">
+                    <i class="bi bi-car-front-fill me-2"></i>¿Ingresas en Vehículo?
+                </label>
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" id="checkAuto" onchange="togglePatente()" {% if tipo == 'VEHICULO' %}checked{% endif %}>
+                </div>
             </div>
-            {% else %}
-            <input type="hidden" name="patente" value="">
-            {% endif %}
 
-            <button class="btn-neon">
+            <div id="divPatente" style="display: {% if tipo == 'VEHICULO' %}block{% else %}none{% endif %};" class="mb-4 animate__animated animate__fadeIn">
+                <div class="p-3 bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded-3">
+                    <label class="small text-warning fw-bold mb-1 ps-1">Patente Vehículo</label>
+                    <input type="text" name="patente" id="inputPatente" class="form-control border-warning text-warning fw-bold text-center fs-5" 
+                           placeholder="ABCD-12" style="text-transform: uppercase; letter-spacing: 2px;"
+                           {% if tipo == 'VEHICULO' %}required{% endif %}>
+                </div>
+            </div>
+
+            <button class="btn-neon mt-2">
                 Generar QR <i class="bi bi-qr-code ms-2"></i>
             </button>
         </form>
     </div>
 </div>
+
+<script>
+    function togglePatente() {
+        const check = document.getElementById('checkAuto');
+        const div = document.getElementById('divPatente');
+        const input = document.getElementById('inputPatente');
+
+        if (check.checked) {
+            div.style.display = 'block';
+            input.required = true;
+            // Animación suave
+            div.classList.add('animate__animated', 'animate__fadeIn');
+        } else {
+            div.style.display = 'none';
+            input.required = false;
+            input.value = ''; // Limpiar si se desmarca
+        }
+    }
+</script>
 
 </body>
 </html>
