@@ -1,353 +1,66 @@
-{% extends "base.html" %}
-{% block title %}| Mando Admin{% endblock %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Listo | HabitaPro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #050505;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            background-image: radial-gradient(circle at center, #111 0%, #000 100%);
+        }
+        .success-card {
+            background: rgba(20, 20, 30, 0.9);
+            border: 1px solid #0dcaf0;
+            box-shadow: 0 0 30px rgba(13, 202, 240, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.5s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .qr-frame {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        h1 { color: #0dcaf0; font-weight: 800; }
+    </style>
+</head>
+<body>
 
-{% block styles %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-    /* =============================================
-       AJUSTES "SUNLIGHT MODE" (Alta Visibilidad)
-       ============================================= */
-    
-    /* 1. Fondo de Tarjetas: Más claro y opaco para leer bajo el sol */
-    .card, .card-glass, .modal-content, .card-dark-solid {
-        background: rgba(30, 35, 45, 0.95) !important; /* Gris azulado sólido */
-        border: 1px solid rgba(255, 255, 255, 0.2) !important; /* Bordes más definidos */
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
-        backdrop-filter: none !important; /* Quitamos blur pesado para nitidez */
-    }
-
-    /* 2. Textos: Sombra para contraste extremo */
-    body, h1, h2, h3, h4, h5, h6, p, span, div {
-        text-shadow: 0 1px 2px rgba(0,0,0,0.8); /* Sombra de texto */
-        font-weight: 500; /* Letra un poco más gruesa */
-    }
-    
-    /* 3. Inputs: Fondo más claro */
-    .form-control, .form-select {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        color: white !important;
-    }
-    .form-control:focus {
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        border-color: #0dcaf0 !important;
-    }
-
-    /* ESTILOS ESPECÍFICOS DEL DASHBOARD */
-    
-    /* Hero Section */
-    .hero-management { position: relative; height: 350px; border-radius: 20px; overflow: hidden; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.2); }
-    #miniMap { width: 100%; height: 100%; filter: grayscale(50%) opacity(0.6); } /* Mapa más visible */
-    .hero-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 40px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(90deg, rgba(20,25,35,0.95) 40%, rgba(20,25,35,0.4) 100%); }
-    
-    /* Calendario Mejorado */
-    .cal-day { height: 45px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; position: relative; }
-    .cal-day:hover { background: rgba(13, 202, 240, 0.3); color: white; border-color: #0dcaf0; }
-    .cal-active { background: #0dcaf0 !important; border: 1px solid white !important; color: #000 !important; text-shadow: none; }
-    .cal-badge { position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; background: #ff4757; border: 2px solid white; border-radius: 50%; }
-
-    /* Parking Grid (Más contraste) */
-    .parking-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-    .park-slot { height: 90px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; position: relative; transition: 0.2s; }
-    .park-slot:hover { transform: scale(1.05); border-color: #0dcaf0; background: rgba(13, 202, 240, 0.1); }
-    
-    .park-ocupado { border-color: #f1c40f !important; background: rgba(241, 196, 15, 0.1) !important; color: #f1c40f; }
-    .park-libre { border-color: #2ecc71 !important; color: #2ecc71; }
-    .park-mantencion { border-color: #ff4757 !important; opacity: 0.8; }
-
-    /* Botones Rápidos (Más grandes y claros) */
-    .btn-quick { height: 110px; border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; color: white; text-decoration: none; font-weight: bold; }
-    .btn-quick:hover { background: rgba(255,255,255,0.15); transform: translateY(-5px); color: #0dcaf0; border-color: #0dcaf0; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-    .btn-quick i { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-    
-    /* Textos secundarios más claros */
-    .text-white-50 { color: rgba(255,255,255,0.7) !important; }
-</style>
-{% endblock %}
-
-{% block content %}
-<nav class="navbar navbar-glass fixed-top">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold text-white" href="#"><i class="bi bi-building me-2 text-info"></i>Admin Panel</a>
-        <div class="d-flex align-items-center gap-3">
-            <span class="text-white small fw-bold">{{ session.nombre }}</span>
-            <a href="/logout" class="btn btn-sm btn-danger border-0 shadow"><i class="bi bi-power"></i></a>
+    <div class="success-card">
+        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+        <h1 class="mt-3">¡Registro Exitoso!</h1>
+        <p class="text-white-50">Tu pase de acceso ha sido generado.</p>
+        
+        <div class="qr-frame">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ token }}&color=000000" alt="QR Acceso">
         </div>
-    </div>
-</nav>
-
-<div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
-    
-    {% with messages = get_flashed_messages() %}{% if messages %}{% for msg in messages %}<div class="alert alert-info border-0 text-center mb-4 fw-bold shadow">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
-
-    <div class="row g-4 mb-4">
-        <div class="col-lg-6">
-            <div class="hero-management">
-                <div id="miniMap"></div>
-                <div class="hero-content">
-                    <span class="badge bg-success w-auto align-self-start mb-2 shadow">SISTEMA ONLINE</span>
-                    <h1 class="fw-bold mb-0 text-white" style="font-size: 2.5rem;">{{ edificio.nombre }}</h1>
-                    <p class="text-white-50 fs-5">{{ edificio.direccion }}</p>
-                    <div class="mt-4 d-flex gap-5">
-                        <div><div class="display-6 fw-bold">{{ stats.unidades }}</div><small class="text-white-50 text-uppercase fw-bold">Unidades</small></div>
-                        <div><div class="display-6 fw-bold text-success">${{ "{:,.0f}".format(finanzas.saldo) }}</div><small class="text-white-50 text-uppercase fw-bold">Caja Chica</small></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="fw-bold m-0 text-white"><i class="bi bi-calendar3 me-2 text-primary"></i>{{ mes_actual }} {{ anio_actual }}</h4>
-                    <div>
-                        <a href="?month={{ nav.prev_m }}&year={{ nav.prev_y }}" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-left"></i></a>
-                        <a href="?month={{ nav.next_m }}&year={{ nav.next_y }}" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-right"></i></a>
-                    </div>
-                </div>
-                <div class="d-flex flex-wrap gap-2 justify-content-center">
-                    {% for semana in calendario %}
-                        {% for dia in semana %}
-                            {% if dia > 0 %}
-                                {% set count = eventos.get(dia, [])|length %}
-                                <div class="cal-day {{ 'cal-active' if count > 0 }}" style="width: 13%;">
-                                    {{ dia }}
-                                    {% if count > 0 %}<div class="cal-badge"></div>{% endif %}
-                                </div>
-                            {% else %}<div style="width: 13%;"></div>{% endif %}
-                        {% endfor %}
-                    {% endfor %}
-                </div>
-                <div class="mt-3 text-center small text-white-50">
-                    <i class="bi bi-info-circle me-1"></i> Selecciona un día azul para ver eventos
-                </div>
-            </div>
+        
+        <h3 class="fw-bold m-0">{{ nombre }}</h3>
+        <p class="text-white-50 small mt-1">RUT: {{ rut }}</p>
+        
+        <div class="mt-4 pt-3 border-top border-secondary">
+            <small class="text-info">Presenta este código en portería.</small>
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-lg-4">
-            <div class="card p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold m-0 text-white"><i class="bi bi-stars text-warning me-2"></i>Amenities</h5>
-                    <button class="btn btn-sm btn-primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#formEspacio">
-                        <i class="bi bi-plus-lg"></i> Nuevo
-                    </button>
-                </div>
-                
-                <div class="collapse mb-3" id="formEspacio">
-                    <form action="/admin/espacios/guardar" method="POST" class="bg-black bg-opacity-50 p-3 rounded border border-secondary">
-                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre (Ej: Quincho)" required>
-                        <div class="row g-2 mb-2">
-                            <div class="col"><input type="number" name="capacidad" class="form-control" placeholder="Cap." required></div>
-                            <div class="col"><input type="number" name="precio" class="form-control" placeholder="$" value="0"></div>
-                        </div>
-                        <button class="btn btn-success w-100 btn-sm fw-bold">Guardar Espacio</button>
-                    </form>
-                </div>
-
-                <div class="list-group list-group-flush">
-                    {% for e in espacios %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom border-white border-opacity-10">
-                        <div>
-                            <div class="fw-bold text-white fs-5">{{ e.nombre }}</div>
-                            <small class="text-white-50">Cap: {{ e.capacidad }}p | <span class="text-success fw-bold">${{ "{:,.0f}".format(e.precio) }}</span></small>
-                        </div>
-                        <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('¿Eliminar espacio?')"><i class="bi bi-trash-fill"></i></a>
-                    </div>
-                    {% else %}
-                    <div class="text-center text-white-50 py-3 border-top border-white border-opacity-10">Sin espacios creados.</div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-8">
-            <div class="card p-0 h-100 overflow-hidden">
-                <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25">
-                    <h5 class="m-0 fw-bold text-white"><i class="bi bi-calendar-check text-info me-2"></i> Reservas Recientes</h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0 align-middle">
-                        <thead><tr class="text-white-50 bg-white bg-opacity-05"><th>Fecha</th><th>Espacio</th><th>Unidad</th><th>Estado</th><th>Acción</th></tr></thead>
-                        <tbody>
-                            {% for r in reservas %}
-                            <tr>
-                                <td class="fw-bold">{{ r.fecha_uso }}</td>
-                                <td class="text-info fw-bold">{{ r.nombre_espacio }}</td>
-                                <td><span class="badge bg-light text-dark border border-white">U. {{ r.numero_unidad }}</span></td>
-                                <td>
-                                    {% if r.estado == 'CONFIRMADA' %}<span class="badge bg-success shadow-sm">CONFIRMADA</span>
-                                    {% else %}<span class="badge bg-danger shadow-sm">CANCELADA</span>{% endif %}
-                                </td>
-                                <td>
-                                    {% if r.estado == 'CONFIRMADA' %}
-                                    <form action="/admin/reservas/cancelar" method="POST" class="d-inline" onsubmit="return confirm('¿Cancelar y devolver dinero?');">
-                                        <input type="hidden" name="reserva_id" value="{{ r.id }}">
-                                        <input type="hidden" name="reembolsar" value="on">
-                                        <button class="btn btn-sm btn-danger py-1 px-2 fw-bold" title="Cancelar"><i class="bi bi-x-lg me-1"></i> Cancelar</button>
-                                    </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="5" class="text-center py-5 text-white-50">No hay reservas activas en el sistema.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-4 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold m-0 text-white"><i class="bi bi-p-square-fill text-primary me-2"></i>Estado Estacionamientos</h4>
-            <span class="badge bg-white bg-opacity-10 border border-white border-opacity-25">{{ parking|length }} Plazas</span>
-        </div>
-        <div class="parking-grid">
-            {% for p in parking %}
-            <div class="park-slot {{ 'park-ocupado' if p.estado == 'ocupado' else 'park-libre' }}">
-                <div class="fw-bold text-white fs-6">{{ p.nombre }}</div>
-                {% if p.estado == 'ocupado' %}
-                    <div class="text-warning fw-bold mt-1" style="font-size: 1.1rem; letter-spacing: 1px;">{{ p.patente }}</div>
-                    <small class="text-white-50" style="font-size: 0.7rem;">{{ p.tiempo }}</small>
-                {% elif p.estado == 'libre' %}
-                    <i class="bi bi-check-circle-fill mt-1 fs-4"></i>
-                {% else %}
-                    <small class="text-muted mt-1">No Disp.</small>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-cash-coin text-success"></i><span>Gestión Gastos</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i class="bi bi-person-badge-fill text-info"></i><span>Conserjes</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i class="bi bi-journal-text text-warning"></i><span>Bitácora</span></a></div>
-        <div class="col-6 col-md-3"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i class="bi bi-whatsapp text-success"></i><span>Soporte</span></a></div>
-    </div>
-
-    <div class="card p-0 overflow-hidden">
-        <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25 d-flex justify-content-between align-items-center">
-            <h5 class="m-0 fw-bold text-white"><i class="bi bi-people-fill me-2"></i> Directorio Residentes</h5>
-            <input type="text" id="buscador" class="form-control w-auto" placeholder="Buscar unidad..." style="min-width: 200px;">
-        </div>
-        <div class="table-responsive" style="max-height: 500px;">
-            <table class="table table-hover mb-0 align-middle" id="tablaResidentes">
-                <thead><tr class="text-white-50 bg-white bg-opacity-05"><th>Unidad</th><th>Residente</th><th>Contacto</th><th class="text-end">Acción</th></tr></thead>
-                <tbody>
-                    {% for u in unidades %}
-                    <tr>
-                        <td class="ps-4"><span class="badge bg-primary fs-6 shadow-sm">{{ u.numero }}</span></td>
-                        <td>
-                            <div class="fw-bold text-white">{{ u.propietario }}</div>
-                            <small class="text-info fw-bold">{{ u.tenant.nombre or '' }}</small>
-                        </td>
-                        <td class="small text-white-50">{{ u.owner.email }}</td>
-                        <td class="pe-4 text-end">
-                            <button class="btn btn-sm btn-outline-warning me-1" onclick='abrirEditar({{ u | tojson }})'><i class="bi bi-pencil-fill"></i></button>
-                            <button class="btn btn-sm btn-outline-info" onclick="resetClave({{ u.id }})"><i class="bi bi-key-fill"></i></button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-</div>
-
-<div class="modal fade" id="modalEditarUnidad" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Editar Unidad</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/admin/residentes/guardar_edicion" method="POST"><input type="hidden" name="unidad_id" id="editUnitId"><div class="row g-2 mb-3"><div class="col"><label class="small text-white-50">Piso</label><input type="number" name="piso" id="editPiso" class="form-control"></div><div class="col"><label class="small text-white-50">Prorrateo</label><input type="text" name="prorrateo" id="editProrrateo" class="form-control"></div></div><h6 class="text-info border-bottom border-white border-opacity-10 pb-2 mb-3">Residente Actual</h6><input type="text" name="tenant_nombre" id="editTenantNombre" class="form-control mb-2" placeholder="Nombre"><input type="text" name="tenant_rut" id="editTenantRut" class="form-control mb-2" placeholder="RUT"><input type="email" name="tenant_email" id="editTenantEmail" class="form-control mb-2" placeholder="Email"><input type="text" name="tenant_fono" id="editTenantFono" class="form-control" placeholder="Teléfono"><button class="btn btn-warning w-100 mt-4 fw-bold">Guardar Cambios</button></form></div></div></div></div>
-
-<div class="modal fade" id="modalConserjes" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Equipo de Conserjería</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-2 mb-4 bg-black bg-opacity-25 p-3 rounded"><div class="col"><input id="newCRut" class="form-control" placeholder="RUT Nuevo"></div><div class="col"><input id="newCNombre" class="form-control" placeholder="Nombre"></div><div class="col-auto"><button class="btn btn-success fw-bold" onclick="crearConserje()"><i class="bi bi-plus-lg"></i> Agregar</button></div></div><div id="listaConserjes"></div></div></div></div></div>
-
-<div class="modal fade" id="modalLogs" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Bitácora de Eventos</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center text-white-50"><i class="bi bi-cone-striped fs-1 mb-3 d-block"></i>Módulo en desarrollo...</div></div></div></div>
-
-<script>
-    // Inicializar Mapa
-    document.addEventListener("DOMContentLoaded", function() {
-        var map = L.map('miniMap', {zoomControl: false}).setView([{{ edificio.lat | default(-33.4) }}, {{ edificio.lon | default(-70.6) }}], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-    });
-
-    // Funciones de Lógica
-    function abrirEditar(u) {
-        document.getElementById('editUnitId').value = u.id;
-        document.getElementById('editPiso').value = u.piso;
-        document.getElementById('editProrrateo').value = u.prorrateo;
-        document.getElementById('editTenantNombre').value = u.tenant.nombre || '';
-        document.getElementById('editTenantRut').value = u.tenant.rut || '';
-        document.getElementById('editTenantEmail').value = u.tenant.email || '';
-        document.getElementById('editTenantFono').value = u.tenant.fono || '';
-        new bootstrap.Modal(document.getElementById('modalEditarUnidad')).show();
-    }
-
-    function resetClave(uid) {
-        if(!confirm('¿Generar nueva contraseña para este residente?')) return;
-        fetch('/admin/residentes/reset_clave', {
-            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `unidad_id=${uid}`
-        })
-        .then(r => r.json())
-        .then(d => {
-            if(d.status === 'success') {
-                Swal.fire({
-                    title: '¡Clave Generada!',
-                    html: `<p class="text-white-50">Usuario: <strong class="text-white">${d.residente_nombre}</strong></p>
-                           <div class="bg-white text-dark p-3 rounded fs-2 fw-bold select-all border border-primary">${d.password}</div>
-                           <p class="small text-white-50 mt-2">Copia y envía esta clave.</p>`,
-                    icon: 'success', background: '#1a1d24', color: '#fff'
-                });
-            } else {
-                Swal.fire({ title: 'Error', text: d.message, icon: 'error', background: '#1a1d24', color: '#fff' });
-            }
-        });
-    }
-
-    function abrirModalConserjes() {
-        new bootstrap.Modal(document.getElementById('modalConserjes')).show();
-        cargarConserjes();
-    }
-
-    function cargarConserjes() {
-        fetch('/admin/conserjes/listar').then(r => r.json()).then(data => {
-            let html = '<ul class="list-group list-group-flush">';
-            data.forEach(c => html += `<li class="list-group-item bg-transparent d-flex justify-content-between align-items-center text-white px-0 border-bottom border-white border-opacity-10">
-                <div><span class="fw-bold">${c.nombre}</span> <span class="small text-white-50">(${c.rut})</span></div>
-                <button class="btn btn-sm btn-outline-danger border-0" onclick="eliminarConserje('${c.rut}')"><i class="bi bi-trash-fill"></i></button></li>`);
-            html += '</ul>';
-            document.getElementById('listaConserjes').innerHTML = html;
-        });
-    }
-
-    function crearConserje() {
-        let r = document.getElementById('newCRut').value;
-        let n = document.getElementById('newCNombre').value;
-        if(!r || !n) return alert('Datos incompletos');
-        fetch('/admin/conserjes/crear', {
-            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `rut=${r}&nombre=${n}&email=staff@habita.cl`
-        }).then(res => res.json()).then(d => {
-            if(d.status==='success') {
-                Swal.fire({title: 'Conserje Creado', html: `Contraseña: <strong>${d.password}</strong>`, icon: 'success', background:'#1a1d24', color:'#fff'});
-                cargarConserjes(); document.getElementById('newCRut').value='';
-            } else alert('Error al crear');
-        });
-    }
-
-    function eliminarConserje(rut) {
-        if(confirm('¿Eliminar acceso a este conserje?')) fetch('/admin/conserjes/eliminar', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `rut=${rut}` }).then(() => cargarConserjes());
-    }
-
-    function abrirModalLogs() { new bootstrap.Modal(document.getElementById('modalLogs')).show(); }
-
-    document.getElementById('buscador').addEventListener('keyup', function() {
-        let val = this.value.toLowerCase();
-        document.querySelectorAll('#tablaResidentes tbody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(val) ? '' : 'none');
-    });
-</script>
-{% endblock %}
+</body>
+</html>

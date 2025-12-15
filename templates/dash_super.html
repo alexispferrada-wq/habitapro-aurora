@@ -7,11 +7,20 @@
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC08hIbpWi529l6GN6Q4BWknbJV4saTJPM&libraries=places"></script>
 
 <style>
-    /* --- ESTILOS ORIGINALES CONSERVADOS --- */
-    .stat-card { 
-        text-align: center; padding: 20px; border-bottom: 4px solid var(--accent-blue); 
-        border-radius: 12px;
+    /* --- CORRECCIÓN 1: SOLUCIÓN AL AUTOCOMPLETE DE GOOGLE --- */
+    /* Esto fuerza a que las sugerencias aparezcan ENCIMA del modal */
+    .pac-container {
+        z-index: 10000 !important; 
+        background-color: #1a1d24; 
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
     }
+    .pac-item { border-top: 1px solid rgba(255,255,255,0.1); color: #ccc; cursor: pointer; }
+    .pac-item:hover { background-color: rgba(255,255,255,0.1); }
+    .pac-item-query { color: white; font-weight: bold; }
+
+    /* Estilos Originales */
+    .stat-card { text-align: center; padding: 20px; border-bottom: 4px solid var(--accent-blue); border-radius: 12px; }
     .stat-num { font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; }
     
     .log-feed { font-size: 0.85rem; max-height: 400px; overflow-y: auto; }
@@ -24,30 +33,26 @@
     
     .global-status-card {
         background: linear-gradient(135deg, rgba(25, 25, 40, 0.8), rgba(10, 10, 20, 0.8));
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(13, 202, 240, 0.2);
-        border-radius: 16px;
-        box-shadow: 0 0 30px rgba(13, 202, 240, 0.1);
+        backdrop-filter: blur(15px); border: 1px solid rgba(13, 202, 240, 0.2);
+        border-radius: 16px; box-shadow: 0 0 30px rgba(13, 202, 240, 0.1);
     }
     .metric-box { border-bottom: 1px dashed rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 10px; }
     
-    /* --- NUEVO: TARJETAS DE COBRO POR USUARIO --- */
     .user-count-card {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 12px;
-        padding: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: 0.3s;
-        position: relative; /* <--- ¡ESTO ES LO QUE FALTABA! BLINDA EL CLICK */
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+        padding: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; position: relative;
     }
     .user-count-card:hover { border-color: #0dcaf0; background: rgba(13, 202, 240, 0.05); }
-    .user-badge {
-        font-size: 1.5rem; font-weight: 800; color: #0dcaf0;
-        text-shadow: 0 0 10px rgba(13, 202, 240, 0.3);
+    .user-badge { font-size: 1.5rem; font-weight: 800; color: #0dcaf0; text-shadow: 0 0 10px rgba(13, 202, 240, 0.3); }
+
+    /* Botón eliminar flotante */
+    .btn-delete-float {
+        position: absolute; top: 10px; right: 10px; z-index: 10;
+        background: rgba(220, 53, 69, 0.2); color: #dc3545; border: 1px solid #dc3545;
+        border-radius: 50%; width: 30px; height: 30px; display: flex;
+        align-items: center; justify-content: center; transition: 0.2s;
     }
+    .btn-delete-float:hover { background: #dc3545; color: white; transform: scale(1.1); }
 
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0a0a0f; }
@@ -101,6 +106,10 @@
         {% for e in edificios %}
         <div class="col-md-4 col-xl-3">
             <div class="user-count-card">
+                <button class="btn-delete-float" onclick="confirmarEliminarEdificio('{{ e.id }}', '{{ e.nombre }}')">
+                    <i class="bi bi-trash-fill" style="font-size: 0.8rem;"></i>
+                </button>
+
                 <div>
                     <h6 class="fw-bold text-white mb-1">{{ e.nombre }}</h6>
                     <div class="text-white-50 small"><i class="bi bi-geo-alt"></i> {{ e.direccion }}</div>
@@ -109,7 +118,7 @@
                     <div class="user-badge">{{ e.cantidad_usuarios }}</div>
                     <div class="text-white-50" style="font-size: 0.65rem;">USUARIOS</div>
                 </div>
-                <a href="/superadmin/detalle_edificio/{{ e.id }}" class="stretched-link"></a>
+                <a href="/superadmin/detalle_edificio/{{ e.id }}" class="stretched-link" style="z-index: 1;"></a>
             </div>
         </div>
         {% else %}
@@ -124,92 +133,27 @@
     </div>
 
     <div class="row mb-4">
-        <div class="row mb-4">
-    <div class="col-lg-4">
-        <div class="card-glass p-4 h-100">
-            <h6 class="text-white fw-bold mb-3"><i class="bi bi-houses-fill me-2 text-info"></i> Amenities / Espacios</h6>
-            
-            <ul class="list-group mb-3">
-                {% for e in espacios %}
-                <li class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong class="text-white">{{ e.nombre }}</strong>
-                        <div class="small text-white-50">Cap: {{ e.capacidad }} | ${{ "{:,.0f}".format(e.precio) }}</div>
-                    </div>
-                    <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></a>
-                </li>
-                {% else %}
-                <li class="list-group-item bg-transparent text-white-50 text-center">Sin espacios creados.</li>
-                {% endfor %}
-            </ul>
-
-            <button class="btn btn-outline-info w-100 btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formEspacio">
-                <i class="bi bi-plus-lg"></i> Nuevo Espacio
-            </button>
-            <div class="collapse mt-3" id="formEspacio">
-                <form action="/admin/espacios/guardar" method="POST">
-                    <input type="text" name="nombre" class="form-control mb-2 form-control-sm" placeholder="Nombre (Ej: Quincho)" required>
-                    <div class="row g-2">
-                        <div class="col"><input type="number" name="capacidad" class="form-control form-control-sm" placeholder="Pers." required></div>
-                        <div class="col"><input type="number" name="precio" class="form-control form-control-sm" placeholder="Precio $" value="0" required></div>
-                    </div>
-                    <button class="btn btn-info w-100 btn-sm mt-2 fw-bold">Guardar</button>
-                </form>
+        <div class="col-lg-4">
+            <div class="card-glass p-4 h-100">
+                <h6 class="text-white fw-bold mb-3"><i class="bi bi-houses-fill me-2 text-info"></i> Gestión Global Espacios</h6>
+                <ul class="list-group mb-3">
+                    {% for e in espacios %}
+                    <li class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="text-white">{{ e.nombre }}</strong>
+                            <div class="small text-white-50">Cap: {{ e.capacidad }} | ${{ "{:,.0f}".format(e.precio) }}</div>
+                        </div>
+                        <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></a>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item bg-transparent text-white-50 text-center">Sin espacios globales.</li>
+                    {% endfor %}
+                </ul>
+                <div class="alert alert-info small border-0 bg-opacity-10 bg-info text-info"><i class="bi bi-info-circle me-1"></i> Para crear espacios, entra al detalle de cada edificio.</div>
             </div>
         </div>
-    </div>
 
-    <div class="col-lg-8">
-        <div class="card-glass p-0 h-100 overflow-hidden">
-            <div class="header-dark d-flex justify-content-between align-items-center">
-                <h6 class="m-0 fw-bold text-warning"><i class="bi bi-calendar-event me-2"></i> Gestión de Reservas</h6>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 text-white align-middle">
-                    <thead><tr class="text-white-50 small"><th>Fecha</th><th>Espacio</th><th>Unidad</th><th>Estado</th><th>Acción</th></tr></thead>
-                    <tbody>
-                        {% for r in reservas %}
-                        <tr>
-                            <td>{{ r.fecha_uso }}</td>
-                            <td class="fw-bold">{{ r.nombre_espacio }}</td>
-                            <td><span class="badge bg-secondary">U. {{ r.numero_unidad }}</span></td>
-                            <td>
-                                {% if r.estado == 'CONFIRMADA' %}<span class="badge bg-success">OK</span>
-                                {% else %}<span class="badge bg-danger">CANCEL</span>{% endif %}
-                            </td>
-                            <td>
-                                {% if r.estado == 'CONFIRMADA' %}
-                                <form action="/admin/reservas/cancelar" method="POST" class="d-inline" onsubmit="return confirm('¿Cancelar y devolver dinero?');">
-                                    <input type="hidden" name="reserva_id" value="{{ r.id }}">
-                                    <div class="form-check d-inline-block me-2">
-                                        <input class="form-check-input bg-dark border-secondary" type="checkbox" name="reembolsar" id="reembolso{{ r.id }}" checked>
-                                        <label class="form-check-label small text-white-50" for="reembolso{{ r.id }}">Devolver $</label>
-                                    </div>
-                                    <button class="btn btn-sm btn-danger py-0"><i class="bi bi-x-lg"></i></button>
-                                </form>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="5" class="text-center text-white-50 py-4">No hay reservas registradas.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-        <div class="col-12">
-            <div class="card-glass p-0 overflow-hidden" style="height: 350px;">
-                <div class="header-dark"><h6 class="m-0 fw-bold"><i class="bi bi-map-fill me-2"></i> Mapa de Operaciones</h6></div>
-                <div id="map" style="height: 100%; width: 100%;"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-lg-8">
             <div class="card-glass">
                 <div class="header-dark d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold text-info"><i class="bi bi-eye-fill me-2"></i> Ojo de Dios (Logs)</h6>
@@ -241,6 +185,14 @@
         </div>
     </div>
 
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-glass p-0 overflow-hidden" style="height: 350px;">
+                <div class="header-dark"><h6 class="m-0 fw-bold"><i class="bi bi-map-fill me-2"></i> Mapa de Operaciones</h6></div>
+                <div id="map" style="height: 100%; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="modalCrearEdificio" tabindex="-1">
@@ -251,24 +203,36 @@
                 <form action="/superadmin/crear_edificio" method="POST">
                     <label class="small text-muted mb-1">Nombre</label>
                     <input type="text" name="nombre" class="form-control mb-3" required>
-                    <label class="small text-muted mb-1">Dirección</label>
-                    <input type="text" name="direccion" id="googleAddressInput" class="form-control mb-3" required>
-                    <input type="hidden" name="lat" id="latInput"><input type="hidden" name="lon" id="lonInput">
-                    <button class="btn btn-primary w-100 fw-bold">Crear</button>
+                    
+                    <label class="small text-muted mb-1">Dirección (Google)</label>
+                    <input type="text" name="direccion" id="googleAddressInput" class="form-control mb-3" required placeholder="Escribe para buscar...">
+                    
+                    <input type="hidden" name="lat" id="latInput">
+                    <input type="hidden" name="lon" id="lonInput">
+                    
+                    <button class="btn btn-primary w-100 fw-bold">Crear y Activar</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
+<form id="formEliminarEdificio" action="/superadmin/eliminar_edificio" method="POST">
+    <input type="hidden" name="edificio_id" id="deleteId">
+</form>
+
 <script>
     function updateServerTime() { document.getElementById('server-time').textContent = new Date().toLocaleTimeString('es-CL'); }
     setInterval(updateServerTime, 1000); updateServerTime();
 
+    // 1. INICIALIZAR GOOGLE AUTOCOMPLETE (CORREGIDO)
     function initGoogleAutocomplete() {
         const input = document.getElementById('googleAddressInput');
         if(!input) return;
+        
         const autocomplete = new google.maps.places.Autocomplete(input);
+        
+        // Al seleccionar una dirección, guardamos Lat y Lon
         autocomplete.addListener('place_changed', function() {
             const place = autocomplete.getPlace();
             if (place.geometry) {
@@ -278,24 +242,59 @@
         });
     }
 
+    // 2. MAPA LEAFLET Y PUNTOS
     document.addEventListener("DOMContentLoaded", function() {
-        initGoogleAutocomplete();
-        var map = L.map('map').setView([-33.437, -70.650], 12);
+        initGoogleAutocomplete(); // Iniciar Google
+        
+        var map = L.map('map').setView([-33.437, -70.650], 12); // Centro en Santiago
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
         
+        // Datos inyectados desde Flask
         var data = {{ edificios | tojson }};
         var bounds = [];
+        
         data.forEach(e => {
+            // Solo dibujamos si hay coordenadas guardadas
             if(e.lat && e.lon) {
-                L.marker([e.lat, e.lon]).addTo(map).bindPopup(`<b>${e.nombre}</b><br>${e.cantidad_usuarios} Usuarios`);
+                L.marker([e.lat, e.lon])
+                 .addTo(map)
+                 .bindPopup(`<b>${e.nombre}</b><br>${e.cantidad_usuarios} Usuarios<br><a href="/superadmin/detalle_edificio/${e.id}" class="btn btn-sm btn-primary mt-1 text-white">Ver Panel</a>`);
                 bounds.push([e.lat, e.lon]);
             }
         });
+        
+        // Ajustar zoom para ver todos los edificios
         if(bounds.length) map.fitBounds(bounds, {padding: [50, 50]});
     });
 
+    // 3. FUNCIÓN ELIMINAR CON CLAVE MAESTRA
     function confirmarEliminarEdificio(id, nombre) {
-        // ... (Tu función de eliminar existente) ...
+        Swal.fire({
+            title: '¿ELIMINAR EDIFICIO?',
+            text: `Se desactivará "${nombre}". Ingrese la CONTRASEÑA MAESTRA:`,
+            input: 'password',
+            inputPlaceholder: 'Clave Maestra',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            background: '#1a1d24', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (result.value === "T3t1n53m$") {
+                    document.getElementById('deleteId').value = id;
+                    document.getElementById('formEliminarEdificio').submit();
+                } else {
+                    Swal.fire({
+                        title: 'ACCESO DENEGADO',
+                        text: 'Contraseña maestra incorrecta.',
+                        icon: 'error',
+                        background: '#1a1d24', color: '#fff'
+                    });
+                }
+            }
+        });
     }
 </script>
 {% endblock %}

@@ -1,174 +1,44 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso HabitaPro</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+{% extends "base.html" %}
+{% block title %}| Bienvenido{% endblock %}
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-
-        body {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
-        }
-
-        body::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 1;
-        }
-
-        .login-card {
-            position: relative; z-index: 2; background: rgba(255, 255, 255, 0.95);
-            padding: 3rem; width: 100%; max-width: 400px; border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center;
-        }
-
-        .brand-icon { font-size: 48px; margin-bottom: 10px; display: block; }
-        .brand-title { font-size: 28px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
-        .brand-subtitle { font-size: 13px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
-
-        .input-group { margin-bottom: 20px; text-align: left; }
-        .input-group label { display: block; font-size: 12px; color: #475569; margin-bottom: 6px; font-weight: 600; }
-        .input-group input {
-            width: 100%; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;
-            outline: none; background-color: #f8fafc;
-        }
-        .input-group input:focus { border-color: #2563EB; background-color: #fff; }
-
-        .btn-login {
-            width: 100%; padding: 14px; background-color: #2563EB; color: white; border: none;
-            border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.3s;
-        }
-        .btn-login:hover { background-color: #1d4ed8; }
-
-        .footer-links { margin-top: 20px; font-size: 12px; }
-        .footer-links a { color: #2563EB; text-decoration: none; cursor: pointer; }
-
-        /* MODAL (Ventana Emergente) */
-        .modal {
-            display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;
-        }
-        .modal-content {
-            background-color: #fff; padding: 30px; border-radius: 12px; width: 90%; max-width: 350px; text-align: center;
-            border-top: 5px solid #22c55e; /* Borde verde éxito */
-            animation: popIn 0.3s ease;
-        }
-        .modal-text { font-size: 16px; color: #333; margin-bottom: 20px; line-height: 1.5; }
-        .modal-email { font-weight: bold; color: #2563EB; display: block; margin-top: 5px; font-size: 18px; }
-        .close-btn {
-            background-color: #e2e8f0; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;
-        }
-        @keyframes popIn { from {transform: scale(0.8); opacity: 0;} to {transform: scale(1); opacity: 1;} }
-    </style>
-</head>
-<body>
-
-    <div class="login-card">
-        <span class="brand-icon">🏢</span>
-        <h1 class="brand-title">HabitaPro</h1>
-        <p class="brand-subtitle">Un programa de <strong>AEXON</strong></p>
-
-        <form id="loginForm">
-            <div class="input-group">
-                <label for="rut">RUT Usuario</label>
-                <input type="text" id="rut" placeholder="Ej. 12.345.678-9" required>
-            </div>
-
-            <div class="input-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" placeholder="••••••••" required>
-            </div>
-
-            <button type="submit" class="btn-login">INICIAR SESIÓN</button>
-        </form>
-
-        <div class="footer-links">
-            <p>
-                <a onclick="olvideContrasena()">¿Olvidó su contraseña?</a>
-            </p>
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="card card-glass p-4" style="max-width: 400px; width: 100%;">
+        <div class="text-center mb-4">
+            <i class="bi bi-buildings-fill text-primary" style="font-size: 3rem;"></i>
+            <h3 class="fw-bold text-white mt-2">HabitaPro</h3>
+            <p class="text-white-50">Acceso a Residentes y Staff</p>
         </div>
-    </div>
 
-    <div id="recoveryModal" class="modal">
-        <div class="modal-content">
-            <h3 style="margin-bottom: 10px;">Recuperación de Clave</h3>
-            <p class="modal-text">
-                CORREO ENVIADO A:
-                <span id="recoveredEmail" class="modal-email">...</span>
-            </p>
-            <button class="close-btn" onclick="cerrarModal()">Entendido</button>
-        </div>
-    </div>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="alert alert-danger text-center border-0 small py-2 mb-3">
+                        <i class="bi bi-exclamation-circle me-1"></i> {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-<script>
-        // Lógica de Login
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        <form action="/login" method="POST">
+            <div class="mb-3">
+                <label class="form-label text-white-50 small">Usuario</label>
+                <input type="text" name="email" class="form-control" placeholder="RUT (12345678-9) o Depto" required>
+            </div>
             
-            // Efecto visual en el botón
-            const btn = document.querySelector('.btn-login');
-            const originalText = btn.innerText;
-            btn.innerText = "Verificando...";
-            btn.disabled = true;
+            <div class="mb-4">
+                <label class="form-label text-white-50 small">Contraseña</label>
+                <input type="password" name="password" class="form-control" placeholder="••••" required>
+            </div>
 
-            const rut = document.getElementById('rut').value;
-            const password = document.getElementById('password').value;
-
-            try {
-                const response = await fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ rut, password })
-                });
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    // ¡AQUÍ ESTÁ LA MAGIA! Redirigimos a la página que dijo el servidor
-                    window.location.href = data.redirect_url;
-                } else {
-                    alert("Error: " + data.message);
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                alert("Error de conexión con el servidor");
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        });
-
-        // Lógica de Olvidé Contraseña
-        async function olvideContrasena() {
-            const rut = document.getElementById('rut').value;
-            if (!rut) {
-                alert("Por favor, ingrese su RUT primero.");
-                return;
-            }
-            const response = await fetch('/recuperar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rut })
-            });
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                document.getElementById('recoveredEmail').innerText = data.email;
-                document.getElementById('recoveryModal').style.display = "flex";
-            } else {
-                alert(data.message);
-            }
-        }
-
-        function cerrarModal() {
-            document.getElementById('recoveryModal').style.display = "none";
-        }
-    </script>
-</body>
-</html>
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                INGRESAR <i class="bi bi-arrow-right-short"></i>
+            </button>
+        </form>
+        
+        <div class="text-center mt-4">
+            <small class="text-white-50">¿Olvidaste tu clave? Pídela en conserjería.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

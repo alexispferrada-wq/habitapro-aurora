@@ -4,32 +4,47 @@
 {% block styles %}
 <meta name="theme-color" content="#0dcaf0">
 <link rel="manifest" href="/manifest.json">
-<style>
-    /* Diseño App Mobile-First */
-    body { padding-bottom: 90px; background: #0a0a0f; } 
-    
-    .app-header { 
-        background: linear-gradient(180deg, rgba(20,20,30,0.95) 0%, rgba(10,10,15,0) 100%);
-        padding: 20px 15px; position: sticky; top: 0; z-index: 1000; 
-    }
-    
-    .building-info { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
-    
-    .card-app { background: #1a1d24; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 15px; overflow: hidden; }
-    
-    .btn-invite {
-        border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: rgba(255,255,255,0.03); color: white; transition: 0.2s; height: 100%; width: 100%;
-    }
-    .btn-invite:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
-    .btn-invite i { font-size: 2rem; margin-bottom: 10px; }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
-    .btn-pay { background: linear-gradient(45deg, #0dcaf0, #0d6efd); border: none; border-radius: 12px; color: white; font-weight: bold; padding: 12px; width: 100%; }
+<style>
+    /* Diseño Base */
+    body { padding-bottom: 90px; background: #0a0a0f; font-family: 'Segoe UI', sans-serif; }
     
-    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #13131f; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; backdrop-filter: blur(10px); }
-    .nav-item-app { color: rgba(255,255,255,0.5); text-align: center; text-decoration: none; font-size: 0.75rem; }
-    .nav-item-app.active { color: #0dcaf0; }
+    .app-header { background: linear-gradient(180deg, rgba(15,15,20,0.98) 0%, rgba(10,10,15,0) 100%); padding: 20px 15px; position: sticky; top: 0; z-index: 1000; }
+    .card-app { background: #151820; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 20px rgba(0,0,0,0.4); margin-bottom: 15px; overflow: hidden; }
+    
+    /* TARJETA PENDIENTES (Dashboard) */
+    .dashboard-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+    .dash-card { min-width: 140px; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; }
+    .dash-card h3 { font-size: 1.8rem; font-weight: 800; margin: 0; }
+    .dash-card small { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
+    
+    .card-package { background: linear-gradient(135deg, #ffc107, #d35400); color: #000; }
+    .card-alert { background: linear-gradient(135deg, #dc3545, #a71d2a); color: white; }
+    .card-visit { background: linear-gradient(135deg, #0dcaf0, #0d6efd); color: white; }
+    .card-empty { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border-style: dashed; justify-content: center; align-items: center; }
+
+    /* BOTONES */
+    .btn-invite { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; height: 100%; width: 100%; transition: 0.2s; }
+    .btn-invite:active { transform: scale(0.96); background: rgba(255,255,255,0.1); }
+    .btn-pay { background: linear-gradient(90deg, #00dbde 0%, #fc00ff 100%); border: none; border-radius: 12px; color: white; font-weight: 800; padding: 12px; width: 100%; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+    /* MODAL BRANDING */
+    .brand-header {
+        background: radial-gradient(circle at center, #1a2a6c, #b21f1f, #fdbb2d); /* Estilo Tecnológico/Energético */
+        background-size: 200% 200%;
+        animation: gradientBG 5s ease infinite;
+        padding: 30px 20px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+    .brand-logo { font-family: 'Courier New', monospace; letter-spacing: -1px; font-weight: 800; font-size: 1.5rem; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    .brand-tag { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.8); margin-top: 5px; display: block; }
+    
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f1014; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; }
+    .nav-item-app { color: rgba(255,255,255,0.4); text-align: center; text-decoration: none; font-size: 0.7rem; }
+    .nav-item-app.active { color: #0dcaf0; text-shadow: 0 0 10px rgba(13, 202, 240, 0.5); }
     .nav-item-app i { font-size: 1.4rem; display: block; margin-bottom: 2px; }
 </style>
 {% endblock %}
@@ -38,105 +53,161 @@
 <div class="app-header">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="d-flex align-items-center gap-2">
-            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow" style="width: 45px; height: 45px; font-size: 1.2rem;">{{ u.numero }}</div>
+            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow" style="width: 42px; height: 42px;">{{ u.numero }}</div>
             <div>
-                <h5 class="m-0 text-white fw-bold">{{ session.nombre.split()[0] }}</h5>
-                <span class="text-info small fw-bold">Residente</span>
+                <h6 class="m-0 text-white fw-bold">{{ session.nombre.split()[0] }}</h6>
+                <span class="badge bg-white bg-opacity-10 text-white border border-white border-opacity-25" style="font-size: 0.65rem;">Residente</span>
             </div>
         </div>
-        <a href="/logout" class="text-white-50 p-2"><i class="bi bi-box-arrow-right fs-4"></i></a>
+        <a href="/logout" class="text-white-50"><i class="bi bi-power fs-4"></i></a>
     </div>
-
-    <div class="building-info">
-        <div class="d-flex align-items-center gap-2 mb-1">
-            <i class="bi bi-building text-warning"></i>
-            <span class="fw-bold text-white">{{ edificio.nombre }}</span>
-        </div>
-        <div class="text-white-50 small ps-4">{{ edificio.direccion }}</div>
+    <div class="building-info p-2 rounded border border-secondary bg-black bg-opacity-25 d-flex align-items-center justify-content-between">
+        <span class="text-white small fw-bold"><i class="bi bi-building me-1 text-info"></i> {{ edificio.nombre }}</span>
+        <span class="text-success small fw-bold"><i class="bi bi-wifi"></i> Online</span>
     </div>
 </div>
 
 <div class="container px-3">
     
-    <h6 class="text-white-50 text-uppercase small fw-bold mb-3 ps-1">Accesos & Visitas</h6>
+    <h6 class="text-white-50 text-uppercase small fw-bold mb-2 ps-1">Resumen de Hoy</h6>
+    <div class="dashboard-scroll mb-4">
+        {% if encomiendas %}
+        <div class="dash-card card-package animate__animated animate__pulse animate__infinite">
+            <div><i class="bi bi-box-seam-fill fs-4"></i></div>
+            <div>
+                <h3>{{ encomiendas|length }}</h3>
+                <small>Paquetes</small>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if multas %}
+        <div class="dash-card card-alert">
+            <div><i class="bi bi-exclamation-triangle-fill fs-4"></i></div>
+            <div>
+                <h3>{{ multas|length }}</h3>
+                <small>Multas</small>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if visitas_activas %}
+            {% for v in visitas_activas %}
+            <div class="dash-card card-visit">
+                <div class="d-flex justify-content-between">
+                    <i class="bi bi-clock-history fs-4"></i>
+                    {% if v.parking_nombre %}<span class="badge bg-white text-primary">{{ v.parking_nombre }}</span>{% endif %}
+                </div>
+                <div>
+                    {% set restantes = 300 - v.minutos_transcurridos|int %}
+                    {% if restantes > 0 %}
+                        <h4 class="m-0">{{ (restantes/60)|int }}h {{ (restantes%60)|int }}m</h4>
+                        <small>Restantes</small>
+                    {% else %}
+                        <h5 class="m-0">VENCIDO</h5>
+                        <small>Debe salir</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if not encomiendas and not multas and not visitas_activas %}
+        <div class="dash-card card-empty" style="width: 100%;">
+            <i class="bi bi-check-circle fs-1 mb-2"></i>
+            <small>Sin pendientes</small>
+        </div>
+        {% endif %}
+    </div>
+
+    <h6 class="text-white-50 text-uppercase small fw-bold mb-2 ps-1">Gestionar Accesos</h6>
     <div class="row g-3 mb-4">
         <div class="col-6">
             <button class="btn-invite" onclick="abrirModalInvitacion('PEATON')">
-                <i class="bi bi-person-walking text-success"></i>
-                <span class="fw-bold">Visita a Pie</span>
-                <span class="text-white-50 small" style="font-size: 0.7rem;">Sin estacionamiento</span>
+                <i class="bi bi-person-walking text-success mb-2"></i>
+                <span class="fw-bold">A Pie</span>
+                <span class="text-white-50 small" style="font-size: 0.65rem;">Código QR</span>
             </button>
         </div>
         <div class="col-6">
             <button class="btn-invite" onclick="abrirModalInvitacion('VEHICULO')">
-                <i class="bi bi-car-front-fill text-warning"></i>
-                <span class="fw-bold">Visita Auto</span>
-                <span class="text-white-50 small" style="font-size: 0.7rem;">Con estacionamiento</span>
+                <i class="bi bi-car-front-fill text-warning mb-2"></i>
+                <span class="fw-bold">En Auto</span>
+                <span class="text-white-50 small" style="font-size: 0.65rem;">Asigna Parking</span>
             </button>
         </div>
     </div>
 
     <div class="card-app p-4 text-center">
-        <h6 class="text-white-50 text-uppercase ls-1 small">Estado de Cuenta</h6>
-        <h1 class="display-5 fw-bold {% if u.deuda_monto > 0 %}text-danger{% else %}text-success{% endif %} my-2">
-            ${{ "{:,.0f}".format(u.deuda_monto) }}
-        </h1>
-        <p class="text-white-50 small mb-3">{% if u.deuda_monto > 0 %}Tienes pagos pendientes{% else %}¡Estás al día! 🌟{% endif %}</p>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-white-50 small text-uppercase fw-bold">Total a Pagar</span>
+            <span class="badge {{ 'bg-danger' if u.deuda_monto > 0 else 'bg-success' }}">
+                {{ 'VENCIDO' if u.deuda_monto > 0 else 'AL DÍA' }}
+            </span>
+        </div>
+        <h1 class="display-5 fw-bold text-white mb-3">${{ "{:,.0f}".format(u.deuda_monto) }}</h1>
+        
+        {% if multas %}
+            <div class="bg-black bg-opacity-25 p-2 rounded mb-3 text-start">
+                <small class="text-danger fw-bold d-block mb-1"><i class="bi bi-info-circle"></i> Detalle Multas:</small>
+                {% for m in multas %}
+                    <div class="d-flex justify-content-between text-white-50 small border-bottom border-secondary pb-1 mb-1">
+                        <span>{{ m.motivo }}</span>
+                        <span class="text-white">${{ "{:,.0f}".format(m.monto) }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         {% if u.deuda_monto > 0 %}
         <form action="/residente/pagar_deuda" method="POST">
             <input type="hidden" name="unidad_id" value="{{ u.id }}">
             <input type="hidden" name="monto" value="{{ u.deuda_monto }}">
-            <button class="btn-pay shadow"><i class="bi bi-credit-card-2-front me-2"></i> PAGAR TOTAL</button>
+            <button class="btn-pay shadow">PAGAR AHORA <i class="bi bi-chevron-right"></i></button>
         </form>
         {% endif %}
     </div>
 
-    <div class="card-app p-3 mt-3">
-        <h6 class="text-white fw-bold mb-3 d-flex align-items-center"><i class="bi bi-stars text-warning me-2"></i> Reservar Amenities</h6>
+    <div class="card-app p-3">
+        <h6 class="text-white fw-bold mb-3"><i class="bi bi-stars text-warning me-2"></i> Amenities</h6>
         <form action="/residente/reservar" method="POST">
             <div class="input-group mb-2">
                 <select name="espacio_id" class="form-select bg-dark text-white border-secondary" required onchange="actualizarPrecio(this)">
-                    <option value="" data-precio="0">¿Qué deseas reservar?</option>
+                    <option value="" data-precio="0">Seleccionar...</option>
                     {% for e in espacios %}
-                    <option value="{{ e.id }}" data-precio="{{ e.precio }}">{{ e.nombre }} ({{ e.capacidad }}p)</option>
+                    <option value="{{ e.id }}" data-precio="{{ e.precio }}">{{ e.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="input-group mb-3">
-                <input type="date" name="fecha" class="form-control bg-dark text-white border-secondary" required min="{{ hoy }}">
-                <span class="input-group-text bg-dark border-secondary text-info fw-bold" id="precioLabel">$0</span>
+            <div class="row g-2 mb-3">
+                <div class="col-7"><input type="date" name="fecha" class="form-control bg-dark text-white border-secondary" required min="{{ hoy }}"></div>
+                <div class="col-5"><input type="time" name="hora" class="form-control bg-dark text-white border-secondary" required></div>
             </div>
-            <button class="btn btn-outline-info w-100 fw-bold">Confirmar Reserva</button>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-white-50 small">Valor:</span>
+                <span class="text-info fw-bold" id="precioLabel">$0</span>
+            </div>
+            <button class="btn btn-outline-info w-100 fw-bold btn-sm">Reservar</button>
         </form>
         
         {% if mis_reservas %}
         <div class="mt-3 pt-3 border-top border-secondary">
-            <small class="text-white-50 mb-2 d-block">Tus próximas reservas:</small>
             {% for r in mis_reservas %}
             <div class="d-flex justify-content-between align-items-center bg-black bg-opacity-25 p-2 rounded mb-1">
-                <span class="text-white small">{{ r.nombre_espacio }}</span>
+                <div>
+                    <span class="text-white small fw-bold d-block">{{ r.nombre_espacio }}</span>
+                    <span class="text-warning small" style="font-size: 0.7rem;"><i class="bi bi-clock"></i> {{ r.hora_inicio or '--:--' }}</span>
+                </div>
                 <span class="badge bg-primary">{{ r.fecha_uso }}</span>
             </div>
             {% endfor %}
         </div>
         {% endif %}
     </div>
-
-    {% if encomiendas %}
-    <div class="card-app p-3 border-warning border-opacity-50 bg-warning bg-opacity-10">
-        <div class="d-flex align-items-center gap-3">
-            <div class="bg-warning text-dark rounded-circle p-2"><i class="bi bi-box-seam-fill fs-4"></i></div>
-            <div>
-                <h6 class="text-white fw-bold m-0">¡Llegó Paquete!</h6>
-                <p class="text-white-50 small m-0">{{ encomiendas|length }} por retirar en conserjería.</p>
-            </div>
-        </div>
-    </div>
-    {% endif %}
     
     <div class="text-center mt-4 mb-3">
         <button class="btn btn-link text-white-50 text-decoration-none btn-sm" data-bs-toggle="modal" data-bs-target="#modalPerfil">
-            <i class="bi bi-gear-fill me-1"></i> Configurar mi Perfil
+            <i class="bi bi-gear-fill me-1"></i> Configurar Perfil
         </button>
     </div>
 </div>
@@ -149,24 +220,37 @@
 
 <div class="modal fade" id="modalGenerarInv" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0"><h5 class="modal-title text-white">Nueva Invitación <span id="tipoInvTitulo" class="text-info"></span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <p class="text-white-50 small mb-3">Puedes pre-llenar el nombre de tu visita para agilizar su ingreso.</p>
+        <div class="modal-content border-0 overflow-hidden" style="background:#1a1d24; color:white;">
+            
+            <div class="brand-header">
+                <div class="brand-logo">HabitaPro</div>
+                <span class="brand-tag">TECNOLOGÍA PURA</span>
+                <small class="d-block mt-2 text-white-50" style="font-size: 0.65rem;">Powered by Aexon • www.habitapro.cl</small>
+            </div>
+
+            <div class="modal-body p-4">
+                <h5 class="text-center fw-bold mb-1 text-white">Nueva Invitación <span id="tipoInvTitulo" class="text-info"></span></h5>
+                <p class="text-center text-white-50 small mb-4">Genera un acceso seguro y rápido para tus visitas.</p>
+                
                 <input type="hidden" id="tipoInvInput">
-                <div class="form-floating mb-3">
+                <div class="form-floating mb-4">
                     <input type="text" class="form-control bg-dark text-white border-secondary" id="nombreVisitaInput" placeholder="Nombre (Opcional)">
                     <label class="text-white-50">Nombre Visita (Opcional)</label>
                 </div>
-                <button class="btn btn-success w-100 fw-bold py-3" onclick="generarLink()">
-                    <i class="bi bi-link-45deg me-2"></i> CREAR PASE DE ACCESO
+                
+                <button class="btn btn-primary w-100 fw-bold py-3 shadow-lg" onclick="generarLink()" style="border-radius: 12px; background: linear-gradient(90deg, #0dcaf0, #0d6efd);">
+                    <i class="bi bi-qr-code-scan me-2"></i> GENERAR ACCESO DIGITAL
                 </button>
+                
+                <div class="text-center mt-3">
+                    <small class="text-white-50" style="font-size: 0.6rem;"><i class="bi bi-shield-lock-fill me-1"></i> Acceso encriptado y monitoreado</small>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalPerfil" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Mis Datos</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/residente/perfil/editar" method="POST"><div class="mb-3"><label>Email</label><input type="email" name="email" value="{{ user.email }}" class="form-control"></div><div class="mb-3"><label>Teléfono</label><input type="text" name="telefono" value="{{ user.telefono }}" class="form-control"></div><button class="btn btn-primary w-100">Guardar</button></form></div></div></div></div>
+<div class="modal fade" id="modalPerfil" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="background:#1a1d24; color:white;"><div class="modal-header border-0"><h5 class="modal-title">Mis Datos</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/residente/perfil/editar" method="POST"><div class="mb-3"><label>Email</label><input type="email" name="email" value="{{ user.email }}" class="form-control bg-dark text-white"></div><div class="mb-3"><label>Teléfono</label><input type="text" name="telefono" value="{{ user.telefono }}" class="form-control bg-dark text-white"></div><button class="btn btn-primary w-100">Guardar</button></form></div></div></div></div>
 
 <script>
     function actualizarPrecio(select) {
@@ -183,9 +267,9 @@
     function generarLink() {
         let tipo = document.getElementById('tipoInvInput').value;
         let nombre = document.getElementById('nombreVisitaInput').value;
-        let btn = document.querySelector('#modalGenerarInv .btn-success');
+        let btn = document.querySelector('#modalGenerarInv .btn-primary');
         
-        btn.disabled = true; btn.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Generando...';
+        btn.disabled = true; btn.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Encriptando...';
 
         fetch('/residente/invitar/generar', {
             method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -195,15 +279,18 @@
         .then(d => {
             bootstrap.Modal.getInstance(document.getElementById('modalGenerarInv')).hide();
             Swal.fire({
-                title: '¡Pase Listo!',
-                html: `<p class="text-white-50">Comparte este link. Tu visita deberá completar sus datos.</p>
-                       <div class="input-group mb-3">
+                title: '¡Acceso Creado!',
+                html: `<div class="text-center">
+                        <i class="bi bi-check-circle-fill text-success display-1 mb-3"></i>
+                        <p class="text-white-50">Comparte este enlace seguro:</p>
+                        <div class="input-group mb-3">
                            <input type="text" class="form-control bg-dark text-white border-secondary" value="${d.link}" id="linkInv" readonly>
                            <button class="btn btn-success" onclick="copiarLink()"><i class="bi bi-whatsapp"></i></button>
+                       </div>
                        </div>`,
                 background: '#1a1d24', color: '#fff', showConfirmButton: false
             });
-            btn.disabled = false; btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i> CREAR PASE DE ACCESO';
+            btn.disabled = false; btn.innerHTML = '<i class="bi bi-qr-code-scan me-2"></i> GENERAR ACCESO DIGITAL';
         });
     }
     
@@ -211,7 +298,7 @@
         let copyText = document.getElementById("linkInv");
         copyText.select();
         document.execCommand("copy");
-        window.open(`https://wa.me/?text=Hola, aquí tienes tu invitación para ingresar al edificio: ${copyText.value}`, '_blank');
+        window.open(`https://wa.me/?text=Hola, te envío un acceso seguro de HabitaPro para ingresar al edificio: ${copyText.value}`, '_blank');
     }
 </script>
 {% endblock %}

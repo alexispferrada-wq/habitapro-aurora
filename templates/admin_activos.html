@@ -1,51 +1,166 @@
 {% extends "base.html" %}
 {% block title %}| Activos{% endblock %}
+
+{% block styles %}
+<style>
+    /* 1. FONDO OSCURO (Igual que el Dashboard) */
+    body {
+        background-color: #1a1d24;
+        background-image: linear-gradient(180deg, rgba(20,25,35,0.95) 0%, #1a1d24 100%);
+        min-height: 100vh;
+        color: white;
+    }
+
+    /* 2. TARJETAS DE VIDRIO (Glassmorphism) */
+    .card-glass {
+        background: rgba(30, 35, 45, 0.6); /* Fondo semi-transparente oscuro */
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        color: white;
+    }
+
+    /* 3. INPUTS DARK MOOD */
+    .form-control {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+    }
+    .form-control:focus {
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        border-color: #0dcaf0 !important;
+        box-shadow: 0 0 0 3px rgba(13, 202, 240, 0.25) !important;
+    }
+    .form-control::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+    /* 4. TABLAS */
+    .table { color: white; }
+    .table-hover tbody tr:hover { background-color: rgba(255,255,255,0.05); }
+    .table td, .table th { border-bottom: 1px solid rgba(255,255,255,0.1); vertical-align: middle; }
+</style>
+{% endblock %}
+
 {% block content %}
-<nav class="navbar navbar-glass fixed-top">
-    <div class="container-fluid px-4"><a class="navbar-brand text-white fw-bold" href="/panel-admin"><i class="bi bi-arrow-left"></i> Volver</a></div>
+<nav class="navbar navbar-glass fixed-top" style="background: rgba(20,25,35,0.9); border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand text-white fw-bold d-flex align-items-center gap-2" href="/panel-admin">
+            <i class="bi bi-arrow-left-circle text-info"></i> Volver al Panel
+        </a>
+        <span class="text-white-50 small">Gestión de Activos</span>
+    </div>
 </nav>
-<div class="container px-4" style="margin-top: 100px;">
-    {% with msgs = get_flashed_messages() %}{% if msgs %}<div class="alert alert-success border-0 bg-success bg-opacity-25 text-white">{{ msgs[0] }}</div>{% endif %}{% endwith %}
+
+<div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
+    
+    {% with msgs = get_flashed_messages() %}
+        {% if msgs %}
+        <div class="alert alert-success border-0 bg-success bg-opacity-25 text-white shadow mb-4 fw-bold">
+            <i class="bi bi-check-circle me-2"></i> {{ msgs[0] }}
+        </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="row g-4">
         <div class="col-lg-4">
             <div class="card-glass p-4">
-                <h5 class="text-white fw-bold mb-3">Agregar Activo</h5>
+                <h5 class="text-white fw-bold mb-3 border-bottom border-white border-opacity-10 pb-2">
+                    <i class="bi bi-plus-circle text-success me-2"></i> Nuevo Activo
+                </h5>
                 <form action="/admin/activos/guardar" method="POST">
-                    <div class="mb-2"><label class="small text-white-50">Nombre</label><input name="nombre" class="form-control" required></div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6"><label class="small text-white-50">Días Periodo</label><input type="number" name="periodicidad" class="form-control" value="30"></div>
-                        <div class="col-6"><label class="small text-white-50">Costo</label><input type="number" name="costo" class="form-control"></div>
+                    <div class="mb-3">
+                        <label class="small text-white-50 mb-1">Nombre del Activo</label>
+                        <input name="nombre" class="form-control" placeholder="Ej: Bomba de Agua Norte" required>
                     </div>
-                    <div class="mb-3"><label class="small text-warning">Última Mantención</label><input type="date" name="ultimo_servicio" class="form-control border-warning" required></div>
-                    <button class="btn btn-success w-100 fw-bold">Guardar</button>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-white-50 mb-1">Frecuencia (Días)</label>
+                            <input type="number" name="periodicidad" class="form-control" value="30" placeholder="30">
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-white-50 mb-1">Costo ($)</label>
+                            <input type="number" name="costo" class="form-control" placeholder="0">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="small text-warning mb-1 fw-bold">Última Mantención</label>
+                        <input type="date" name="ultimo_servicio" class="form-control border-warning text-warning" required>
+                        <small class="text-white-50" style="font-size: 0.7rem;">Fecha base para calcular las siguientes.</small>
+                    </div>
+                    
+                    <button class="btn btn-success w-100 fw-bold py-2 shadow">
+                        <i class="bi bi-save me-2"></i> GUARDAR ACTIVO
+                    </button>
                 </form>
             </div>
-            <div class="card-glass p-4 mt-3 text-center border-start border-4 border-info">
-                <small class="text-white-50 text-uppercase">Gasto Proyectado (Este Mes)</small>
-                <h2 class="text-info my-2">${{ "{:,.0f}".format(gasto_mes) }}</h2>
+
+            <div class="card-glass p-4 mt-4 text-center border-start border-4 border-info">
+                <small class="text-white-50 text-uppercase ls-1">Gasto Proyectado (Este Mes)</small>
+                <h2 class="text-info my-2 fw-bold">${{ "{:,.0f}".format(gasto_mes).replace(',', '.') }}</h2>
+                <small class="text-white-50 d-block">Basado en las fechas de mantención.</small>
             </div>
         </div>
+
         <div class="col-lg-8">
-            <div class="card-glass p-0">
-                <div class="p-3 border-bottom border-secondary bg-black bg-opacity-25"><h6 class="m-0 text-white">Inventario</h6></div>
-                <table class="table table-hover mb-0 text-white align-middle">
-                    <thead class="bg-white bg-opacity-05"><tr><th>Activo</th><th>Próxima</th><th>Estado</th><th class="text-end pe-4">Acciones</th></tr></thead>
-                    <tbody>
-                        {% for a in activos %}
-                        <tr>
-                            <td>{{ a.nombre }}</td>
-                            <td>{{ a.prox_fecha }}</td>
-                            <td>{% if a.dias_restantes < 0 %}<span class="badge bg-danger">Vencida</span>{% else %}<span class="badge bg-success">OK</span>{% endif %}</td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-outline-warning border-0 me-2" onclick='abrirEditar({{ a | tojson }})'>
-                                    <i class="bi bi-pencil-fill"></i>
-                                </button>
-                                <a href="/admin/activos/eliminar/{{ a.id }}" class="text-danger" onclick="return confirm('¿Eliminar?')"><i class="bi bi-trash"></i></a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card-glass p-0 overflow-hidden h-100">
+                <div class="p-3 border-bottom border-white border-opacity-10 bg-black bg-opacity-25 d-flex justify-content-between align-items-center">
+                    <h5 class="m-0 text-white fw-bold"><i class="bi bi-list-check text-warning me-2"></i> Inventario & Mantenciones</h5>
+                    <span class="badge bg-white bg-opacity-10">{{ activos|length }} Equipos</span>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle text-white">
+                        <thead class="bg-white bg-opacity-05 text-white-50 small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Activo</th>
+                                <th>Próxima Fecha</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in activos %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ a.nombre }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-calendar-event text-info"></i>
+                                        {{ a.prox_fecha }}
+                                    </div>
+                                    <small class="text-white-50">Cada {{ a.periodicidad_dias }} días</small>
+                                </td>
+                                <td>
+                                    {% if a.dias_restantes < 0 %}
+                                        <span class="badge bg-danger bg-opacity-75 shadow-sm">Vencida ({{ a.dias_restantes|abs }}d)</span>
+                                    {% elif a.dias_restantes <= 7 %}
+                                        <span class="badge bg-warning text-dark shadow-sm">Próxima ({{ a.dias_restantes }}d)</span>
+                                    {% else %}
+                                        <span class="badge bg-success bg-opacity-75 shadow-sm">OK ({{ a.dias_restantes }}d)</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-warning border-0 me-1" onclick='abrirEditar({{ a | tojson }})' title="Editar">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+                                    <a href="/admin/activos/eliminar/{{ a.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('¿Estás seguro de eliminar este activo?')" title="Eliminar">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-white-50">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>
+                                    No hay activos registrados aún.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -54,7 +169,7 @@
 <div class="modal fade" id="modalEditar" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content card-glass border-warning">
-            <div class="modal-header border-bottom border-secondary">
+            <div class="modal-header border-bottom border-white border-opacity-10">
                 <h5 class="modal-title text-white fw-bold"><i class="bi bi-pencil-square text-warning me-2"></i>Editar Activo</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -62,18 +177,18 @@
                 <form action="/admin/activos/editar" method="POST">
                     <input type="hidden" name="activo_id" id="editId">
                     <div class="mb-3">
-                        <label class="small text-white-50">Nombre</label>
-                        <input type="text" name="nombre" id="editNombre" class="form-control text-white" style="background: rgba(0,0,0,0.3);">
+                        <label class="small text-white-50 mb-1">Nombre</label>
+                        <input type="text" name="nombre" id="editNombre" class="form-control text-white">
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-6"><label class="small text-white-50">Periodo (Días)</label><input type="number" name="periodicidad" id="editPeriodo" class="form-control"></div>
-                        <div class="col-6"><label class="small text-white-50">Costo ($)</label><input type="number" name="costo" id="editCosto" class="form-control"></div>
+                        <div class="col-6"><label class="small text-white-50 mb-1">Periodo (Días)</label><input type="number" name="periodicidad" id="editPeriodo" class="form-control"></div>
+                        <div class="col-6"><label class="small text-white-50 mb-1">Costo ($)</label><input type="number" name="costo" id="editCosto" class="form-control"></div>
                     </div>
                     <div class="mb-4">
-                        <label class="small text-warning">Última Mantención (Referencia)</label>
-                        <input type="date" name="ultimo_servicio" id="editUltimo" class="form-control border-warning">
+                        <label class="small text-warning mb-1 fw-bold">Última Mantención (Referencia)</label>
+                        <input type="date" name="ultimo_servicio" id="editUltimo" class="form-control border-warning text-warning">
                     </div>
-                    <button class="btn btn-warning w-100 fw-bold">Guardar Cambios</button>
+                    <button class="btn btn-warning w-100 fw-bold text-dark shadow">Guardar Cambios</button>
                 </form>
             </div>
         </div>
@@ -86,7 +201,7 @@
         document.getElementById('editNombre').value = activo.nombre;
         document.getElementById('editPeriodo').value = activo.periodicidad_dias;
         document.getElementById('editCosto').value = activo.costo_estimado;
-        document.getElementById('editUltimo').value = activo.ultimo_servicio; // Formato YYYY-MM-DD
+        document.getElementById('editUltimo').value = activo.ultimo_servicio; 
         new bootstrap.Modal(document.getElementById('modalEditar')).show();
     }
 </script>
