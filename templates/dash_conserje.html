@@ -52,8 +52,8 @@
 
 <div class="container-fluid px-4" style="margin-top: 100px; padding-bottom: 50px;">
     {% with msgs = get_flashed_messages() %}{% if msgs %}{% for m in msgs %}<div class="alert alert-success bg-success bg-opacity-25 text-white border-0">{{ m }}</div>{% endfor %}{% endif %}{% endwith %}
-
-    <div class="card-glass p-4 mb-4">
+    
+    <div class="card-glass p-4" style="margin-bottom: 150px !important;">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="m-0 fw-bold"><i class="bi bi-p-square-fill me-2 text-primary"></i> Control de Estacionamiento</h4>
             <div class="d-flex gap-3 text-white-50 small">
@@ -62,30 +62,44 @@
                 <span><i class="bi bi-circle-fill text-info"></i> Mantención</span>
             </div>
         </div>
+        
         <div class="parking-grid">
             {% for p in parking %}
                 <div class="park-slot park-{{ p.estado }}" onclick="gestionarParking('{{ p.id }}', '{{ p.nombre }}', '{{ p.estado }}', '{{ p.patente }}')">
+                    
                     <div class="slot-name">{{ p.nombre }}</div>
+                    
                     <div class="slot-icon">
                         {% if p.estado == 'libre' %}<i class="bi bi-check-circle"></i>
                         {% elif p.estado == 'ocupado' %}<i class="bi bi-car-front-fill"></i>
                         {% elif p.estado == 'mantencion' %}<i class="bi bi-cone-striped"></i>
                         {% elif p.estado == 'asignado' %}<i class="bi bi-house-lock"></i>{% endif %}
                     </div>
+
                     {% if p.estado == 'ocupado' %}
                         <div class="lh-1 text-center w-100">
+                            <div class="badge bg-white text-danger mb-1" style="font-size: 0.7rem;">
+                                Depto {{ p.unidad_numero }}
+                            </div>
+
                             <div class="fw-bold text-warning small mb-1">{{ p.patente }}</div>
                             <div class="slot-timer" id="timer-{{ p.id }}" data-elapsed="{{ p.tiempo }}">Calculando...</div>
                         </div>
-                    {% elif p.estado == 'libre' %}<small class="fw-bold">LIBRE</small>
-                    {% elif p.estado == 'mantencion' %}<small class="fw-bold" style="font-size:0.6rem">MANTENCIÓN</small>
-                    {% else %}<small class="text-info fw-bold">U. {{ p.unidad_numero }}</small>{% endif %}
+
+                    {% elif p.estado == 'libre' %}
+                        <small class="fw-bold">LIBRE</small>
+
+                    {% elif p.estado == 'mantencion' %}
+                        <small class="fw-bold" style="font-size:0.6rem">MANTENCIÓN</small>
+
+                    {% else %}
+                        <small class="text-info fw-bold">U. {{ p.unidad_numero }}</small>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>
-    </div>
-
-    <div class="row g-4 mb-4">
+        ```
+    <div class="row g-3 mb-100"style="margin-bottom: 80px !important;">
         <div class="col-lg-3 col-6"><button class="btn-action-lg bg-qr w-100" data-bs-toggle="modal" data-bs-target="#modalQR"><i class="bi bi-qr-code-scan"></i> Escanear Pase</button></div>
         <div class="col-lg-3 col-6"><button class="btn-action-lg bg-box w-100" data-bs-toggle="modal" data-bs-target="#modalEncomienda"><i class="bi bi-box-seam"></i> Recepción</button></div>
         <div class="col-lg-3 col-6"><button class="btn-action-lg bg-log w-100" data-bs-toggle="modal" data-bs-target="#modalBitacora"><i class="bi bi-journal-text"></i> Bitácora</button></div>
@@ -94,7 +108,7 @@
 
     <div class="row g-4">
         <div class="col-lg-12">
-            <div class="card-glass p-3 mb-4">
+            <div class="card-glass p-3 mb-10">
                 <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-success me-2"></i> Agenda Amenities</h5>
                 <div class="d-flex gap-2 overflow-auto pb-2">
                     {% for r in reservas_futuras %}
