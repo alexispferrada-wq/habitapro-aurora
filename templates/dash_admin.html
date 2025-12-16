@@ -218,7 +218,7 @@
                 <i class="bi bi-gear-fill me-1"></i> Configurar
             </button>
         </div>
-        <div class="parking-grid">
+    <div class="parking-grid">
             {% for p in parking %}
             <div class="park-slot park-{{ p.estado }}">
                 <form action="/admin/parking/maintenance" method="POST">
@@ -226,24 +226,32 @@
                     <input type="hidden" name="accion" value="{{ 'desactivar' if p.estado == 'mantencion' else 'activar' }}">
                     <button class="btn-maint" title="Activar/Desactivar Mantención"><i class="bi bi-cone-striped"></i></button>
                 </form>
+
                 <div class="fw-bold">{{ p.nombre }}</div>
+
                 {% if p.estado == 'ocupado' %}
                     <i class="bi bi-car-front-fill park-icon fs-4 my-1"></i>
+                    
+                    <span class="badge bg-danger mb-1" style="font-size: 0.6rem;">U. {{ p.unidad_numero }}</span>
+                    
                     <div class="text-warning fw-bold small">{{ p.patente }}</div>
                     <small class="text-white-50" style="font-size: 0.65rem;">{{ p.tiempo }}</small>
+
                 {% elif p.estado == 'libre' %}
                     <i class="bi bi-check-circle park-icon fs-3 my-1"></i>
                     <small class="text-success fw-bold" style="font-size: 0.7rem;">LIBRE</small>
+
                 {% elif p.estado == 'mantencion' %}
                     <i class="bi bi-tools park-icon fs-4 my-1"></i>
                     <small class="text-info fw-bold" style="font-size: 0.7rem;">MANT.</small>
+
                 {% else %}
                     <i class="bi bi-lock-fill park-icon fs-4 my-1"></i>
                     <small class="text-white-50" style="font-size: 0.7rem;">U. {{ p.unidad_numero }}</small>
                 {% endif %}
             </div>
             {% endfor %}
-        </div>
+        </div>    
     </div>
 
     <div class="row g-3 mb-4">

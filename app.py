@@ -274,14 +274,60 @@ def panel_conserje():
     return render_template('dash_conserje.html', edificio=dict(edificio), parking=obtener_estado_parking_real(eid), encomiendas=encomiendas, unidades=u_proc, reservas_futuras=reservas_futuras)
 
 
+# EN: app.py
+
 @app.route('/conserje/parking/toggle', methods=['POST'])
 def conserje_parking_toggle():
-    sid = request.form.get('slot_id'); acc = request.form.get('accion'); pat = request.form.get('patente','VISITA').upper(); eid = session.get('edificio_id')
-    if sid in MANTENCION_DB: return jsonify({'status': 'error', 'message': 'Bloqueado por Admin'})
-    conn = get_db_connection(); cur = conn.cursor()
-    if acc == 'ocupar': cur.execute("INSERT INTO visitas (edificio_id, patente, estacionamiento_id, ingreso) VALUES (%s, %s, %s, NOW())", (eid, pat, sid))
-    else: cur.execute("UPDATE visitas SET salida = NOW() WHERE edificio_id = %s AND estacionamiento_id = %s AND salida IS NULL", (eid, sid))
-    conn.commit(); cur.close(); conn.close(); return jsonify({'status': 'success'})
+    sid = request.form.get('slot_id')
+    acc = request.form.get('accion')
+    pat = request.form.get('patente', 'VISITA').upper()
+    eid = session.get('edificio_id')
+
+    # Validación de seguridad
+    if sid in MANTENCION_DB:
+        return jsonify({'status': 'error', 'message': 'Bloqueado por Admin'})
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        if acc == 'ocupar':
+            # 1. Registrar la visita
+            cur.execute("""
+                INSERT INTO visitas (edificio_id, patente, estacionamiento_id, parking_id, ingreso) 
+                VALUES (%s, %s, %s, %s, NOW())
+            """, (eid, pat, sid, sid))
+            
+            # 2. Marcar el parking como OCUPADO visualmente
+            cur.execute("UPDATE estacionamientos_visita SET estado = 'ocupado', patente = %s WHERE id = %s", (pat, sid))
+
+        else: # Acción: LIBERAR
+            # 1. Cerrar la visita (poner hora de salida)
+            # Nota: Usamos parking_id para mayor precisión si existe, o estacionamiento_id como respaldo
+            cur.execute("""
+                UPDATE visitas 
+                SET salida = NOW() 
+                WHERE edificio_id = %s 
+                AND (parking_id = %s OR estacionamiento_id = %s) 
+                AND salida IS NULL
+            """, (eid, int(sid), sid))
+
+            # 2. CRÍTICO: Devolver el estado del parking a LIBRE
+            cur.execute("UPDATE estacionamientos_visita SET estado = 'libre', patente = NULL WHERE id = %s", (sid,))
+
+        conn.commit()
+        return jsonify({'status': 'success'})
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Error parking toggle: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+    finally:
+        cur.close()
+        conn.close()
+
+
 
 @app.route('/conserje/encomiendas/guardar', methods=['POST'])
 def conserje_guardar_encomienda():
@@ -298,16 +344,55 @@ def conserje_guardar_incidencia():
 # ==========================================
 # RUTAS RESIDENTE (APP MÓVIL)
 # ==========================================
+# EN: app.py
+
+# EN: app.py
+
 @app.route('/manifest.json')
-def manifest(): return jsonify({"name": "HabitaPro", "short_name": "HabitaPro", "start_url": "/panel-residente", "display": "standalone", "background_color": "#1a1d24", "theme_color": "#0dcaf0", "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/555/555545.png", "sizes": "192x192", "type": "image/png"}]})
+def manifest():
+    return jsonify({
+        "name": "HabitaPro",
+        "short_name": "HabitaPro",
+        "start_url": "/panel-residente",
+        "display": "standalone",
+        "background_color": "#1a1d24",
+        "theme_color": "#0dcaf0",
+        "icons": [
+            {
+                # URL OFICIAL del ícono exacto de tu login
+                "src": "https://icons.getbootstrap.com/assets/icons/buildings-fill.svg",
+                "sizes": "any",
+                "type": "image/svg+xml"
+            }
+        ]
+    })
 
 
-@app.route('/panel-residente')
+# EN: app.py
+
+# EN: app.py
+
+
+# EN: app.py
+
+# IMPORTANTE: Fíjate que dice methods=['GET', 'POST']
+# EN: app.py
+
+
+
+@app.route('/residente/perfil/editar', methods=['POST'])
+def residente_editar_perfil():
+    conn=get_db_connection(); cur=conn.cursor(); cur.execute("UPDATE usuarios SET email=%s, telefono=%s WHERE rut=%s", (request.form.get('email'), request.form.get('telefono'), session.get('user_id'))); conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_residente'))
+# EN: app.py
+
+@app.route('/panel-residente', methods=['GET', 'POST'])
 def panel_residente():
     import json
     from datetime import date, datetime
     
-    if session.get('rol') != 'residente': return redirect(url_for('home'))
+    # 1. SEGURIDAD: Verificar sesión correcta o mandar a home
+    if session.get('rol') != 'residente' or 'unidad_id_residente' not in session:
+        return redirect(url_for('home'))
     
     uid = session.get('unidad_id_residente')
     eid = session.get('edificio_id')
@@ -315,67 +400,62 @@ def panel_residente():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # 1. Datos Básicos
+    # A. Datos Básicos (Unidad y Edificio)
     cur.execute("SELECT * FROM unidades WHERE id = %s", (uid,))
     u = cur.fetchone()
     cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,))
     edificio = cur.fetchone()
     
-    # 2. Perfil User
-    t = u['tenant_json'] if isinstance(u['tenant_json'], dict) else json.loads(u['tenant_json'] or '{}')
-    o = u['owner_json'] if isinstance(u['owner_json'], dict) else json.loads(u['owner_json'] or '{}')
+    # B. Perfil Usuario
+    t = parse_json_field(u.get('tenant_json'))
+    o = parse_json_field(u.get('owner_json'))
     user_data = {'email': t.get('email') or o.get('email') or '', 'telefono': t.get('fono') or o.get('fono') or ''}
 
-    # 3. Datos Dashboard
+    # C. NOTIFICACIONES ACTIVAS (Filtros Aplicados)
+    
+    # 1. Espacios Comunes (Para reservar)
     cur.execute("SELECT * FROM espacios WHERE edificio_id = %s AND activo = TRUE", (eid,))
     espacios = cur.fetchall()
 
-    # Encomiendas
-    cur.execute("SELECT * FROM encomiendas WHERE unidad_id = %s AND entrega IS NULL", (uid,))
+    # 2. Encomiendas: Solo las que NO tienen fecha de entrega (Pendientes)
+    cur.execute("SELECT * FROM encomiendas WHERE unidad_id = %s AND entrega IS NULL ORDER BY recepcion DESC", (uid,))
     encomiendas = cur.fetchall()
     
-    # Reservas
+    # 3. Reservas Confirmadas Futuras
     cur.execute("SELECT r.*, e.nombre as nombre_espacio FROM reservas r JOIN espacios e ON r.espacio_id = e.id WHERE r.unidad_id = %s AND r.fecha_uso >= CURRENT_DATE AND r.estado = 'CONFIRMADA' ORDER BY r.fecha_uso ASC", (uid,))
     mis_reservas = cur.fetchall()
 
-    # --- NUEVO: VISITAS ACTIVAS (Para ver tiempo restante) ---
-    # Asumimos que la visita dura 5 horas (300 min) desde el ingreso
+    # 4. Visitas Activas: Solo las que están DENTRO (salida IS NULL)
+    # NOTA: Usamos 'salida' para que coincida con el botón del conserje
     cur.execute("""
         SELECT v.*, p.nombre as parking_nombre,
         EXTRACT(EPOCH FROM (NOW() - v.ingreso))/60 as minutos_transcurridos
         FROM visitas v
-        LEFT JOIN parking p ON v.parking_id = p.id
-        WHERE v.unidad_id = %s AND v.egreso IS NULL
+        LEFT JOIN estacionamientos_visita p ON v.parking_id = p.id
+        WHERE v.unidad_id = %s AND v.salida IS NULL
+        ORDER BY v.ingreso DESC
     """, (uid,))
     visitas_activas = cur.fetchall()
 
-    # --- NUEVO: MULTAS IMPAGAS ---
-    # Usamos try/except por si no creaste la tabla aún, para que no se caiga
+    # 5. Multas Impagas: Solo las que tienen pagada = FALSE
     try:
-        cur.execute("SELECT * FROM multas WHERE unidad_id = %s AND pagada = FALSE", (uid,))
+        # AQUÍ ESTÁ EL FILTRO QUE PEDISTE:
+        cur.execute("SELECT * FROM multas WHERE unidad_id = %s AND pagada = FALSE ORDER BY fecha DESC", (uid,))
         multas = cur.fetchall()
-    except:
-        multas = [] # Si falla, lista vacía
+    except Exception as e:
+        # Si la columna 'pagada' aún no existe en tu BD, devolvemos lista vacía para no romper el sitio
+        conn.rollback()
+        multas = []
 
-    cur.close(); conn.close()
+    cur.close()
+    conn.close()
     
-    return render_template('dash_residente.html', u=u, user=user_data, edificio=edificio, espacios=espacios, encomiendas=encomiendas, mis_reservas=mis_reservas, visitas_activas=visitas_activas, multas=multas, hoy=date.today())
+    return render_template('dash_residente.html', 
+                         u=u, user=user_data, edificio=edificio, 
+                         espacios=espacios, encomiendas=encomiendas, 
+                         mis_reservas=mis_reservas, visitas_activas=visitas_activas, 
+                         multas=multas, hoy=date.today())
 
-
-
-@app.route('/residente/perfil/editar', methods=['POST'])
-def residente_editar_perfil():
-    conn=get_db_connection(); cur=conn.cursor(); cur.execute("UPDATE usuarios SET email=%s, telefono=%s WHERE rut=%s", (request.form.get('email'), request.form.get('telefono'), session.get('user_id'))); conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_residente'))
-
-@app.route('/residente/pagar_deuda', methods=['POST'])
-def residente_pagar_deuda():
-    uid = request.form.get('unidad_id'); m = int(request.form.get('monto')); eid = session.get('edificio_id'); conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("SELECT mes, anio FROM cierres_mes WHERE edificio_id = %s ORDER BY anio DESC, mes DESC LIMIT 1", (eid,)); uc = cur.fetchone()
-    if uc: mp, ap = (uc['mes']+1, uc['anio']) if uc['mes'] < 12 else (1, uc['anio']+1)
-    else: now = datetime.now(); mp, ap = now.month, now.year
-    cur.execute("UPDATE unidades SET deuda_monto = GREATEST(0, deuda_monto - %s) WHERE id = %s", (m, uid))
-    cur.execute("INSERT INTO historial_pagos (edificio_id, unidad_id, monto, metodo, comprobante_url, mes_periodo, anio_periodo) VALUES (%s, %s, %s, 'APP', 'N/A', %s, %s)", (eid, uid, m, mp, ap))
-    conn.commit(); cur.close(); conn.close(); flash("Pago exitoso"); return redirect(url_for('panel_residente'))
 
 @app.route('/residente/invitar/generar', methods=['POST'])
 def generar_link_invitacion():
@@ -1276,43 +1356,66 @@ def admin_logs_listar():
     return jsonify(data)
 
 # --- RUTA PÚBLICA PARA VER LA INVITACIÓN (CÓDIGO QR / ACCESO) ---
-@app.route('/invitacion/<token>')
+# EN: app.py
+
+# EN: app.py
+
+# EN: app.py
+
+# EN: app.py
+
+@app.route('/invitacion/<token>', methods=['GET', 'POST'])
 def public_invitacion(token):
-    import json
-    
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Buscamos la invitación cruzando datos con la Unidad y el Edificio
+    # Buscamos la invitación y datos del edificio
     cur.execute("""
-        SELECT i.*, u.numero as numero_depto, u.tenant_json, u.owner_json, e.nombre as nombre_edificio
+        SELECT i.*, u.numero as unidad_numero, e.nombre as edificio_nombre, e.direccion as edificio_direccion
         FROM invitaciones i
         JOIN unidades u ON i.unidad_id = u.id
-        JOIN edificios e ON i.edificio_id = e.id
+        JOIN edificios e ON i.edificio_id = e.id 
         WHERE i.token = %s
     """, (token,))
-    
-    data = cur.fetchone()
-    cur.close()
-    conn.close()
-    
-    if not data:
-        return "<h1>Invitación no encontrada o expirada 🚫</h1>", 404
-        
-    # Calcular nombre del anfitrión (Residente)
-    t = data['tenant_json'] if isinstance(data['tenant_json'], dict) else json.loads(data['tenant_json'] or '{}')
-    o = data['owner_json'] if isinstance(data['owner_json'], dict) else json.loads(data['owner_json'] or '{}')
-    nombre_anfitrion = t.get('nombre') or o.get('nombre') or "Residente"
+    inv = cur.fetchone()
 
-    # Renderizamos pasando TODAS las variables que pide el HTML
-    return render_template('public_visita.html',
-        token=token,
-        edificio=data['nombre_edificio'], # <--- AQUÍ ESTÁ LA SOLUCIÓN AL ERROR
-        depto=data['numero_depto'],
-        anfitrion=nombre_anfitrion,
-        tipo=data['tipo'],
-        pre_nombre=data['pre_nombre'] or ''
-    )
+    # --- CANDADO 1: SI NO EXISTE ---
+    if not inv:
+        cur.close(); conn.close()
+        return render_template('public_qr_exito.html', error="Invitación no encontrada o enlace roto.")
+
+    # --- CANDADO 2: SI YA FUE USADO (SEGURIDAD TOTAL) ---
+    if inv['estado'] == 'USADO':
+        cur.close(); conn.close()
+        # Renderizamos la plantilla de éxito pero en modo "Error/Caducado"
+        return render_template('public_qr_exito.html', 
+                             error="⛔ ESTE ENLACE YA CADUCÓ", 
+                             mensaje="El pase ya fue utilizado para ingresar al recinto.")
+
+    # --- LOGICA POST: GENERAR EL QR ---
+    if request.method == 'POST':
+        try:
+            patente = request.form.get('patente', '').upper()
+            
+            # Si es vehículo, guardamos la patente
+            if inv['tipo'] == 'VEHICULO' and patente:
+                cur.execute("UPDATE invitaciones SET patente = %s WHERE id = %s", (patente, inv['id']))
+                conn.commit()
+                inv['patente'] = patente 
+
+            cur.close(); conn.close()
+            
+            # Al enviar el formulario, mostramos el QR exitoso
+            return render_template('public_qr_exito.html', inv=inv, token=token)
+
+        except Exception as e:
+            print(f"Error QR: {e}")
+            return "Error procesando solicitud"
+
+    # --- LOGICA GET: MOSTRAR FORMULARIO ---
+    cur.close(); conn.close()
+    return render_template('public_visita.html', inv=inv)
+
 # --- 1. VALIDAR QR Y DEVOLVER OPCIONES (MODIFICADO) ---
 
            
@@ -1469,8 +1572,159 @@ def validar_qr_visita():
             'unidad': inv['unidad_numero']
         })
 
+# EN: app.py (Pégalo al final o reemplaza la ruta existente)
+
+@app.route('/conserje/qr/validar', methods=['POST'])
+def conserje_qr_validar():
+    token = request.form.get('token')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 1. Buscar Datos de la Invitación
+    cur.execute("""
+        SELECT i.*, u.numero as unidad, u.edificio_id 
+        FROM invitaciones i
+        JOIN unidades u ON i.unidad_id = u.id
+        WHERE i.token = %s
+    """, (token,))
+    inv = cur.fetchone()
+
+    if not inv:
+        cur.close(); conn.close()
+        return jsonify({'status': 'error', 'message': 'Código QR no existe en el sistema.'})
+
+    # --- CANDADO DE SEGURIDAD: SI YA SE USÓ, BLOQUEAR ---
+    if inv['estado'] == 'USADO':
+        cur.close(); conn.close()
+        return jsonify({
+            'status': 'error', 
+            'message': '⛔ ALERTA DE SEGURIDAD: ESTE QR YA FUE UTILIZADO.'
+        })
+    # ----------------------------------------------------
+
+    # Si pasa el candado, procedemos
+    if inv['tipo'] == 'VEHICULO':
+        # Lógica para Autos: Mostrar estacionamientos libres
+        cur.execute("""
+            SELECT e.id, e.nombre 
+            FROM estacionamientos_visita e
+            LEFT JOIN visitas v ON e.id = v.parking_id AND v.salida IS NULL
+            WHERE e.edificio_id = %s 
+            AND (e.estado = 'libre' OR e.estado = 'LIBRE')
+            AND v.id IS NULL
+            ORDER BY e.id ASC
+        """, (inv['edificio_id'],))
+        slots = cur.fetchall()
+        cur.close(); conn.close()
+
+        return jsonify({
+            'status': 'parking_selection',
+            'token_invitacion': token,
+            'visita': inv['nombre_visita'],
+            'patente': inv['patente'] or 'SIN-PATENTE',
+            'unidad': inv['unidad'],
+            'slots': slots
+        })
+
+    else:
+        # Lógica para Peatones: Ingreso Directo y QUEMAR TOKEN
+        print(f"🚶 INGRESO PEATÓN: {inv['nombre_visita']}")
+        
+        cur.execute("""
+            INSERT INTO visitas (edificio_id, unidad_id, rut, nombre_visita, patente, ingreso)
+            VALUES (%s, %s, %s, %s, 'PEATON', NOW())
+        """, (inv['edificio_id'], inv['unidad_id'], inv.get('rut_visita',''), inv['nombre_visita']))
+        
+        # QUEMAR EL TOKEN PARA QUE NO SE USE DE NUEVO
+        cur.execute("UPDATE invitaciones SET estado = 'USADO', fecha_uso = NOW() WHERE id = %s", (inv['id'],))
+        
+        conn.commit()
+        cur.close(); conn.close()
+
+        return jsonify({
+            'status': 'success',
+            'visita': inv['nombre_visita'],
+            'unidad': inv['unidad'],
+            'tipo': 'PEATON'
+        })
+    
+# EN: app.py
+
+@app.route('/conserje/qr/asignar_parking', methods=['POST'])
+def conserje_qr_asignar_parking():
+    token = request.form.get('token')
+    sid = request.form.get('slot_id')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        # 1. Recuperar datos de la invitación usando el token
+        cur.execute("SELECT * FROM invitaciones WHERE token = %s", (token,))
+        inv = cur.fetchone()
+
+        if not inv:
+            return jsonify({'status': 'error', 'message': 'Invitación no válida'})
+
+        # 2. Registrar la Visita (Ocupando el parking)
+        cur.execute("""
+            INSERT INTO visitas (edificio_id, unidad_id, rut, nombre_visita, patente, parking_id, estacionamiento_id, ingreso)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+        """, (inv['edificio_id'], inv['unidad_id'], inv.get('rut_visita',''), inv['nombre_visita'], inv['patente'], sid, sid))
+
+        # 3. Marcar el Estacionamiento como OCUPADO
+        cur.execute("UPDATE estacionamientos_visita SET estado = 'ocupado', patente = %s WHERE id = %s", (inv['patente'], sid))
+
+        # ==============================================================================
+        # 4. ¡AQUÍ VA LA LÍNEA! QUEMAMOS EL TOKEN PARA QUE NO SE USE MÁS
+        # ==============================================================================
+        cur.execute("UPDATE invitaciones SET estado = 'USADO', fecha_uso = NOW() WHERE token = %s", (token,))
+        
+        conn.commit()
+        return jsonify({'status': 'success'})
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Error Asignar QR: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+    finally:
+        cur.close()
+        conn.close()
 
 
+
+# EN: app.py (Pégalo al final, antes del if __name__ == '__main__':)
+
+@app.route('/fix-multas')
+def fix_multas_fantasma():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # 1. Asegurar que la columna 'pagada' exista
+    try:
+        cur.execute("ALTER TABLE multas ADD COLUMN IF NOT EXISTS pagada BOOLEAN DEFAULT FALSE")
+    except:
+        conn.rollback()
+
+    # 2. LOGICA MAESTRA: Si la unidad tiene deuda 0 (o negativa), marcar TODAS sus multas como PAGADAS.
+    cur.execute("""
+        UPDATE multas 
+        SET pagada = TRUE 
+        FROM unidades 
+        WHERE multas.unidad_id = unidades.id 
+        AND unidades.deuda_monto <= 0
+    """)
+    
+    filas = cur.rowcount
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return f"<h3>✅ LIMPIEZA COMPLETADA: Se arreglaron {filas} multas de unidades sin deuda. <br> <a href='/panel-residente'>Volver al Panel</a></h3>"
+
+    
 
 if __name__ == '__main__':
     app.run(debug=True, port=5004)
