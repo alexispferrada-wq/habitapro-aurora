@@ -111,36 +111,106 @@
                 </div>
 
             {% else %}
-                <div class="card-glass p-4 mb-4 border-danger">
-                    <h5 class="fw-bold text-danger mb-3"><i class="bi bi-receipt me-2"></i>Facturación</h5>
-                    
-                    {% if e.deuda_omnisoft > 0 %}
-                        <div class="alert alert-dark border-danger d-flex justify-content-between align-items-center mb-3">
-                            <div class="overflow-hidden me-2">
-                                <div class="small text-danger fw-bold text-uppercase">Pendiente</div>
-                                <div class="fw-bold text-white text-truncate">{{ e.deuda_descripcion }}</div>
-                                <div class="fw-bold text-white">${{ "{:,.0f}".format(e.deuda_omnisoft) }}</div>
+                <div class="card-glass p-4 mb-4 border-warning">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-warning m-0"><i class="bi bi-currency-exchange me-2"></i>Contrato UF</h5>
+                        <div class="badge bg-warning text-dark fw-bold">HOY: ${{ "{:,.2f}".format(indicadores.uf) }}</div>
+                    </div>
+
+                    <div class="bg-black bg-opacity-25 p-3 rounded mb-3 border border-secondary">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-5">
+                                <label class="small text-white-50">Plan Base (50 un.)</label>
+                                <input type="number" step="0.01" id="baseUF" class="form-control form-control-sm bg-dark text-warning border-secondary fw-bold" 
+                                       value="{{ e.precio_base_uf or 1.32 }}" oninput="calcularCLP()">
                             </div>
-                            <i class="bi bi-clock-history text-danger fs-4"></i>
+                            <div class="col-5">
+                                <label class="small text-white-50">Extra (+50)</label>
+                                <input type="number" step="0.001" id="extraUF" class="form-control form-control-sm bg-dark text-warning border-secondary fw-bold" 
+                                       value="{{ e.precio_extra_uf or 0.008 }}" oninput="calcularCLP()">
+                            </div>
+                            <div class="col-2 text-end">
+                                 <button class="btn btn-sm btn-outline-secondary" onclick="restaurarValores()" title="Restaurar Valores por Defecto">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
                         </div>
-                    {% else %}
-                        <div class="alert alert-success bg-opacity-10 bg-success border-0 text-white mb-3 small">
-                            <i class="bi bi-check-circle-fill me-2"></i> Sin deuda pendiente.
+                        <div class="mt-2 small text-muted fst-italic text-end">
+                            Total Unidades: <strong class="text-white">{{ unidades|length }}</strong>
                         </div>
-                    {% endif %}
+                    </div>
 
                     <form action="/superadmin/enviar_cobro" method="POST">
                         <input type="hidden" name="edificio_id" value="{{ e.id }}">
-                        <label class="small text-white-50 mb-1">Generar Nuevo Cobro</label>
+                        
+                        <label class="small text-white-50 mb-1">Monto a Cobrar (CLP)</label>
                         <div class="input-group mb-2">
-                            <span class="input-group-text bg-dark border-secondary text-white">$</span>
-                            <input type="text" name="monto" class="form-control" placeholder="150000" required>
+                            <span class="input-group-text bg-dark border-secondary text-white fw-bold">$</span>
+                            <input type="text" name="monto" id="inputPesos" class="form-control fw-bold text-success fs-5" readonly required>
                         </div>
-                        <input type="text" name="descripcion" class="form-control mb-2" placeholder="Ej: Mensualidad Junio" required>
-                        <input type="date" name="vencimiento" class="form-control mb-3" required>
-                        <button class="btn btn-danger w-100 fw-bold"><i class="bi bi-send-fill me-2"></i> ENVIAR</button>
+                        
+                        <div class="alert alert-info bg-opacity-10 border-0 p-2 mb-2 small text-info">
+                            <i class="bi bi-calculator me-1"></i> <span id="formulaVisual"></span>
+                        </div>
+
+                        <input type="text" name="descripcion" id="inputDesc" class="form-control mb-2 bg-dark border-secondary text-white" required>
+                        <input type="date" name="vencimiento" class="form-control mb-3 bg-dark border-secondary text-white" required id="dateVencimiento">
+                        
+                        <button class="btn btn-warning w-100 fw-bold text-dark">
+                            <i class="bi bi-send-fill me-2"></i> GENERAR COBRO
+                        </button>
                     </form>
                 </div>
+
+                <script>
+                    const VALOR_UF_HOY = {{ indicadores.uf }};
+                    const TOTAL_UNIDADES = {{ unidades|length }};
+                    const UMBRAL_BASE = 50; // Las primeras 50 unidades no pagan extra
+                    const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+                    function calcularCLP() {
+                        let base = parseFloat(document.getElementById('baseUF').value) || 0;
+                        let extra = parseFloat(document.getElementById('extraUF').value) || 0;
+
+                        // LÓGICA DE NEGOCIO CORREGIDA:
+                        // Solo cobramos extra por las unidades que superen el umbral (50)
+                        let unidadesPagantes = Math.max(0, TOTAL_UNIDADES - UMBRAL_BASE);
+                        
+                        let totalUF = base + (unidadesPagantes * extra);
+                        let totalCLP = Math.round(totalUF * VALOR_UF_HOY);
+                        
+                        document.getElementById('inputPesos').value = totalCLP.toLocaleString('es-CL');
+                        
+                        // Explicación visual
+                        if (unidadesPagantes > 0) {
+                            document.getElementById('formulaVisual').innerText = 
+                                `Base (${base} UF) + ${unidadesPagantes} Extras (${(unidadesPagantes * extra).toFixed(2)} UF) = ${totalUF.toFixed(2)} UF`;
+                        } else {
+                            document.getElementById('formulaVisual').innerText = 
+                                `Cobro Mínimo (Base): ${totalUF.toFixed(2)} UF`;
+                        }
+                        
+                        let fecha = new Date();
+                        let mesActual = MESES[fecha.getMonth()];
+                        document.getElementById('inputDesc').value = `Servicio AEXON - ${mesActual} (${totalUF.toFixed(2)} UF)`;
+                    }
+
+                    function restaurarValores() {
+                        // Valores ajustados a tu estrategia:
+                        // $50.000 / $38.000 ≈ 1.32 UF
+                        // $300 / $38.000 ≈ 0.008 UF
+                        document.getElementById('baseUF').value = 1.32;
+                        document.getElementById('extraUF').value = 0.008;
+                        calcularCLP();
+                    }
+
+                    document.addEventListener("DOMContentLoaded", function() {
+                        let date = new Date();
+                        date.setDate(date.getDate() + 10);
+                        document.getElementById('dateVencimiento').valueAsDate = date;
+                        calcularCLP();
+                    });
+                </script>
             {% endif %}
 
             <div class="card-glass p-4">
@@ -235,4 +305,60 @@
         });
     }
 </script>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                {% for category, message in messages %}
+                    // CASO 1: SE CREÓ UN ADMIN NUEVO O SE RESETEÓ CLAVE
+                    {% if category == 'credenciales_new_admin' or category == 'credenciales_reset' %}
+                        var data = "{{ message }}".split("|");
+                        var nombre = data[0];
+                        var rut = data[1];
+                        var password = data[2];
+
+                        Swal.fire({
+                            title: 'ACCESS GRANTED',
+                            html: `
+                                <div class="text-start bg-black bg-opacity-25 p-3 rounded border border-secondary">
+                                    <div class="mb-2">
+                                        <small class="text-white-50">Usuario Asignado:</small><br>
+                                        <strong class="text-white fs-5">${nombre}</strong>
+                                    </div>
+                                    <div class="mb-3">
+                                        <small class="text-white-50">Login ID (RUT):</small><br>
+                                        <span class="text-info font-monospace">${rut}</span>
+                                    </div>
+                                    <div class="border-top border-secondary pt-2">
+                                        <small class="text-warning">NUEVA CONTRASEÑA:</small><br>
+                                        <div class="input-group mt-1">
+                                            <input type="text" value="${password}" id="newPassInput" class="form-control bg-dark text-white border-secondary fw-bold text-center" readonly>
+                                            <button class="btn btn-outline-warning" onclick="copiarPass()">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'success',
+                            background: '#1a1d24',
+                            color: '#fff',
+                            confirmButtonColor: '#0dcaf0',
+                            confirmButtonText: 'Entendido, cerrar'
+                        });
+
+                        window.copiarPass = function() {
+                            var copyText = document.getElementById("newPassInput");
+                            copyText.select();
+                            document.execCommand("copy");
+                            Swal.showValidationMessage('¡Copiado!');
+                        };
+                    {% endif %}
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+{% endwith %}
+
 {% endblock %}

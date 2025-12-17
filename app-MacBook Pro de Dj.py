@@ -1,222 +1,49 @@
-# ==========================================
-# 1. IMPORTACIONES Y CONFIGURACIÓN
-# ==========================================
-import os
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 import json
 import random
-import calendar
+import os
 import io
 import csv
-import requests
-from datetime import date, datetime, timedelta
-import psycopg2 # Para tu código antiguo
-from psycopg2.extras import RealDictCursor
-from database import inicializar_tablas
-from datetime import datetime, timedelta, date
+import calendar 
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
+from datetime import datetime, timedelta, date
+from database import get_db_connection, inicializar_tablas
 
-# Cargar variables de entorno
+app = Flask(__name__)
 load_dotenv()
 
-# Inicializar App
 app = Flask(__name__)
-
-# CONFIGURACIÓN (Tus claves y URL de Neon)
-DB_URI = os.environ.get('DB_URI')
-app.config['SQLALCHEMY_DATABASE_URI'] = DB_URI
-app.config['SECRET_KEY'] = 'tu_clave_secreta_super_segura'
+app.secret_key = os.getenv('SECRET_KEY', 'clave_dev_por_defecto')
 app.config['SESSION_COOKIE_NAME'] = 'aexon_session'
 
-# ==========================================
-# 2. INICIALIZAR BASE DE DATOS (MODO HÍBRIDO)
-# ==========================================
-db = SQLAlchemy(app, engine_options={
-    "pool_pre_ping": True, 
-    "pool_recycle": 300
-})
-
-# Login Manager (Para el nuevo sistema de usuarios)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-# --- FUNCIÓN CRÍTICA QUE FALTABA (Para tu código antiguo) ---
-def get_db_connection():
-    conn = psycopg2.connect(
-        app.config['SQLALCHEMY_DATABASE_URI'],
-        cursor_factory=RealDictCursor  # <--- ESTO ES LA MAGIA
-    )
-    return conn
-
-# --- FUNCIÓN DE INICIALIZACIÓN (Para evitar el NameError) ---
-def inicializar_tablas():
-    with app.app_context():
-        # Crea las tablas si no existen usando SQLAlchemy
-        db.create_all() 
-        print("✅ Tablas sincronizadas (Modo Híbrido).")
-
-# ==========================================
-# 3. MODELOS (Para SQLAlchemy / Superadmin)
-# ==========================================
-class Usuario(UserMixin, db.Model): 
-    __tablename__ = 'usuarios'
-    rut = db.Column(db.String(20), primary_key=True) # Usamos RUT como ID
-    nombre = db.Column(db.String(100))
-    email = db.Column(db.String(100))
-    rol = db.Column(db.String(50))
-    edificio_id = db.Column(db.Integer, db.ForeignKey('edificios.id'))
-    activo = db.Column(db.Boolean, default=True)
-    
-    # Necesario para Flask-Login (sobreescribimos get_id para usar RUT)
-    def get_id(self):
-        return self.rut
-
-
-class Edificio(db.Model):
-    __tablename__ = 'edificios'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100))
-    direccion = db.Column(db.String(200))
-    
-    # --- CAMBIO CLAVE AQUÍ ---
-    # Si tus columnas en Neon se llaman 'lat' y 'lon', usa esto:
-    latitud = db.Column('lat', db.String(50))  # Mapea 'latitud' (python) -> 'lat' (DB)
-    longitud = db.Column('lon', db.String(50)) # Mapea 'longitud' (python) -> 'lon' (DB)
-    
-    # Si tus columnas se llaman 'latitud' y 'longitud', borra lo de arriba y usa:
-    # latitud = db.Column(db.String(50))
-    # longitud = db.Column(db.String(50))
-    
-    activo = db.Column(db.Boolean, default=True)
-    usuarios_rel = db.relationship('Usuario', backref='edificio_obj')
-
-# --- FUNCIÓN PARA OBTENER UF, DÓLAR, ETC. ---
-CACHE_INDICADORES = {'data': None, 'fecha': None}
-
-def obtener_indicadores():
-    global CACHE_INDICADORES
-    hoy = date.today()
-    if CACHE_INDICADORES['data'] and CACHE_INDICADORES['fecha'] == hoy:
-        return CACHE_INDICADORES['data']
-    try:
-        r = requests.get('https://mindicador.cl/api', timeout=5)
-        d = r.json()
-        datos = {'uf': d['uf']['valor'], 'utm': d['utm']['valor'], 'dolar': d['dolar']['valor']}
-        CACHE_INDICADORES = {'data': datos, 'fecha': hoy}
-        return datos
-    except:
-        return {'uf': 38000, 'utm': 64000, 'dolar': 980} # Valores respaldo
-    
-     
-    
-@login_manager.user_loader
-def load_user(user_rut):
-    return Usuario.query.get(user_rut)
-
-# Variables globales antiguas
 MANTENCION_DB = set(['E-115', 'E-118']) 
 PASSWORD_TEMP_DB = {} 
 
-# Inicializar al arrancar
+# Inicializar tablas al arrancar
 with app.app_context():
     inicializar_tablas()
 
-# ==========================================
-# UTILIDADES Y FUNCIONES GLOBALES (Pegar esto antes de las rutas)
-# ==========================================
-
-# 1. Función para obtener UF/Dólar (Sin duplicados)
-CACHE_INDICADORES = {'data': None, 'fecha': None}
-def obtener_indicadores():
-    global CACHE_INDICADORES
-    hoy = date.today()
-    if CACHE_INDICADORES['data'] and CACHE_INDICADORES['fecha'] == hoy:
-        return CACHE_INDICADORES['data']
-    try:
-        r = requests.get('https://mindicador.cl/api', timeout=5)
-        d = r.json()
-        datos = {
-            'uf': d['uf']['valor'],
-            'utm': d['utm']['valor'],
-            'dolar': d['dolar']['valor'],
-            'euro': d.get('euro', {}).get('valor', 0)
-        }
-        CACHE_INDICADORES = {'data': datos, 'fecha': hoy}
-        return datos
-    except:
-        # Valores de respaldo por si falla la API
-        return {'uf': 38000, 'utm': 64000, 'dolar': 980, 'euro': 1050}
-
-# 2. Navegación de Calendario
-def calcular_navegacion(m, y):
-    return {
-        'prev_m': 12 if m == 1 else m - 1,
-        'prev_y': y - 1 if m == 1 else y,
-        'next_m': 1 if m == 12 else m + 1,
-        'next_y': y + 1 if m == 12 else y
-    }
-
-# 3. Formatear RUT
-def formatear_rut(rut_raw):
-    if not rut_raw: return ""
-    limpio = str(rut_raw).replace(".", "").replace(" ", "").strip().upper()
-    if "-" not in limpio and len(limpio) > 3:
-        limpio = limpio[:-1] + "-" + limpio[-1]
-    return limpio
-
-# 4. PARSEO DE JSON (¡ESTA ES LA QUE TE FALTA!)
+# --- UTILIDADES ---
 def parse_json_field(field_data):
     if isinstance(field_data, dict): return field_data
-    try:
-        return json.loads(field_data or '{}')
-    except:
-        return {}
+    try: return json.loads(field_data or '{}')
+    except: return {}
 
-# 5. Obtener fecha segura para admin
 def get_safe_date_params():
     try:
         y_str = request.args.get('year', '')
         m_str = request.args.get('month', '')
-        now = date.today()
+        now = datetime.now()
         y = int(y_str) if y_str and y_str.isdigit() else now.year
         m = int(m_str) if m_str and m_str.isdigit() else now.month
         if m < 1: m = 1
         if m > 12: m = 12
         if y < 2000: y = 2000
+        if y > 2100: y = 2100
         return y, m
     except:
-        now = date.today()
+        now = datetime.now()
         return now.year, now.month
-    
-# --- UTILIDADES ---
-def obtener_indicadores():
-    global CACHE_INDICADORES
-    hoy = date.today()
-    
-    # Si ya consultamos hoy, usamos la memoria (cache)
-    if CACHE_INDICADORES['data'] and CACHE_INDICADORES['fecha'] == hoy:
-        return CACHE_INDICADORES['data']
-        
-    try:
-        # Consultamos API
-        r = requests.get('https://mindicador.cl/api', timeout=5)
-        d = r.json()
-        datos = {
-            'uf': d['uf']['valor'],
-            'utm': d['utm']['valor'],
-            'dolar': d['dolar']['valor']
-        }
-        CACHE_INDICADORES = {'data': datos, 'fecha': hoy}
-        return datos
-    except Exception as e:
-        print(f"Error API: {e}")
-        # Valores de respaldo por si falla internet
-        return {'uf': 38000, 'utm': 64000, 'dolar': 980}
-    
-    
 
 def calcular_navegacion(m, y):
     return {
@@ -239,36 +66,6 @@ def formatear_rut(rut_raw):
     return limpio
 
 # --- RUTAS PRINCIPALES ---
-# --- CACHÉ DE INDICADORES (Para no saturar la API) ---
-CACHE_INDICADORES = {'data': None, 'fecha': None}
-
-def obtener_indicadores():
-    global CACHE_INDICADORES
-    hoy = date.today()
-    
-    # Si ya consultamos hoy, devolver memoria (Ahorra tiempo)
-    if CACHE_INDICADORES['data'] and CACHE_INDICADORES['fecha'] == hoy:
-        return CACHE_INDICADORES['data']
-        
-    try:
-        # Consultamos a mindicador.cl
-        r = requests.get('https://mindicador.cl/api', timeout=5)
-        d = r.json()
-        
-        datos = {
-            'uf': d['uf']['valor'],
-            'utm': d['utm']['valor'],
-            'dolar': d['dolar']['valor'],
-            'euro': d['euro']['valor']
-        }
-        CACHE_INDICADORES = {'data': datos, 'fecha': hoy}
-        return datos
-    except Exception as e:
-        print(f"⚠️ Error API Indicadores: {e}")
-        # Valores de respaldo por si se cae internet (Diciembre 2024 aprox)
-        return {'uf': 38000, 'utm': 64000, 'dolar': 980, 'euro': 1050}
-    
-    
 @app.route('/')
 def home():
     if 'user_id' in session: 
@@ -717,36 +514,7 @@ def generar_link_invitacion():
 # ==========================================
 # PANEL ADMIN
 # ==========================================
-# ==========================================
-# FUNCIONES DE AYUDA (FECHAS Y NAVEGACIÓN)
-# ==========================================
-def get_safe_date_params():
-    try:
-        y_str = request.args.get('year', '')
-        m_str = request.args.get('month', '')
-        now = date.today()
-        y = int(y_str) if y_str and y_str.isdigit() else now.year
-        m = int(m_str) if m_str and m_str.isdigit() else now.month
-        
-        # Validaciones de seguridad
-        if m < 1: m = 1
-        if m > 12: m = 12
-        if y < 2000: y = 2000
-        if y > 2100: y = 2100
-        
-        return y, m
-    except:
-        now = date.today()
-        return now.year, now.month
-
-def calcular_navegacion(m, y):
-    return {
-        'prev_m': 12 if m == 1 else m - 1,
-        'prev_y': y - 1 if m == 1 else y,
-        'next_m': 1 if m == 12 else m + 1,
-        'next_y': y + 1 if m == 12 else y
-    }
-    
+@app.route('/panel-admin')
 @app.route('/panel-admin')
 def panel_admin():
     if session.get('rol') != 'admin': return redirect(url_for('home'))
@@ -861,12 +629,8 @@ def panel_admin():
         new_credentials=session.pop('new_credentials_unidad', None),
         # Variables nuevas para la alerta
         dias_restantes=dias_restantes,
-        alerta_deuda=alerta_deuda,
-        indicadores=obtener_indicadores()
-        
+        alerta_deuda=alerta_deuda
     )
-    
-    
 @app.route('/admin/gastos')
 def admin_gastos():
     if session.get('rol') != 'admin': return redirect(url_for('home'))
@@ -1215,98 +979,51 @@ def residente_crear_reserva():
     return redirect(url_for('panel_residente'))
 
 
+# --- MÓDULO SUPER ADMIN (QUE FALTABA) ---
 @app.route('/panel-superadmin')
-@login_required
 def panel_superadmin():
-    if current_user.rol != 'superadmin': return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    # 1. ESTADO DE LA BASE DE DATOS (db_info) - ¡ESTO FALTABA!
+    if session.get('rol') != 'superadmin': return redirect(url_for('home'))
+    conn = get_db_connection(); cur = conn.cursor()
     try:
         cur.execute("SELECT version()")
-        # Convertimos a string por si acaso viene en formato raro
-        ver_raw = cur.fetchone()
-        db_ver = ver_raw['version'] if ver_raw else "Unknown"
-        # Limpiamos el string para que no sea tan largo
-        db_ver = str(db_ver).split(',')[0]
-        
+        db_ver = cur.fetchone()['version'].split(',')[0]
         db_info = {'status': "ONLINE", 'version': db_ver, 'color': 'text-success'}
-    except Exception as e:
-        print(f"Error DB Info: {e}")
-        db_info = {'status': "OFFLINE", 'version': "Error conexión", 'color': 'text-danger'}
+    except:
+        db_info = {'status': "OFFLINE", 'version': "Error", 'color': 'text-danger'}
 
-    # 2. ESTADÍSTICAS GENERALES
-    cur.execute("""
-        SELECT e.*, COUNT(u.rut) as cantidad_usuarios 
-        FROM edificios e 
-        LEFT JOIN usuarios u ON e.id = u.edificio_id AND u.activo = TRUE 
-        WHERE e.activo = TRUE 
-        GROUP BY e.id 
-        ORDER BY e.id ASC
-    """)
+    cur.execute("SELECT e.*, COUNT(u.rut) as cantidad_usuarios FROM edificios e LEFT JOIN usuarios u ON e.id = u.edificio_id AND u.activo = TRUE WHERE e.activo = TRUE GROUP BY e.id ORDER BY e.id ASC")
     edificios_stats = cur.fetchall()
-    
     total_edificios = len(edificios_stats)
     total_usuarios = sum(e['cantidad_usuarios'] for e in edificios_stats)
 
-    # 3. LOGS DEL SISTEMA (Ojo de Dios)
-    query_logs = """
-        (SELECT 'VISITA' as tipo, v.ingreso as fecha, e.nombre as edificio, CONCAT('Visita: ', v.nombre_visita) as detalle, 'Conserjería' as actor FROM visitas v JOIN edificios e ON v.edificio_id = e.id) 
-        UNION ALL 
-        (SELECT 'INCIDENCIA', i.fecha, e.nombre, i.titulo as detalle, i.autor as actor FROM incidencias i JOIN edificios e ON i.edificio_id = e.id) 
-        UNION ALL 
-        (SELECT 'PAGO', h.fecha, e.nombre, CONCAT('Pago GC: $', h.monto) as detalle, 'App' as actor FROM historial_pagos h JOIN edificios e ON h.edificio_id = e.id) 
-        UNION ALL 
-        (SELECT 'ENCOMIENDA', enc.recepcion, e.nombre, CONCAT('Paquete: ', enc.remitente) as detalle, 'Conserjería' as actor FROM encomiendas enc JOIN edificios e ON enc.edificio_id = e.id) 
-        ORDER BY fecha DESC LIMIT 30
-    """
-    try:
-        cur.execute(query_logs)
-        logs = cur.fetchall()
-    except:
-        logs = []
-
-    # Procesar fechas de logs
+    query_logs = "((SELECT 'VISITA' as tipo, v.ingreso as fecha, e.nombre as edificio, CONCAT('Visita: ', v.nombre_visita) as detalle, 'Conserjería' as actor FROM visitas v JOIN edificios e ON v.edificio_id = e.id) UNION ALL (SELECT 'INCIDENCIA', i.fecha, e.nombre, i.titulo as detalle, i.autor as actor FROM incidencias i JOIN edificios e ON i.edificio_id = e.id) UNION ALL (SELECT 'PAGO', h.fecha, e.nombre, CONCAT('Pago GC: $', h.monto) as detalle, 'App' as actor FROM historial_pagos h JOIN edificios e ON h.edificio_id = e.id) UNION ALL (SELECT 'ENCOMIENDA', enc.recepcion, e.nombre, CONCAT('Paquete: ', enc.remitente) as detalle, 'Conserjería' as actor FROM encomiendas enc JOIN edificios e ON enc.edificio_id = e.id)) ORDER BY fecha DESC LIMIT 30"
+    cur.execute(query_logs); logs = cur.fetchall()
     logs_proc = []
-    now = datetime.now()
     for l in logs:
-        # Calcular tiempo transcurrido (hace X min)
-        if l['fecha']:
-            delta = now - l['fecha']
-            if delta.days == 0:
-                minutos = delta.seconds // 60
-                tiempo = f"Hace {minutos}m"
-            else:
-                tiempo = f"Hace {delta.days}d"
-            
-            fecha_str = l['fecha'].strftime('%d/%m %H:%M')
-        else:
-            tiempo = "-"
-            fecha_str = "-"
+        delta = datetime.now() - l['fecha']
+        tiempo = f"Hace {delta.seconds//60}m" if delta.days == 0 else f"Hace {delta.days}d"
+        logs_proc.append({'tipo': l['tipo'], 'fecha_full': l['fecha'].strftime('%d/%m %H:%M'), 'tiempo': tiempo, 'edificio': l['edificio'], 'detalle': l['detalle'], 'actor': l['actor']})
 
-        logs_proc.append({
-            'tipo': l['tipo'],
-            'fecha_full': fecha_str,
-            'tiempo': tiempo,
-            'edificio': l['edificio'],
-            'detalle': l['detalle'],
-            'actor': l['actor']
-        })
+    cur.close(); conn.close()
+    return render_template('dash_super.html', stats={'edificios': total_edificios, 'users': total_usuarios}, edificios=edificios_stats, global_logs=logs_proc, db_info=db_info)
 
-    cur.close()
+@app.route('/superadmin/detalle_edificio/<int:id>')
+def super_detalle_edificio(id):
+    if session.get('rol') != 'superadmin': return redirect(url_for('home'))
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("SELECT * FROM edificios WHERE id = %s", (id,)); ed = cur.fetchone()
+    # TRAER TODOS LOS ADMINS
+    cur.execute("SELECT * FROM usuarios WHERE edificio_id = %s AND rol = 'admin' AND activo = TRUE", (id,))
+    admins = cur.fetchall()
+    cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (id,)); units = cur.fetchall()
     conn.close()
+    ed_full = dict(ed)
+    u_proc = []
+    for u in units:
+        o = parse_json_field(u.get('owner_json')); t = parse_json_field(u.get('tenant_json'))
+        u_proc.append({'id': u['id'], 'numero': u['numero'], 'owner': o, 'tenant': t, 'metraje': u['metraje'], 'prorrateo': u['prorrateo'], 'estado_deuda': u.get('estado_deuda', 'AL_DIA')})
+    return render_template('super_detalle_edificio.html', e=ed_full, admins=admins, unidades=u_proc)
 
-    # 4. RENDERIZAR CON TODO (Incluyendo indicadores y db_info)
-    return render_template('dash_super.html', 
-                           stats={'edificios': total_edificios, 'users': total_usuarios}, 
-                           edificios=edificios_stats, 
-                           global_logs=logs_proc, 
-                           db_info=db_info,               # <--- AQUÍ ESTÁ LA SOLUCIÓN
-                           indicadores=obtener_indicadores()) # <--- Y TUS INDICADORES NUEVOS
-    
-    
 # 1. REEMPLAZAR ESTA RUTA (SUPER ADMIN ENVÍA COBRO)
 @app.route('/superadmin/enviar_cobro', methods=['POST'])
 def enviar_cobro():
@@ -1384,9 +1101,6 @@ def admin_pagar_servicio():
     
     flash("Comprobante enviado. Esperando validación de Aexon.")
     return redirect(url_for('panel_admin'))
-# EN: app.py - SECCIÓN SUPER ADMIN
-
-
 
 
 
@@ -1405,69 +1119,13 @@ def crear_unidad():
     conn.commit(); cur.close(); conn.close(); return redirect(url_for('super_detalle_edificio', id=request.form.get('edificio_id')))
 
 @app.route('/superadmin/crear_admin_rapido', methods=['POST'])
-@login_required
 def crear_admin_rapido():
-    rut = formatear_rut(request.form.get('rut'))
-    nombre = request.form.get('nombre')
-    email = request.form.get('email')
-    edificio_id = request.form.get('edificio_id')
-    
-    # Generar Password Aleatoria Segura
-    new_pass = f"Habita{random.randint(1000,9999)}$"
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute("""
-            INSERT INTO usuarios (rut, nombre, email, password, rol, edificio_id, activo) 
-            VALUES (%s, %s, %s, %s, 'admin', %s, TRUE) 
-            ON CONFLICT (rut) 
-            DO UPDATE SET rol='admin', edificio_id=%s, activo=TRUE, password=%s
-        """, (rut, nombre, email, new_pass, edificio_id, edificio_id, new_pass))
-        conn.commit()
-        
-        # AQUÍ ESTÁ EL TRUCO: Enviamos los datos separados por una barra vertical "|"
-        # Formato: NOMBRE | RUT | PASSWORD
-        flash(f"{nombre}|{rut}|{new_pass}", "credenciales_new_admin")
-        
-    except Exception as e:
-        conn.rollback()
-        flash(f"Error al crear admin: {str(e)}", "error")
-    finally:
-        cur.close(); conn.close()
-
-    return redirect(url_for('super_detalle_edificio', id=edificio_id))
-
-@app.route('/superadmin/reset_pass_admin', methods=['POST'])
-@login_required
-def reset_pass_admin():
-    rut_admin = request.form.get('rut_admin')
-    edificio_id = request.form.get('edificio_id')
-    
-    # Generar Password Aleatoria
-    new_pass = f"Reset{random.randint(1000,9999)}$"
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        # Recuperamos el nombre para mostrarlo bonito en la alerta
-        cur.execute("SELECT nombre FROM usuarios WHERE rut = %s", (rut_admin,))
-        u = cur.fetchone()
-        nombre = u['nombre'] if u else 'Administrador'
-
-        cur.execute("UPDATE usuarios SET password=%s WHERE rut=%s", (new_pass, rut_admin))
-        conn.commit()
-        
-        # ENVIAMOS LA SEÑAL ESPECIAL
-        flash(f"{nombre}|{rut_admin}|{new_pass}", "credenciales_reset")
-        
-    except Exception as e:
-        flash("Error al resetear clave", "error")
-    finally:
-        cur.close(); conn.close()
-        
-    return redirect(url_for('super_detalle_edificio', id=edificio_id))
-
+    r = formatear_rut(request.form.get('rut')); ed = request.form.get('edificio_id'); p = f"Habita{random.randint(1000,9999)}$"
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("INSERT INTO usuarios (rut, nombre, email, password, rol, edificio_id, activo) VALUES (%s, %s, %s, %s, 'admin', %s, TRUE) ON CONFLICT (rut) DO UPDATE SET rol='admin', edificio_id=%s, activo=TRUE", (r, request.form.get('nombre'), request.form.get('email'), p, ed, ed))
+    conn.commit(); cur.close(); conn.close()
+    flash(f"NEW_ADMIN_PASS:{p}")
+    return redirect(url_for('super_detalle_edificio', id=ed))
 
 @app.route('/superadmin/editar_admin', methods=['POST'])
 def superadmin_editar_admin():
@@ -1475,102 +1133,134 @@ def superadmin_editar_admin():
     cur.execute("UPDATE usuarios SET nombre=%s, email=%s, telefono=%s WHERE rut=%s", (request.form.get('nombre'), request.form.get('email'), request.form.get('telefono'), request.form.get('rut')))
     conn.commit(); cur.close(); conn.close(); flash("Datos actualizados"); return redirect(url_for('super_detalle_edificio', id=request.form.get('edificio_id')))
 
+@app.route('/superadmin/reset_pass_admin', methods=['POST'])
+def reset_pass_admin():
+    np = f"Reset{random.randint(1000,9999)}$"; conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("UPDATE usuarios SET password=%s WHERE rut=%s", (np, request.form.get('rut_admin')))
+    conn.commit(); cur.close(); conn.close(); flash(f"NEW_ADMIN_PASS:{np}"); return redirect(url_for('super_detalle_edificio', id=request.form.get('edificio_id')))
 
+# --- CORRECCIÓN SUPER ADMIN: PREVENIR DUPLICADOS ---
 
-# ==========================================
-# RUTA LOGIN UNIFICADA Y CORREGIDA
-# ==========================================
-@app.route('/login', methods=['GET', 'POST']) # <--- CRÍTICO: Debe tener GET y POST
+@app.route('/login', methods=['POST'])
 def login():
-    # 1. Si es GET (alguien entra a la página), mostramos el HTML
-    if request.method == 'GET':
-        # Si ya está logueado, lo mandamos a su panel
-        if current_user.is_authenticated:
-            if session.get('rol') == 'superadmin': return redirect(url_for('panel_superadmin'))
-            if session.get('rol') == 'admin': return redirect(url_for('panel_admin'))
-            # ... otros roles ...
-        return render_template('login.html')
-
-    # 2. Si es POST (envían el formulario)
     import json
     
+    # 1. DATOS DEL FORMULARIO
     usuario_input = request.form.get('email') or request.form.get('username') or request.form.get('rut')
     password = request.form.get('password')
-    pass_input = str(password).strip()
     
-    # Limpieza de RUT para búsqueda
+    # Limpiamos los datos de entrada
+    pass_input = str(password).strip()
+    # Limpiamos el RUT (sin puntos, sin guión, mayúsculas)
     rut_input_clean = str(usuario_input).replace('.', '').replace('-', '').strip().upper()
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+    print(f"\n🚀 LOGIN INTENTO: Usuario='{usuario_input}' (Clean: {rut_input_clean}) | Clave='{pass_input}'")
+
+    conn = None
+    cur = None
     
     try:
-        # --- A. INTENTO STAFF (ADMINS / CONSERJES / SUPERADMIN) ---
-        # Buscamos por email, rut o nombre
-        cur.execute("""
-            SELECT * FROM usuarios 
-            WHERE email = %s OR rut = %s OR nombre = %s
-        """, (usuario_input, usuario_input, usuario_input))
-        user_data = cur.fetchone() # Usamos user_data para no confundir con el objeto User de Flask
-        
-        if user_data:
-            # Verificamos contraseña
-            if str(user_data.get('password', '')).strip() == pass_input:
-                
-                # CREAMOS EL USUARIO FLASK-LOGIN
-                user_obj = Usuario()
-                user_obj.rut = user_data['rut']
-                user_obj.nombre = user_data['nombre']
-                user_obj.rol = user_data['rol']
-                user_obj.edificio_id = user_data.get('edificio_id')
-                
-                # Iniciamos sesión en Flask-Login
-                login_user(user_obj)
-                
-                # Guardamos datos en sesión tradicional por compatibilidad con tu código antiguo
-                session['user_id'] = user_data['rut']
-                session['nombre'] = user_data['nombre']
-                session['rol'] = user_data['rol']
-                session['edificio_id'] = user_data.get('edificio_id')
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-                # Redirección según rol
-                if user_data['rol'] == 'superadmin': return redirect(url_for('panel_superadmin'))
-                if user_data['rol'] == 'admin': return redirect(url_for('panel_admin'))
-                if user_data['rol'] == 'conserje': return redirect(url_for('panel_conserje'))
-                return redirect(url_for('home'))
-
-        # --- B. INTENTO RESIDENTE (Código existente) ---
-        # (Aquí va tu lógica de residentes tal cual la tenías, si quieres la omito para ahorrar espacio
-        # pero asegúrate de que si logueas un residente, también uses login_user(user_obj))
+        # ----------------------------------------
+        # A. INTENTO STAFF (Tabla Usuarios)
+        # ----------------------------------------
+        cur.execute("SELECT * FROM usuarios WHERE email = %s OR rut = %s OR nombre = %s", (usuario_input, usuario_input, usuario_input))
+        user = cur.fetchone()
         
-        flash("Usuario o contraseña incorrectos.", "error")
-        return redirect(url_for('login'))
+        if user:
+            pass_db = str(user.get('password', '')).strip()
+            if pass_db == pass_input:
+                session.clear()
+                # Parche para ID
+                user_id = user.get('id') or user.get('user_id') or user.get('rut')
+                session['user_id'] = user_id
+                session['nombre'] = user.get('nombre', 'Staff')
+                session['rol'] = user.get('rol', 'conserje')
+                session['edificio_id'] = user.get('edificio_id')
+                
+                print(f"✅ STAFF AUTORIZADO: {session['rol']}")
+                if session['rol'] == 'superadmin': return redirect(url_for('panel_superadmin'))
+                if session['rol'] == 'admin': return redirect(url_for('panel_admin'))
+                if session['rol'] == 'conserje': return redirect(url_for('panel_conserje'))
+            else:
+                print(f"❌ STAFF FALLÓ CLAVE. DB: '{pass_db}' vs Input: '{pass_input}'")
+
+        # ----------------------------------------
+        # B. INTENTO RESIDENTE (Tabla Unidades)
+        # ----------------------------------------
+        # Traemos TODO para buscar en los JSON
+        cur.execute("SELECT u.*, e.nombre as edificio_nombre FROM unidades u JOIN edificios e ON u.edificio_id = e.id")
+        all_units = cur.fetchall()
+        
+        coincidencias = []
+        rut_encontrado = False # Para depuración
+
+        for unit in all_units:
+            try:
+                # Extraemos JSONs
+                t_json = unit['tenant_json']
+                o_json = unit['owner_json']
+                tenant = t_json if isinstance(t_json, dict) else json.loads(t_json or '{}')
+                owner = o_json if isinstance(o_json, dict) else json.loads(o_json or '{}')
+                
+                # Extraemos RUTs de la BD y limpiamos
+                t_rut = str(tenant.get('rut', '')).replace('.', '').replace('-', '').strip().upper()
+                o_rut = str(owner.get('rut', '')).replace('.', '').replace('-', '').strip().upper()
+                
+                # 1. CHEQUEAR RUT
+                if (t_rut == rut_input_clean) or (o_rut == rut_input_clean):
+                    rut_encontrado = True
+                    pass_db_unit = str(unit['password']).strip()
+                    
+                    print(f"🔎 RUT ENCONTRADO en Depto {unit['numero']}. Clave DB: '{pass_db_unit}' vs Input: '{pass_input}'")
+                    
+                    # 2. CHEQUEAR CLAVE
+                    if pass_db_unit == pass_input:
+                        nombre_res = tenant.get('nombre') or owner.get('nombre') or 'Residente'
+                        coincidencias.append({
+                            'id': unit['id'], 'numero': unit['numero'],
+                            'edificio': unit['edificio_nombre'], 'edificio_id': unit['edificio_id'],
+                            'nombre_usuario': nombre_res
+                        })
+                    else:
+                        print("   -> ⛔ Clave no coincide.")
+            except Exception as e_loop:
+                continue
+
+        # RESULTADOS
+        if len(coincidencias) == 1:
+            u_data = coincidencias[0]
+            session['rol'] = 'residente'
+            session['unidad_id_residente'] = u_data['id']
+            session['edificio_id'] = u_data['edificio_id']
+            session['nombre'] = u_data['nombre_usuario']
+            session['numero_unidad'] = u_data['numero']
+            print("✅ RESIDENTE AUTORIZADO")
+            return redirect(url_for('panel_residente'))
+            
+        elif len(coincidencias) > 1:
+            session['opciones_login'] = coincidencias
+            return redirect(url_for('seleccionar_unidad'))
+
+        if rut_encontrado:
+            print("❌ El RUT existe, pero la contraseña no coincidió en ninguna unidad.")
+        else:
+            print("❌ El RUT no se encontró en ningún registro.")
+
+        flash("Usuario o contraseña incorrectos.")
+        return redirect(url_for('home'))
 
     except Exception as e:
-        print(f"Error Login: {e}")
-        flash(f"Error interno: {e}", "error")
-        return redirect(url_for('login'))
+        print(f"🔥 ERROR FATAL EN LOGIN: {e}")
+        flash("Error interno.")
+        return redirect(url_for('home'))
+        
     finally:
-        cur.close()
-        conn.close()
-                
-# --- KILL SWITCH: ACTIVAR / DESACTIVAR EDIFICIO ---
-@app.route('/superadmin/toggle_edificio/<int:edificio_id>', methods=['POST'])
-def superadmin_toggle_edificio(edificio_id):
-    if session.get('rol') != 'superadmin': return jsonify({'status': 'error'})
-    
-    data = request.get_json()
-    nuevo_estado = data.get('activo') # True (Encendido) o False (Apagado)
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # Actualizamos el estado
-    cur.execute("UPDATE edificios SET activo = %s WHERE id = %s", (nuevo_estado, edificio_id))
-    conn.commit()
-    
-    cur.close(); conn.close()
-    return jsonify({'status': 'success'})
+        if cur: cur.close()
+        if conn: conn.close()
+
 
 @app.route('/superadmin/eliminar_edificio', methods=['POST'])
 def eliminar_edificio():
@@ -2036,264 +1726,5 @@ def fix_multas_fantasma():
 
     
 
-
-# 1. Quitamos el "int:" de la ruta para que acepte RUTs con guión o letras (ej: 12345678-9)
-# ==========================================
-# MODO DIOS (GHOST LOGIN & BUSCADOR)
-# ==========================================
-
-# 1. BUSCADOR GLOBAL (Para encontrar usuarios por nombre o RUT)
-@app.route('/superadmin/buscar_usuarios_global')
-def superadmin_buscar_global():
-    if session.get('rol') != 'superadmin': return jsonify([])
-    q = request.args.get('q', '').lower()
-    
-    conn = get_db_connection(); cur = conn.cursor()
-    
-    # IMPORTANTE: Seleccionamos el RUT pero le ponemos el alias 'id' 
-    # para que el JavaScript del modal funcione sin cambios.
-    cur.execute("""
-        SELECT u.rut as id, u.nombre, u.rut, u.rol, e.nombre as edificio 
-        FROM usuarios u
-        JOIN edificios e ON u.edificio_id = e.id
-        WHERE (LOWER(u.nombre) LIKE %s OR LOWER(u.rut) LIKE %s)
-        AND u.activo = TRUE
-        LIMIT 10
-    """, (f'%{q}%', f'%{q}%'))
-    
-    results = cur.fetchall()
-    cur.close(); conn.close()
-    
-    return jsonify([dict(r) for r in results])
-
-# 2. GHOST LOGIN (Entrar como otro usuario)
-@app.route('/superadmin/ghost_login/<user_id>', methods=['POST'])
-def superadmin_ghost_login(user_id):
-    # Seguridad: Solo el Superadmin puede hacer esto
-    if session.get('rol') != 'superadmin':
-        return redirect(url_for('home'))
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    # Buscamos por RUT (porque user_id viene con el RUT gracias al buscador de arriba)
-    cur.execute("SELECT * FROM usuarios WHERE rut = %s", (user_id,))
-    target_user = cur.fetchone()
-
-    if target_user:
-        # Guardamos tu identidad real por si quisiéramos implementar un "volver"
-        session['god_mode_origin'] = session.get('user_id')
-        
-        # SUPLANTAMOS LA IDENTIDAD
-        session['user_id'] = target_user['rut'] 
-        session['nombre'] = target_user['nombre']
-        session['rol'] = target_user['rol']
-        session['edificio_id'] = target_user['edificio_id']
-        
-        # Forzamos la redirección correcta
-        if target_user['rol'] == 'admin': 
-            url = url_for('panel_admin')
-        elif target_user['rol'] == 'conserje': 
-            url = url_for('panel_conserje')
-        elif target_user['rol'] == 'residente': 
-            url = url_for('panel_residente')
-        else:
-            url = url_for('home')
-            
-        cur.close(); conn.close()
-        return redirect(url)
-    
-    cur.close(); conn.close()
-    flash("Usuario no encontrado.")
-    return redirect(url_for('panel_superadmin'))
-
-# EN: app.py
-
-# 3. SALIR DEL MODO FANTASMA (Volver a ser Dios)
-@app.route('/superadmin/exit_ghost')
-def superadmin_exit_ghost():
-    # Verificamos si hay un origen guardado (si eras Dios antes)
-    origin_rut = session.get('god_mode_origin')
-    
-    if not origin_rut:
-        return redirect(url_for('home'))
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # Recuperamos tus poderes de Superadmin
-    cur.execute("SELECT * FROM usuarios WHERE rut = %s", (origin_rut,))
-    god_user = cur.fetchone()
-    cur.close(); conn.close()
-    
-    if god_user:
-        # Restauramos tu sesión original
-        session['user_id'] = god_user['rut']
-        session['nombre'] = god_user['nombre']
-        session['rol'] = 'superadmin'
-        session['edificio_id'] = None
-        
-        # Borramos el rastro del modo fantasma
-        session.pop('god_mode_origin', None)
-        
-        flash("⚡ HAS VUELTO AL NIVEL DIOS")
-        return redirect(url_for('panel_superadmin'))
-    
-    return redirect(url_for('home'))
-
-# EN: app.py (Ruta temporal para actualizar BD)
-
-# --- RUTAS SUPERADMIN: GESTIÓN DE EDIFICIOS ---
-
-# Busca esta ruta y reemplázala completa:
-@app.route('/superadmin/crear_edificio', methods=['GET', 'POST']) # <--- AHORA ACEPTA GET TAMBIÉN
-@login_required
-def super_crear_edificio():
-    # 1. Seguridad: Si entran por error via URL (GET), devolver al panel
-    if request.method == 'GET':
-        return redirect(url_for('panel_superadmin'))
-
-    # 2. Seguridad de Rol
-    if current_user.rol != 'superadmin':
-        flash("Acceso denegado.", "error")
-        return redirect(url_for('login'))
-        
-    try:
-        nuevo_edificio = Edificio(
-            nombre=request.form['nombre'],
-            direccion=request.form['direccion'],
-            latitud=request.form.get('lat', ''),   
-            longitud=request.form.get('lon', ''),
-            activo=True
-        )
-        db.session.add(nuevo_edificio)
-        db.session.commit()
-        flash('Nuevo centro de operaciones desplegado.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error Creación: {e}") # Para ver en terminal si falla algo más
-        flash(f'Error al desplegar edificio.', 'error')
-        
-    return redirect(url_for('panel_superadmin'))
-
-
-
-@app.route('/superadmin/eliminar_edificio', methods=['POST'])
-@login_required
-def super_eliminar_edificio():
-    if current_user.rol != 'superadmin':
-        return redirect(url_for('login'))
-        
-    edificio_id = request.form.get('edificio_id')
-    edificio = Edificio.query.get(edificio_id)
-    
-    if edificio:
-        # OPCIÓN A: Borrado Lógico (Recomendado para no romper historiales)
-        edificio.activo = False 
-        flash(f'Edificio {edificio.nombre} desactivado y archivado.', 'warning')
-        
-        # OPCIÓN B: Borrado Físico (Descomentar si prefieres borrarlo de verdad)
-        # db.session.delete(edificio)
-        # flash('Edificio eliminado permanentemente.', 'error')
-        
-        db.session.commit()
-    
-    return redirect(url_for('super_dashboard'))
-
-# --- RUTAS SUPERADMIN: MODO FANTASMA (GHOST) ---
-
-@app.route('/superadmin/buscar_usuarios_global')
-@login_required
-def buscar_usuarios_global():
-    if current_user.rol != 'superadmin': return jsonify([])
-    
-    query = request.args.get('q', '')
-    if len(query) < 2: return jsonify([])
-    
-    # Busca por nombre o RUT en todos los usuarios
-    resultados = Usuario.query.filter(
-        (Usuario.nombre.ilike(f'%{query}%')) | 
-        (Usuario.rut.ilike(f'%{query}%'))
-    ).limit(10).all()
-    
-    data = []
-    for u in resultados:
-        # Obtener nombre del edificio si existe la relación
-        nombre_edificio = u.edificio.nombre if u.edificio else "Sin Asignar"
-        
-        data.append({
-            'id': u.id,
-            'nombre': u.nombre,
-            'rut': u.rut,
-            'rol': u.rol,
-            'edificio': nombre_edificio
-        })
-        
-    return jsonify(data)
-
-@app.route('/superadmin/ghost_login/<int:user_id>', methods=['POST'])
-@login_required
-def ghost_login(user_id):
-    if current_user.rol != 'superadmin':
-        return "Acceso Denegado", 403
-        
-    target_user = Usuario.query.get_or_404(user_id)
-    
-    # 1. (Opcional) Guardar en sesión que eres un admin disfrazado para poder volver
-    # session['ghost_admin_id'] = current_user.id 
-    
-    # 2. Desloguear al superadmin y loguear a la víctima
-    logout_user()
-    login_user(target_user)
-    
-    flash(f'MODO FANTASMA ACTIVADO: Ahora eres {target_user.nombre}', 'warning')
-    
-    # Redirigir según el rol de la víctima
-    if target_user.rol == 'admin':
-        return redirect(url_for('admin_dashboard')) # Ajusta a tu ruta real
-    else:
-        return redirect(url_for('user_home')) # Ajusta a tu ruta real
-
-# --- RUTA DE DETALLE ---
-@app.route('/superadmin/detalle_edificio/<int:id>')
-@login_required
-def super_detalle_edificio(id):
-    if current_user.rol != 'superadmin': return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # 1. Traer Edificio
-    cur.execute("SELECT * FROM edificios WHERE id = %s", (id,))
-    edificio = cur.fetchone()
-    
-    if not edificio:
-        cur.close(); conn.close()
-        return "Edificio no encontrado", 404
-
-    # 2. Traer Admins
-    cur.execute("SELECT * FROM usuarios WHERE edificio_id = %s AND rol = 'admin' AND activo = TRUE", (id,))
-    admins = cur.fetchall()
-    
-    # 3. Traer Unidades y procesar JSONs (Owner/Tenant)
-    cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (id,))
-    unidades_raw = cur.fetchall()
-    
-    unidades_procesadas = []
-    for u in unidades_raw:
-        # Usamos tu función parse_json_field que ya tienes en app.py
-        u['owner'] = parse_json_field(u.get('owner_json'))
-        u['tenant'] = parse_json_field(u.get('tenant_json'))
-        unidades_procesadas.append(u)
-
-    cur.close()
-    conn.close()
-
-    # 4. Renderizar pasando INDICADORES y nombre de archivo correcto
-    return render_template('super_detalle_edificio.html', 
-                           e=edificio, 
-                           admins=admins, 
-                           unidades=unidades_procesadas,
-                           indicadores=obtener_indicadores()) # <--- ESTO ES LO QUE FALTABA
 if __name__ == '__main__':
     app.run(debug=True, port=5004)

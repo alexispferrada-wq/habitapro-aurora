@@ -7,19 +7,13 @@
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC08hIbpWi529l6GN6Q4BWknbJV4saTJPM&libraries=places"></script>
 
 <style>
-    /* --- CORRECCIÓN 1: SOLUCIÓN AL AUTOCOMPLETE DE GOOGLE --- */
-    /* Esto fuerza a que las sugerencias aparezcan ENCIMA del modal */
-    .pac-container {
-        z-index: 10000 !important; 
-        background-color: #1a1d24; 
-        border: 1px solid rgba(255,255,255,0.2);
-        color: white;
-    }
+    /* CORRECCIÓN GOOGLE AUTOCOMPLETE */
+    .pac-container { z-index: 10000 !important; background-color: #1a1d24; border: 1px solid rgba(255,255,255,0.2); color: white; }
     .pac-item { border-top: 1px solid rgba(255,255,255,0.1); color: #ccc; cursor: pointer; }
     .pac-item:hover { background-color: rgba(255,255,255,0.1); }
     .pac-item-query { color: white; font-weight: bold; }
 
-    /* Estilos Originales */
+    /* ESTILOS MODO DIOS */
     .stat-card { text-align: center; padding: 20px; border-bottom: 4px solid var(--accent-blue); border-radius: 12px; }
     .stat-num { font-size: 2.5rem; font-weight: 700; margin-bottom: 5px; }
     
@@ -41,11 +35,11 @@
     .user-count-card {
         background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
         padding: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; position: relative;
+        height: 100%;
     }
     .user-count-card:hover { border-color: #0dcaf0; background: rgba(13, 202, 240, 0.05); }
     .user-badge { font-size: 1.5rem; font-weight: 800; color: #0dcaf0; text-shadow: 0 0 10px rgba(13, 202, 240, 0.3); }
 
-    /* Botón eliminar flotante */
     .btn-delete-float {
         position: absolute; top: 10px; right: 10px; z-index: 10;
         background: rgba(220, 53, 69, 0.2); color: #dc3545; border: 1px solid #dc3545;
@@ -53,6 +47,13 @@
         align-items: center; justify-content: center; transition: 0.2s;
     }
     .btn-delete-float:hover { background: #dc3545; color: white; transform: scale(1.1); }
+
+    /* ESTILOS RESULTADOS BÚSQUEDA GHOST */
+    .ghost-result-item {
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        padding: 10px; border-radius: 8px; display: flex; justify-content: space-between;
+        align-items: center; margin-bottom: 8px;
+    }
 
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0a0a0f; }
@@ -68,11 +69,29 @@
             <span class="fw-bold">AEXON <span class="fw-light opacity-75">Overlord</span></span>
         </a>
         <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm btn-outline-warning fw-bold" data-bs-toggle="modal" data-bs-target="#modalGhostLogin">
+                <i class="bi bi-incognito me-2"></i> MODO FANTASMA
+            </button>
             <a href="/logout" class="btn btn-sm btn-glass">Cerrar Sesión</a>
         </div>
     </div>
 </nav>
-
+<div class="bg-black border-bottom border-secondary py-1" style="margin-top: 56px;">
+    <div class="container-fluid d-flex justify-content-end gap-4 text-white-50" style="font-size: 0.75rem;">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-graph-up-arrow text-warning me-1"></i> 
+            UF: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.uf) }}</span>
+        </div>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-bank text-success me-1"></i> 
+            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.dolar) }}</span>
+        </div>
+        <div class="d-flex align-items-center d-none d-md-flex">
+            <i class="bi bi-file-earmark-text text-info me-1"></i> 
+            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) }}</span>
+        </div>
+    </div>
+</div>
 <div class="container-fluid px-4" style="margin-top: 90px; padding-bottom: 50px;">
     
     <div class="row g-4 mb-4">
@@ -102,22 +121,33 @@
     </div>
 
     <h6 class="text-white-50 text-uppercase fw-bold mb-3 ps-2 border-start border-4 border-info">Usuarios por Edificio</h6>
-    <div class="row g-3 mb-5">
+    
+    <div class="row g-4 mb-4">
         {% for e in edificios %}
-        <div class="col-md-4 col-xl-3">
+        <div class="col-md-6 col-xl-4">
             <div class="user-count-card">
                 <button class="btn-delete-float" onclick="confirmarEliminarEdificio('{{ e.id }}', '{{ e.nombre }}')">
                     <i class="bi bi-trash-fill" style="font-size: 0.8rem;"></i>
                 </button>
 
-                <div>
-                    <h6 class="fw-bold text-white mb-1">{{ e.nombre }}</h6>
+                <div class="form-check form-switch position-absolute" style="top: 10px; left: 10px; z-index: 10;">
+                    <input class="form-check-input" type="checkbox" role="switch" 
+                           onchange="toggleEdificio('{{ e.id }}', this)" 
+                           {{ 'checked' if e.activo else '' }}>
+                </div>
+
+                <div class="mt-3"> <h6 class="fw-bold text-white mb-1">
+                        {{ e.nombre }} 
+                        {% if not e.activo %}<span class="badge bg-danger ms-1">SUSPENDIDO</span>{% endif %}
+                    </h6>
                     <div class="text-white-50 small"><i class="bi bi-geo-alt"></i> {{ e.direccion }}</div>
                 </div>
+                
                 <div class="text-end">
-                    <div class="user-badge">{{ e.cantidad_usuarios }}</div>
+                    <div class="user-badge {{ 'text-muted' if not e.activo else '' }}">{{ e.cantidad_usuarios }}</div>
                     <div class="text-white-50" style="font-size: 0.65rem;">USUARIOS</div>
                 </div>
+                
                 <a href="/superadmin/detalle_edificio/{{ e.id }}" class="stretched-link" style="z-index: 1;"></a>
             </div>
         </div>
@@ -126,7 +156,7 @@
         {% endfor %}
         
         <div class="col-md-4 col-xl-3">
-            <div class="user-count-card justify-content-center" style="border-style: dashed; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalCrearEdificio">
+            <div class="user-count-card justify-content-center h-100" style="border-style: dashed; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalCrearEdificio">
                 <span class="text-white-50"><i class="bi bi-plus-circle me-2"></i> Nuevo Edificio</span>
             </div>
         </div>
@@ -203,15 +233,33 @@
                 <form action="/superadmin/crear_edificio" method="POST">
                     <label class="small text-muted mb-1">Nombre</label>
                     <input type="text" name="nombre" class="form-control mb-3" required>
-                    
                     <label class="small text-muted mb-1">Dirección (Google)</label>
                     <input type="text" name="direccion" id="googleAddressInput" class="form-control mb-3" required placeholder="Escribe para buscar...">
-                    
                     <input type="hidden" name="lat" id="latInput">
                     <input type="hidden" name="lon" id="lonInput">
-                    
                     <button class="btn btn-primary w-100 fw-bold">Crear y Activar</button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalGhostLogin" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-glass" style="border-color: #ffc107;">
+            <div class="modal-header border-0 bg-warning bg-opacity-10">
+                <h5 class="fw-bold text-warning"><i class="bi bi-incognito me-2"></i>Modo Fantasma</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50 small mb-3">Busca un administrador o conserje para tomar control de su sesión.</p>
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-dark border-secondary text-white"><i class="bi bi-search"></i></span>
+                    <input type="text" id="ghostSearchInput" class="form-control bg-dark text-white border-secondary" placeholder="Nombre o RUT..." onkeyup="buscarUsuarioGhost()">
+                </div>
+                <div id="ghostResults" style="max-height: 200px; overflow-y: auto;">
+                    <div class="text-center text-white-50 py-3 small">Escribe para buscar...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -225,14 +273,10 @@
     function updateServerTime() { document.getElementById('server-time').textContent = new Date().toLocaleTimeString('es-CL'); }
     setInterval(updateServerTime, 1000); updateServerTime();
 
-    // 1. INICIALIZAR GOOGLE AUTOCOMPLETE (CORREGIDO)
     function initGoogleAutocomplete() {
         const input = document.getElementById('googleAddressInput');
         if(!input) return;
-        
         const autocomplete = new google.maps.places.Autocomplete(input);
-        
-        // Al seleccionar una dirección, guardamos Lat y Lon
         autocomplete.addListener('place_changed', function() {
             const place = autocomplete.getPlace();
             if (place.geometry) {
@@ -242,59 +286,77 @@
         });
     }
 
-    // 2. MAPA LEAFLET Y PUNTOS
     document.addEventListener("DOMContentLoaded", function() {
-        initGoogleAutocomplete(); // Iniciar Google
-        
-        var map = L.map('map').setView([-33.437, -70.650], 12); // Centro en Santiago
+        initGoogleAutocomplete();
+        var map = L.map('map').setView([-33.437, -70.650], 12);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-        
-        // Datos inyectados desde Flask
         var data = {{ edificios | tojson }};
         var bounds = [];
-        
         data.forEach(e => {
-            // Solo dibujamos si hay coordenadas guardadas
-            if(e.lat && e.lon) {
-                L.marker([e.lat, e.lon])
-                 .addTo(map)
-                 .bindPopup(`<b>${e.nombre}</b><br>${e.cantidad_usuarios} Usuarios<br><a href="/superadmin/detalle_edificio/${e.id}" class="btn btn-sm btn-primary mt-1 text-white">Ver Panel</a>`);
-                bounds.push([e.lat, e.lon]);
-            }
-        });
-        
-        // Ajustar zoom para ver todos los edificios
+        // CORRECCIÓN: Buscamos latitud O lat, longitud O lon
+        let lat = e.latitud || e.lat;
+        let lon = e.longitud || e.lon;
+
+        if(lat && lon) {
+            L.marker([lat, lon]).addTo(map)
+                .bindPopup(`<b>${e.nombre}</b><br>${e.cantidad_usuarios} Usuarios<br><a href="/superadmin/detalle_edificio/${e.id}" class="btn btn-sm btn-primary mt-1 text-white">Ver Panel</a>`);
+            bounds.push([lat, lon]);
+        }
+    });
         if(bounds.length) map.fitBounds(bounds, {padding: [50, 50]});
     });
 
-    // 3. FUNCIÓN ELIMINAR CON CLAVE MAESTRA
     function confirmarEliminarEdificio(id, nombre) {
         Swal.fire({
-            title: '¿ELIMINAR EDIFICIO?',
-            text: `Se desactivará "${nombre}". Ingrese la CONTRASEÑA MAESTRA:`,
-            input: 'password',
-            inputPlaceholder: 'Clave Maestra',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            background: '#1a1d24', color: '#fff'
+            title: '¿ELIMINAR EDIFICIO?', text: `Se desactivará "${nombre}". Ingrese la CONTRASEÑA MAESTRA:`,
+            input: 'password', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff'
         }).then((result) => {
-            if (result.isConfirmed) {
-                if (result.value === "T3t1n53m$") {
-                    document.getElementById('deleteId').value = id;
-                    document.getElementById('formEliminarEdificio').submit();
-                } else {
-                    Swal.fire({
-                        title: 'ACCESO DENEGADO',
-                        text: 'Contraseña maestra incorrecta.',
-                        icon: 'error',
-                        background: '#1a1d24', color: '#fff'
-                    });
-                }
+            if (result.isConfirmed && result.value === "T3t1n53m$") {
+                document.getElementById('deleteId').value = id;
+                document.getElementById('formEliminarEdificio').submit();
+            } else if (result.isConfirmed) {
+                Swal.fire({title: 'ACCESO DENEGADO', icon: 'error', background: '#1a1d24', color: '#fff'});
             }
         });
+    }
+
+    // --- LÓGICA MODO DIOS (GHOST) ---
+    let debounceTimer;
+    function buscarUsuarioGhost() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            let q = document.getElementById('ghostSearchInput').value;
+            if(q.length < 2) return;
+            
+            let resDiv = document.getElementById('ghostResults');
+            resDiv.innerHTML = '<div class="text-center text-info"><div class="spinner-border spinner-border-sm"></div> Buscando...</div>';
+
+            fetch(`/superadmin/buscar_usuarios_global?q=${q}`)
+                .then(r => r.json())
+                .then(data => {
+                    if(data.length === 0) {
+                        resDiv.innerHTML = '<div class="text-center text-white-50 py-2">No se encontraron usuarios activos.</div>';
+                        return;
+                    }
+                    let html = '';
+                    data.forEach(u => {
+                        html += `
+                        <div class="ghost-result-item animate__animated animate__fadeIn">
+                            <div>
+                                <div class="fw-bold text-white">${u.nombre}</div>
+                                <div class="small text-white-50">${u.rol.toUpperCase()} • ${u.edificio}</div>
+                                <div class="small text-muted" style="font-size:0.65rem">${u.rut}</div>
+                            </div>
+                            <form action="/superadmin/ghost_login/${u.id}" method="POST">
+                                <button class="btn btn-sm btn-warning fw-bold shadow-sm" title="Entrar como ${u.nombre}">
+                                    <i class="bi bi-box-arrow-in-right"></i> ENTRAR
+                                </button>
+                            </form>
+                        </div>`;
+                    });
+                    resDiv.innerHTML = html;
+                });
+        }, 300);
     }
 </script>
 {% endblock %}

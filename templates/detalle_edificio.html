@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}| Detalle {{ edificio.nombre }}{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-glass fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="/superadmin/dashboard">
+            <i class="bi bi-arrow-left-circle-fill text-info"></i> 
+            <span class="fw-bold">Volver al Mando</span>
+        </a>
+        <div class="text-white fw-bold">{{ edificio.nombre }}</div>
+    </div>
+</nav>
+
+<div class="container-fluid px-4" style="margin-top: 90px;">
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-glass p-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-white fw-bold mb-0">{{ edificio.nombre }}</h2>
+                    <p class="text-white-50 mb-0"><i class="bi bi-geo-alt me-1"></i> {{ edificio.direccion }}</p>
+                </div>
+                <div class="text-end">
+                    <div class="badge {{ 'bg-success' if edificio.activo else 'bg-danger' }} mb-2">
+                        {{ 'OPERATIVO' if edificio.activo else 'CLAUSURADO' }}
+                    </div>
+                    <div class="text-white small">ID Sistema: #{{ edificio.id }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card-glass">
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 border-bottom border-secondary">
+                    <h6 class="text-white fw-bold m-0"><i class="bi bi-people-fill me-2 text-warning"></i> Habitantes & Staff</h6>
+                    <span class="badge bg-dark border border-secondary">{{ usuarios|length }} Usuarios</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0 align-middle">
+                        <thead class="text-white-50 small text-uppercase">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in usuarios %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-white">{{ u.nombre }}</div>
+                                    <div class="small text-white-50" style="font-size: 0.7rem;">{{ u.rut }}</div>
+                                </td>
+                                <td>
+                                    {% if u.rol == 'admin' %}
+                                        <span class="badge bg-warning text-dark">ADMIN</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-25 text-white">USER</span>
+                                    {% endif %}
+                                </td>
+                                <td><i class="bi bi-circle-fill text-success" style="font-size: 0.5rem;"></i> Activo</td>
+                                <td>
+                                    <form action="/superadmin/ghost_login/{{ u.id }}" method="POST" class="d-inline">
+                                        <button class="btn btn-sm btn-outline-warning border-0" title="Suplantar Identidad">
+                                            <i class="bi bi-incognito"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Este edificio está desierto.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card-glass p-4 mb-4">
+                <h6 class="text-white fw-bold mb-3"><i class="bi bi-sliders me-2 text-info"></i> Configuración Local</h6>
+                
+                <form>
+                    <div class="mb-3">
+                        <label class="text-white-50 small mb-1">Costo Mensual Base</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-secondary text-white">$</span>
+                            <input type="number" class="form-control bg-dark border-secondary text-white" value="0" disabled title="Próximamente">
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" checked>
+                        <label class="form-check-label text-white small">Permitir Reservas Externas</label>
+                    </div>
+                    <button class="btn btn-primary w-100" disabled>Guardar Cambios (Pronto)</button>
+                </form>
+            </div>
+
+            <div class="card-glass p-4 bg-danger bg-opacity-10 border-danger">
+                <h6 class="text-danger fw-bold mb-3"><i class="bi bi-exclamation-triangle me-2"></i> Zona de Peligro</h6>
+                <p class="text-white-50 small">Si eliminas este edificio, todos los datos asociados quedarán huérfanos.</p>
+                <form action="/superadmin/eliminar_edificio" method="POST" onsubmit="return confirm('¿Seguro? Esta acción es destructiva.');">
+                    <input type="hidden" name="edificio_id" value="{{ edificio.id }}">
+                    <button class="btn btn-outline-danger w-100 btn-sm">Eliminar Edificio</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
