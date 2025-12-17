@@ -1,4 +1,4 @@
-# Python: Carpetas y Archivos Ignorados
+# Python environment
 .venv/
 __pycache__/
 *.pyc
