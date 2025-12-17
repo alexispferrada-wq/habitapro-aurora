@@ -1,5 +1,16 @@
+# Python: Carpetas y Archivos Ignorados
+.venv/
 __pycache__/
 *.pyc
+
+# Archivos de Entorno (¡IMPORTANTE!)
 .env
-venv/
+.env.local
+
+# Archivos de Sistema
 .DS_Store
+Thumbs.db
+
+# Archivos Generados (Fotos de pagos, etc.)
+/static/uploads/
+*.log
