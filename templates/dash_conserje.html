@@ -98,7 +98,7 @@
                 </div>
             {% endfor %}
         </div>
-        ```
+        
     <div class="row g-3 mb-100"style="margin-bottom: 80px !important;">
         <div class="col-lg-3 col-6"><button class="btn-action-lg bg-qr w-100" data-bs-toggle="modal" data-bs-target="#modalQR"><i class="bi bi-qr-code-scan"></i> Escanear Pase</button></div>
         <div class="col-lg-3 col-6"><button class="btn-action-lg bg-box w-100" data-bs-toggle="modal" data-bs-target="#modalEncomienda"><i class="bi bi-box-seam"></i> Recepción</button></div>
@@ -164,7 +164,7 @@
                 <input type="text" id="buscadorResidentes" class="form-control mb-3" placeholder="Buscar unidad o nombre...">
                 <div class="table-responsive" style="max-height: 400px;">
                     <table class="table table-hover align-middle" id="tablaResidentes">
-                        <thead><tr class="text-white-50 small"><th>Depto</th><th>Residente</th><th>Rol</th><th class="text-end">Acciones</th></tr></thead>
+                        <thead><tr class="text-white-50 small"><th>Depto</th><th>Residente</th><th>RUT (Usuario)</th><th>Rol</th><th class="text-end">Acciones</th></tr></thead>
                         <tbody>
                             {% for u in unidades %}
                             <tr>
@@ -172,6 +172,9 @@
                                 <td>
                                     <div class="small fw-bold">{{ u.residente }}</div>
                                     <div class="small text-white-50" style="font-size: 0.75rem;">{{ u.email }}</div>
+                                </td>
+                                <td class="font-monospace small">
+                                    {{ u.tenant.rut if u.tenant.rut else u.owner.rut }}
                                 </td>
                                 <td>
                                     {% if u.tenant.nombre %}
@@ -196,7 +199,7 @@
                                             <i class="bi bi-receipt"></i>
                                         </button>
 
-                                        <button class="btn btn-sm btn-outline-info" onclick="resetClave({{ u.id }}, '{{ u.rut }}')" title="Reset Clave">
+                                        <button class="btn btn-sm btn-outline-info" onclick="resetClave({{ u.id }}, '{{ u.tenant.rut if u.tenant.rut else u.owner.rut }}')" title="Reset Clave">
                                             <i class="bi bi-key-fill"></i>
                                         </button>
                                     </div>
@@ -294,10 +297,13 @@
         .then(d => {
             if(d.status === 'success') {
                 Swal.fire({ 
-                    title: '¡Clave Generada!', 
+                    title: '¡Acceso Generado!', 
                     html: `
-                        <p class="text-white-50">Usuario: <strong class="text-white fs-5">${rutUsuario}</strong></p>
-                        <h2 class="text-warning border p-2 rounded">${d.password}</h2>
+                        <div class="text-start bg-dark p-3 rounded border border-secondary">
+                            <p class="mb-2 text-white-50">Datos de acceso:</p>
+                            <div class="mb-2">Usuario (RUT): <strong class="text-info fs-5">${rutUsuario}</strong></div>
+                            <div>Contraseña: <strong class="text-warning fs-4">${d.password}</strong></div>
+                        </div>
                         <button class="btn btn-sm btn-outline-light mt-2" onclick="navigator.clipboard.writeText('${d.password}')">Copiar</button>
                     `, 
                     icon: 'success', background: '#1a1d24', color: '#fff' 
