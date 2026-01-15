@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <a href="/admin" class="btn btn-outline-secondary mb-3">⬅ Volver</a>
+    <h3>Gestión de Espacios Comunes</h3>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card p-3 shadow-sm">
+                <h6>Nuevo Espacio</h6>
+                <form action="/admin/espacios/guardar" method="POST">
+                    <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre (Ej: Quincho Sur)" required>
+                    <input type="number" name="capacidad" class="form-control mb-2" placeholder="Capacidad (Pers)" required>
+                    <input type="number" name="precio" class="form-control mb-3" placeholder="Precio ($)" value="0" required>
+                    <button class="btn btn-primary w-100">Crear</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <table class="table bg-white shadow-sm">
+                <thead><tr><th>Nombre</th><th>Capacidad</th><th>Precio</th><th>Acción</th></tr></thead>
+                <tbody>
+                    {% for e in espacios %}
+                    <tr>
+                        <td>{{ e.nombre }}</td><td>{{ e.capacidad }}</td><td>${{ e.precio }}</td>
+                        <td><a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-danger btn-sm">X</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

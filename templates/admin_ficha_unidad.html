@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% block title %}| Ficha {{ u.numero }}{% endblock %}
+
+{% block styles %}
+<style>
+    /* 1. FONDO ESPACIAL (MATCH DASHBOARD) */
+    body {
+        background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+        background-size: cover; background-position: center; background-attachment: fixed; min-height: 100vh;
+    }
+    body::before {
+        content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(10, 15, 30, 0.8); z-index: -1;
+    }
+
+    /* 2. GLASSMORPHISM */
+    :root {
+        --glass-bg: rgba(30, 41, 59, 0.65); 
+        --glass-border: rgba(255, 255, 255, 0.15);
+    }
+
+    .card-glass {
+        background: var(--glass-bg);
+        backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+        border: 1px solid var(--glass-border); border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); color: white;
+        margin-bottom: 20px; overflow: hidden;
+    }
+
+    /* Textos Blancos */
+    h3, h4, h5, h6, label { color: white !important; }
+    .text-muted { color: #94a3b8 !important; }
+    .form-control, .form-select {
+        background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); color: white;
+    }
+    .form-control:focus, .form-select:focus {
+        background: rgba(0, 0, 0, 0.5); color: white; border-color: #3b82f6; box-shadow: none;
+    }
+
+    /* PESTAÑAS MODERNAS (NEON TABS) */
+    .nav-pills .nav-link {
+        background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1);
+        margin-right: 10px; border-radius: 12px; transition: 0.3s;
+    }
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+    .nav-pills .nav-link:hover:not(.active) { background: rgba(255,255,255,0.1); }
+
+    /* TABLAS TRANSPARENTES */
+    .table-glass { --bs-table-bg: transparent; --bs-table-color: white; }
+    .table-glass td, .table-glass th { border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .table-glass tr:hover td { background: rgba(255,255,255,0.1); }
+
+    /* NAVBAR */
+    .navbar-glass { background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(255,255,255,0.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-dark navbar-glass fixed-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/admin">
+            <i class="bi bi-arrow-left-circle text-info"></i> Volver al Panel
+        </a>
+        <span class="text-white opacity-75 small font-monospace">{{ edificio.nombre }}</span>
+    </div>
+</nav>
+
+<div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'whatsapp_trigger' %}
+                    <div id="whatsapp-data" data-msg="{{ message }}"></div>
+                {% else %}
+                    <div class="alert alert-info border-0 shadow-sm text-center fw-bold bg-opacity-75">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row g-4">
+        
+        <div class="col-lg-4">
+            <div class="card-glass p-4 text-center h-100">
+                <div class="mb-4">
+                    <span class="badge bg-primary bg-opacity-75 px-4 py-2 fs-6 rounded-pill border border-primary border-opacity-50 shadow-sm">
+                        Depto {{ u.numero }}
+                    </span>
+                </div>
+                
+                <h3 class="fw-bold m-0">{{ u.propietario }}</h3>
+                <span class="badge bg-white bg-opacity-10 border border-white border-opacity-25 mt-2 fw-normal">{{ u.tipo_ocupante }}</span>
+
+                <div class="d-flex justify-content-center gap-4 my-4 p-3 bg-black bg-opacity-20 rounded-4">
+                    <div class="text-center">
+                        <small class="text-uppercase fw-bold opacity-50" style="font-size: 0.65rem;">Deuda Total</small>
+                        <h4 class="{{ 'text-danger' if u.deuda_actual > 0 else 'text-success' }} fw-bold m-0 mt-1">
+                            ${{ "{:,.0f}".format(u.deuda_actual).replace(',', '.') }}
+                        </h4>
+                    </div>
+                    <div class="vr bg-white opacity-25"></div>
+                    <div class="text-center">
+                        <small class="text-uppercase fw-bold opacity-50" style="font-size: 0.65rem;">Superficie</small>
+                        <h4 class="text-white fw-bold m-0 mt-1">{{ u.metros_cuadrados }} m²</h4>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mb-4">
+                    {% if u.telefono %}
+                    <a href="https://wa.me/{{ u.telefono }}" target="_blank" class="btn btn-success fw-bold shadow-sm">
+                        <i class="bi bi-whatsapp"></i> Contactar WhatsApp
+                    </a>
+                    
+                    <a href="/admin/usuario/reset_whatsapp/{{ u.id }}" 
+                       class="btn btn-warning fw-bold text-dark shadow-sm"
+                       onclick="return confirm('¿Generar nueva clave y enviar por WhatsApp?')">
+                        <i class="bi bi-key-fill"></i> Reset Clave & Enviar
+                    </a>
+                    {% else %}
+                    <div class="alert alert-warning small border-0 py-2"><i class="bi bi-exclamation-circle"></i> Sin teléfono registrado</div>
+                    {% endif %}
+                </div>
+
+                <hr class="border-white opacity-25">
+
+                <div class="text-start mt-4">
+                    <h6 class="fw-bold text-info mb-3"><i class="bi bi-pencil-square"></i> Editar Datos</h6>
+                    <form action="/admin/unidad/actualizar_datos" method="POST">
+                        <input type="hidden" name="unidad_id" value="{{ u.id }}">
+                        
+                        <div class="mb-2">
+                            <label class="small text-muted">Teléfono</label>
+                            <input type="text" name="telefono" value="{{ u.telefono or '' }}" class="form-control form-control-sm">
+                        </div>
+                        <div class="mb-2">
+                            <label class="small text-muted">Email</label>
+                            <input type="email" name="email" value="{{ u.email or '' }}" class="form-control form-control-sm">
+                        </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="small text-muted">Estacionamiento</label>
+                                <input type="text" name="estacionamiento" value="{{ u.estacionamiento or '' }}" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-muted">Ocupante</label>
+                                <select name="tipo_ocupante" class="form-select form-select-sm">
+                                    <option value="Propietario" {{ 'selected' if u.tipo_ocupante == 'Propietario' }}>Propietario</option>
+                                    <option value="Arrendatario" {{ 'selected' if u.tipo_ocupante == 'Arrendatario' }}>Arrendatario</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-outline-light w-100 btn-sm">Guardar Cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card-glass h-100 p-4">
+                
+                <ul class="nav nav-pills mb-4" id="pills-tab">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-pagos">
+                            <i class="bi bi-cash-coin"></i> Pagos
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-multas">
+                            <i class="bi bi-receipt"></i> Cargos/Multas
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-visitas">
+                            <i class="bi bi-people"></i> Visitas
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-paquetes">
+                            <i class="bi bi-box-seam"></i> Paquetes
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="pills-tabContent" style="max-height: 500px; overflow-y: auto;">
+                    
+                    <div class="tab-pane fade show active" id="tab-pagos">
+                        <table class="table table-glass table-hover align-middle">
+                            <thead class="text-white-50 small text-uppercase"><tr><th>Fecha</th><th>Detalle</th><th class="text-end">Monto</th></tr></thead>
+                            <tbody>
+                                {% for p in pagos %}
+                                <tr>
+                                    <td><span class="fw-bold">{{ p.fecha[:10] }}</span><div class="small opacity-50">{{ p.metodo }}</div></td>
+                                    <td>
+                                        {{ p.comentario }}
+                                        {% if p.comprobante_archivo %}
+                                            <a href="/static/uploads/{{ p.comprobante_archivo }}" target="_blank" class="badge bg-info text-dark text-decoration-none ms-2"><i class="bi bi-image"></i> Ver</a>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end text-success fw-bold">+${{ "{:,.0f}".format(p.monto).replace(',', '.') }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center py-5 text-muted">Sin historial de pagos.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-multas">
+                        <div class="p-3 bg-white bg-opacity-10 rounded-3 mb-3 border border-white border-opacity-10">
+                            <form action="/admin/multar" method="POST" class="d-flex gap-2 align-items-center">
+                                <input type="hidden" name="unidad_id" value="{{ u.id }}">
+                                <span class="fw-bold text-warning small">NUEVO CARGO:</span>
+                                <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Motivo (Ej: Multa Ruidos)" required>
+                                <input type="number" name="monto" class="form-control form-control-sm" placeholder="$ Monto" style="width: 120px;" required>
+                                <button class="btn btn-warning btn-sm fw-bold text-dark">APLICAR</button>
+                            </form>
+                        </div>
+                        <table class="table table-glass table-hover">
+                            <thead class="text-white-50 small"><tr><th>Fecha</th><th>Motivo</th><th class="text-end">Monto</th></tr></thead>
+                            <tbody>
+                                {% for c in cargos %}
+                                <tr>
+                                    <td>{{ c.fecha }}</td>
+                                    <td>{{ c.descripcion }}</td>
+                                    <td class="text-end text-danger fw-bold">-${{ "{:,.0f}".format(c.monto).replace(',', '.') }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center py-5 text-muted">Sin cargos extra.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-visitas">
+                        <ul class="list-group list-group-flush">
+                            {% for v in visitas %}
+                            <li class="list-group-item bg-transparent text-white border-bottom border-white border-opacity-10 px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-person-walking text-primary me-2"></i>
+                                        <span class="fw-bold">{{ v.nombre_visita }}</span>
+                                        <span class="small opacity-50 ms-1">({{ v.rut_visita }})</span>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="small opacity-75">{{ v.fecha_entrada }}</div>
+                                        {% if v.patente %}<span class="badge bg-secondary border border-white border-opacity-25">{{ v.patente }}</span>{% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                            {% else %}
+                            <div class="text-center py-5 text-muted">Sin visitas recientes.</div>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-paquetes">
+                        <ul class="list-group list-group-flush">
+                            {% for e in encomiendas %}
+                            <li class="list-group-item bg-transparent text-white border-bottom border-white border-opacity-10 px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-box-seam text-warning me-2"></i>
+                                        <span class="fw-bold">{{ e.remitente }}</span>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="small opacity-75">{{ e.fecha_recepcion }}</div>
+                                        {% if e.estado == 'ENTREGADO' %}
+                                            <span class="badge bg-success bg-opacity-75">Entregado</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">En Recepción</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                            {% else %}
+                            <div class="text-center py-5 text-muted">Sin paquetes.</div>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const waDiv = document.getElementById('whatsapp-data');
+        if (waDiv && waDiv.dataset.msg.includes('WHATSAPP_RESET')) {
+            const [_, tel, clave, nombre] = waDiv.dataset.msg.split('|');
+            Swal.fire({
+                icon: 'success',
+                title: 'Clave Generada',
+                html: `<p>Nueva clave temporal: <strong class="text-primary fs-4">${clave}</strong></p>¿Enviar por WhatsApp al vecino?`,
+                showCancelButton: true, confirmButtonText: 'Sí, enviar', confirmButtonColor: '#25D366', background: '#1e293b', color: '#fff'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    const text = `Hola ${nombre}, tu clave de acceso ha sido restablecida. 🔐\n\nNueva Clave: *${clave}*\n\nPor favor cámbiala al ingresar.`;
+                    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(text)}`, '_blank');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

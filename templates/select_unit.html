@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}| Elegir Hogar{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        background: radial-gradient(circle at top, #1a1d24, #000);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .selection-container {
+        max-width: 500px;
+        width: 100%;
+        padding: 20px;
+    }
+    .unit-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .unit-card:hover {
+        background: rgba(13, 202, 240, 0.1);
+        border-color: #0dcaf0;
+        transform: translateX(5px);
+    }
+    .unit-number {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: white;
+    }
+    .building-name {
+        color: #0dcaf0;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+    .building-addr {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="selection-container animate__animated animate__fadeIn">
+    <div class="text-center mb-5">
+        <i class="bi bi-buildings-fill text-white display-1 mb-3"></i>
+        <h3 class="fw-bold text-white">Bienvenido, {{ opciones[0].nombre_usuario.split()[0] }}</h3>
+        <p class="text-white-50">Hemos detectado múltiples propiedades asociadas a tu RUT. <br>Por favor, selecciona a cuál deseas ingresar:</p>
+    </div>
+
+    <div class="list-group">
+        {% for op in opciones %}
+        <a href="/set_unidad/{{ op.id }}" class="text-decoration-none">
+            <div class="unit-card">
+                <div>
+                    <div class="building-name"><i class="bi bi-building me-1"></i> {{ op.edificio }}</div>
+                    <div class="unit-number">Depto {{ op.numero }}</div>
+                    <div class="building-addr">{{ op.direccion }}</div>
+                </div>
+                <i class="bi bi-chevron-right text-white fs-4"></i>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="/logout" class="text-white-50 text-decoration-none small"><i class="bi bi-arrow-left me-1"></i> Volver al inicio</a>
+    </div>
+</div>
+{% endblock %}
