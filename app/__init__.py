@@ -1,65 +1,125 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+# ==========================================
+# 1. IMPORTACIONES Y CONFIGURACIÓN HABIPRO
+# ==========================================
+import os, json, random, calendar, io, csv, requests
+import psycopg2 # <--- ESTA LÍNEA ES LA QUE FALTA O ESTÁ MAL UBICADA
+from psycopg2.extras import RealDictCursor # <--- NECESARIA PARA RealDictCursor
+from datetime import date, datetime, timedelta
+from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-import os
-from datetime import datetime
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
+# 1. CARGAR VARIABLES DE ENTORNO
+load_dotenv()
 
-# Inicializamos extensiones
-db = SQLAlchemy()
+# Fallback: Si no se cargó DB_URI, intentar cargar desde .env.txt (error común al crear el archivo)
+if not os.getenv('DB_URI') and os.path.exists('.env.txt'):
+    print("⚠️  AVISO: Cargando configuración desde .env.txt")
+    load_dotenv('.env.txt')
+    
+    # FIX: Si .env.txt tiene solo la URL (sin DB_URI=), la leemos manualmente
+    if not os.getenv('DB_URI'):
+        try:
+            with open('.env.txt', 'r') as f:
+                content = f.read().strip()
+                if content.startswith('postgresql://'):
+                    os.environ['DB_URI'] = content
+        except: pass
+
+app = Flask(__name__)
+
+# 2. CONFIGURACIÓN MANUAL FORZADA
+# Intentamos obtener la URI desde el archivo .env
+database_uri = os.getenv('DB_URI')
+
+# Si la URI está vacía, usamos el valor directo para que no falle (SOLO PARA PRUEBAS)
+if not database_uri:
+    raise RuntimeError("⚠️ ERROR CRÍTICO: La variable de entorno DB_URI no está configurada.")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+if not app.config['SECRET_KEY']:
+    print("⚠️  SECRET_KEY no encontrada. Usando clave temporal para desarrollo.")
+    app.config['SECRET_KEY'] = 'dev_key_temporal_12345'
+app.config['SESSION_COOKIE_NAME'] = 'habipro_session'
+
+# 3. INICIALIZACIÓN DE LA BASE DE DATOS
+# Ahora SQLAlchemy encontrará la URI cargada en app.config
+db = SQLAlchemy(app, engine_options={
+    "pool_pre_ping": True, 
+    "pool_recycle": 280,
+    "pool_size": 10,
+    "max_overflow": 5,
+    "pool_timeout": 30
+})
 login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 
-def create_app():
-    app = Flask(__name__)
+# ==========================================
+# 2. MODELOS Y UTILIDADES CRÍTICAS
+# ==========================================
+class Usuario(UserMixin, db.Model): 
+    __tablename__ = 'usuarios'
+    rut = db.Column(db.String(20), primary_key=True)
+    nombre = db.Column(db.String(100)); email = db.Column(db.String(100))
+    rol = db.Column(db.String(50)); edificio_id = db.Column(db.Integer)
+    activo = db.Column(db.Boolean, default=True)
+    def get_id(self): return self.rut
+
+@login_manager.user_loader
+def load_user(user_rut): 
+    # session.get es el estándar actual para SQLAlchemy 2.0
+    return db.session.get(Usuario, user_rut)
+
+def get_db_connection():
+    return psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'], cursor_factory=RealDictCursor)
+
+def parse_json_field(field_data):
+    if isinstance(field_data, dict): return field_data
+    try: return json.loads(field_data or '{}')
+    except: return {}
+
+def formatear_rut(rut_raw):
+    if not rut_raw: return ""
+    limpio = str(rut_raw).replace(".", "").replace(" ", "").strip().upper()
+    if "-" not in limpio and len(limpio) > 3: limpio = limpio[:-1] + "-" + limpio[-1]
+    return limpio
+
+CACHE_INDICADORES = {'data': None, 'fecha': None}
+def obtener_indicadores():
+    global CACHE_INDICADORES
+    hoy = date.today()
+    if CACHE_INDICADORES['data'] and CACHE_INDICADORES['fecha'] == hoy: return CACHE_INDICADORES['data']
+    try:
+        r = requests.get('https://mindicador.cl/api', timeout=5).json()
+        datos = {'uf': r['uf']['valor'], 'utm': r['utm']['valor'], 'dolar': r['dolar']['valor']}
+        CACHE_INDICADORES = {'data': datos, 'fecha': hoy}
+        return datos
+    except: return {'uf': 38200, 'utm': 66000, 'dolar': 975}
+
+def get_safe_date_params():
+    now = date.today()
+    y = request.args.get('year', now.year, type=int)
+    m = request.args.get('month', now.month, type=int)
+    return y, m
+
+def calcular_navegacion(m, y):
+    return {'prev_m': 12 if m == 1 else m - 1, 'prev_y': y - 1 if m == 1 else y,
+            'next_m': 1 if m == 12 else m + 1, 'next_y': y + 1 if m == 12 else y}
     
-    # 1. Cargar configuración desde .env
-    load_dotenv()
-    
-    # Fallback: Si no se cargó DB_URI, intentar cargar desde .env.txt
-    if not os.getenv('DB_URI') and os.path.exists('.env.txt'):
-        print("⚠️  AVISO: Cargando configuración desde .env.txt")
-        load_dotenv('.env.txt')
-        
-        # FIX: Si .env.txt tiene solo la URL (sin DB_URI=), la leemos manualmente
-        if not os.getenv('DB_URI'):
-            try:
-                with open('.env.txt', 'r') as f:
-                    content = f.read().strip()
-                    if content.startswith('postgresql://'):
-                        os.environ['DB_URI'] = content
-            except: pass
+@app.route('/')
+def landing():
+    # Si el usuario ya está logueado, lo mandamos a su panel. Si no, ve la landing.
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
 
-    # Configuración de seguridad y base de datos
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'clave_dev_segura_123')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_URI')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SESSION_COOKIE_NAME'] = 'habipro_session'
-
-    if not app.config['SQLALCHEMY_DATABASE_URI']:
-        raise RuntimeError("❌ Error Crítico: DB_URI no encontrada. Verifica tu archivo .env o .env.txt")
-
-    # 2. Iniciar extensiones con la app
-    db.init_app(app)
-    login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
-
-    # Context processor para inyectar variables globales a los templates
-    @app.context_processor
-    def inject_global_vars():
-        return dict(current_year=datetime.utcnow().year)
-
-    # 3. Importar y Registrar Blueprints
-    # Nota: Importamos aquí para evitar referencias circulares
-    from app.blueprints.auth import auth_bp
-    from app.blueprints.admin import admin_bp
-    from app.blueprints.residente import residente_bp
-    from app.blueprints.conserje import conserje_bp
-    from app.blueprints.superadmin import superadmin_bp
-
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(residente_bp)
-    app.register_blueprint(conserje_bp)
-    app.register_blueprint(superadmin_bp)
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Esta
 
     return app
