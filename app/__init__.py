@@ -62,22 +62,6 @@ login_manager.login_view = 'login'
 from app.auth import auth_bp
 app.register_blueprint(auth_bp)
 
-# ==========================================
-# 2. MODELOS Y UTILIDADES CRÍTICAS
-# ==========================================
-class Usuario(UserMixin, db.Model): 
-    __tablename__ = 'usuarios'
-    rut = db.Column(db.String(20), primary_key=True)
-    nombre = db.Column(db.String(100)); email = db.Column(db.String(100))
-    rol = db.Column(db.String(50)); edificio_id = db.Column(db.Integer)
-    activo = db.Column(db.Boolean, default=True)
-    def get_id(self): return self.rut
-
-@login_manager.user_loader
-def load_user(user_rut): 
-    # session.get es el estándar actual para SQLAlchemy 2.0
-    return db.session.get(Usuario, user_rut)
-
 def get_db_connection():
     return psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'], cursor_factory=RealDictCursor)
 
@@ -126,3 +110,7 @@ def landing():
 def dashboard():
     # Redirigir a la lógica de paneles por rol definida en auth.home
     return redirect(url_for('auth.home'))
+
+def create_app():
+    """Función fábrica para retornar la instancia de la aplicación."""
+    return app
