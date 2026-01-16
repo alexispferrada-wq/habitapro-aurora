@@ -56,7 +56,7 @@ db = SQLAlchemy(app, engine_options={
 })
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'auth.login'
 
 # Registro de Blueprints
 from app.auth import auth_bp
@@ -100,9 +100,7 @@ def calcular_navegacion(m, y):
     
 @app.route('/')
 def landing():
-    # Si el usuario ya está logueado, lo mandamos a su panel. Si no, ve la landing.
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+    # Siempre mostrar la landing page en la raíz
     return render_template('landing.html')
 
 @app.route('/dashboard')
