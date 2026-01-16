@@ -258,15 +258,15 @@
     <div class="container-fluid d-flex justify-content-end gap-4 text-white-50" style="font-size: 0.75rem;">
         <div class="d-flex align-items-center">
             <i class="bi bi-graph-up-arrow text-warning me-1"></i>
-            UF: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.uf) }}</span>
+            UF: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.uf) | replace(',', '.') }}</span>
         </div>
         <div class="d-flex align-items-center">
             <i class="bi bi-bank text-success me-1"></i>
-            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.dolar) }}</span>
+            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.dolar) | replace(',', '.') }}</span>
         </div>
         <div class="d-flex align-items-center d-none d-md-flex">
             <i class="bi bi-file-earmark-text text-info me-1"></i>
-            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) }}</span>
+            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) | replace(',', '.') }}</span>
         </div>
     </div>
 </div>
@@ -381,7 +381,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="text-white-50 fw-bold" style="font-size: 0.65rem;">DEUDA AEXON</span>
                                 <span class="fw-bold {{ 'text-danger' if e.deuda_omnisoft > 0 else 'text-success' }}">
-                                    ${{ "{:,.0f}".format(e.deuda_omnisoft) }}
+                                    ${{ "{:,.0f}".format(e.deuda_omnisoft) | replace(',', '.') }}
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">

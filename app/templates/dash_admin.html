@@ -8,53 +8,245 @@
 
 <style>
     /* ESTILOS DARK GENERALES */
-    .card, .modal-content, .card-glass, .list-group-item {
+    .card,
+    .modal-content,
+    .card-glass,
+    .list-group-item {
         background-color: #1a1d24 !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         color: #ffffff !important;
         border-radius: 16px !important;
     }
-    h1, h2, h3, h4, h5, h6, strong, span, p, div { color: #ffffff !important; }
-    .text-white-50, .small { color: rgba(255, 255, 255, 0.6) !important; }
 
-    .form-control, .form-select {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    strong,
+    span,
+    p,
+    div {
+        color: #ffffff !important;
+    }
+
+    .text-white-50,
+    .small {
+        color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    .form-control,
+    .form-select {
         background-color: rgba(0, 0, 0, 0.3) !important;
         border: 1px solid rgba(102, 252, 241, 0.2) !important;
         color: white !important;
     }
-    .form-control:focus { border-color: #0dcaf0 !important; box-shadow: 0 0 0 3px rgba(13, 202, 240, 0.25) !important; }
+
+    .form-control:focus {
+        border-color: #0dcaf0 !important;
+        box-shadow: 0 0 0 3px rgba(13, 202, 240, 0.25) !important;
+    }
 
     /* PARKING & MAPA */
-    .hero-management { position: relative; min-height: 350px; border-radius: 20px; overflow: hidden; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.2); }
-    #miniMap { width: 100%; height: 100%; position: absolute; top: 0; left: 0; filter: grayscale(100%) invert(100%) opacity(0.3); z-index: 0; }
-    .hero-content { position: relative; z-index: 2; padding: 40px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(90deg, rgba(20,25,35,0.95) 40%, rgba(20,25,35,0.4) 100%); height: 100%; }
-    
-    .parking-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-    .park-slot { height: 100px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.85rem; position: relative; transition: 0.2s; }
-    .park-ocupado { border-color: #f1c40f !important; background: rgba(241, 196, 15, 0.15) !important; }
-    .park-ocupado .park-icon { color: #f1c40f; }
-    .park-libre { border-color: #2ecc71 !important; }
-    .park-libre .park-icon { color: #2ecc71; }
-    .park-mantencion { border-color: #0dcaf0 !important; background: rgba(13, 202, 240, 0.1) !important; opacity: 0.8; }
-    .park-mantencion .park-icon { color: #0dcaf0; }
-    .btn-maint { position: absolute; top: 2px; right: 2px; font-size: 0.8rem; color: rgba(255,255,255,0.3); cursor: pointer; background: none; border: none; }
+    .hero-management {
+        position: relative;
+        min-height: 350px;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #miniMap {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        filter: grayscale(100%) invert(100%) opacity(0.3);
+        z-index: 0;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: linear-gradient(90deg, rgba(20, 25, 35, 0.95) 40%, rgba(20, 25, 35, 0.4) 100%);
+        height: 100%;
+    }
+
+    .parking-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+    }
+
+    .park-slot {
+        height: 100px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        position: relative;
+        transition: 0.2s;
+    }
+
+    .park-ocupado {
+        border-color: #f1c40f !important;
+        background: rgba(241, 196, 15, 0.15) !important;
+    }
+
+    .park-ocupado .park-icon {
+        color: #f1c40f;
+    }
+
+    .park-libre {
+        border-color: #2ecc71 !important;
+    }
+
+    .park-libre .park-icon {
+        color: #2ecc71;
+    }
+
+    .park-mantencion {
+        border-color: #0dcaf0 !important;
+        background: rgba(13, 202, 240, 0.1) !important;
+        opacity: 0.8;
+    }
+
+    .park-mantencion .park-icon {
+        color: #0dcaf0;
+    }
+
+    .btn-maint {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        background: none;
+        border: none;
+    }
 
     /* BOTONES ACCIONES */
-    .btn-action-group .btn { padding: 4px 8px; font-size: 0.85rem; }
-    .cal-day { height: 45px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; cursor: default; }
-    .cal-active { background: #66FCF1 !important; color: #0B0C10 !important; font-weight: 800; cursor: pointer !important; }
-    .cal-badge { position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background: #e74c3c; border-radius: 50%; }
-    
-    .btn-quick { height: 110px; border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; transition: 0.3s; }
-    .btn-quick:hover { background: rgba(255,255,255,0.15); border-color: #0dcaf0; transform: translateY(-5px); }
-    .btn-quick i { font-size: 2.5rem; margin-bottom: 10px; }
+    .btn-action-group .btn {
+        padding: 4px 8px;
+        font-size: 0.85rem;
+        color: white; /* Ensure text color is white for all buttons in this group */
+    }
+
+    .cal-day {
+        height: 45px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+        position: relative;
+        /* Necesario para el tooltip */
+    }
+
+    .cal-active {
+        background: #66FCF1 !important;
+        color: #0B0C10 !important;
+        font-weight: 800;
+        cursor: pointer !important;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem; /* Similar a Bootstrap 'gap-2' */
+    }
+
+    .cal-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 10px;
+        height: 10px;
+        background: #e74c3c;
+        border-radius: 50%;
+    }
+
+    /* TOOLTIP POP-UP AL PASAR EL MOUSE */
+    .cal-tooltip {
+        display: none;
+        position: absolute;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(10, 10, 15, 0.95);
+        border: 1px solid #66FCF1;
+        padding: 10px;
+        border-radius: 8px;
+        width: 180px;
+        z-index: 100;
+        font-size: 0.7rem;
+        color: white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+        text-align: left;
+    }
+
+    .cal-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #66FCF1 transparent transparent transparent;
+    }
+
+    .cal-day:hover .cal-tooltip {
+        display: block;
+    }
+
+    .btn-quick {
+        height: 110px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: white;
+        transition: 0.3s;
+    }
+
+    .btn-quick:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #0dcaf0;
+        transform: translateY(-5px);
+    }
+
+    .btn-quick i {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <nav class="navbar navbar-glass fixed-top">
     <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold text-white" href="#" style="--bs-info-rgb: 102, 252, 241;"><i class="bi bi-building me-2 text-info"></i>Admin Panel</a>
+        <a class="navbar-brand fw-bold text-white" href="#" style="--bs-info-rgb: 102, 252, 241;"><i
+                class="bi bi-building me-2 text-info"></i>Admin Panel</a>
         <div class="d-flex align-items-center gap-3">
             <span class="text-white small fw-bold">{{ session.nombre }}</span>
             <a href="/logout" class="btn btn-sm btn-danger border-0 shadow"><i class="bi bi-power"></i></a>
@@ -64,22 +256,24 @@
 <div class="bg-black border-bottom border-secondary py-1" style="margin-top: 56px;">
     <div class="container-fluid d-flex justify-content-end gap-4 text-white-50" style="font-size: 0.75rem;">
         <div class="d-flex align-items-center" style="--bs-warning-rgb: 243, 156, 18;">
-            <i class="bi bi-graph-up-arrow text-warning me-1"></i> 
-            UF: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.uf) }}</span>
+            <i class="bi bi-graph-up-arrow text-warning me-1"></i>
+            UF: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.uf) | replace(',', '.') }}</span>
         </div>
         <div class="d-flex align-items-center">
-            <i class="bi bi-bank text-success me-1"></i> 
-            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.dolar) }}</span>
+            <i class="bi bi-bank text-success me-1"></i>
+            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.dolar) | replace(',', '.') }}</span>
         </div>
         <div class="d-flex align-items-center d-none d-md-flex" style="--bs-info-rgb: 102, 252, 241;">
-            <i class="bi bi-file-earmark-text text-info me-1"></i> 
-            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) }}</span>
+            <i class="bi bi-file-earmark-text text-info me-1"></i>
+            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) | replace(',', '.') }}</span>
         </div>
     </div>
 </div>
 
 <div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
-    {% with messages = get_flashed_messages() %}{% if messages %}{% for msg in messages %}<div class="alert alert-info border-0 text-center mb-4 fw-bold shadow">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
+    {% with messages = get_flashed_messages() %}{% if messages %}{% for msg in messages %}<div
+        class="alert alert-info border-0 text-center mb-4 fw-bold shadow">{{ msg }}</div>{% endfor %}{% endif %}{%
+    endwith %}
 
     <div class="row g-4 mb-4">
         <div class="col-lg-6">
@@ -89,39 +283,53 @@
                     <span class="badge bg-success w-auto align-self-start mb-2 shadow">SISTEMA ONLINE</span>
                     <h1 class="fw-bold mb-0">{{ edificio.nombre }}</h1>
                     <p class="text-white-50 fs-5 mb-2">{{ edificio.direccion }}</p>
-                    
+
                     {% if edificio.deuda_omnisoft > 0 and edificio.estado_pago != 'PAGADO' %}
-                        <div class="mt-3 p-3 rounded border" style="background: rgba(220, 53, 69, 0.15); border-color: #dc3545 !important; backdrop-filter: blur(5px);">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="text-danger fw-bold text-uppercase mb-1"><i class="bi bi-exclamation-circle-fill me-2"></i>Pago Pendiente</div>
-                                    <h5 class="text-white m-0">{{ edificio.deuda_descripcion }}</h5>
-                                    <div class="fs-4 fw-bold text-white mt-1">${{ "{:,.0f}".format(edificio.deuda_omnisoft) }}</div>
-                                </div>
-                                <div class="text-end">
-                                    {% if alerta_deuda == 'VENCIDO' %}
-                                        <div class="badge bg-danger fs-6 mb-2">¡VENCIDO!</div>
-                                        <div class="text-white small">Hace {{ dias_restantes|abs }} días</div>
-                                    {% else %}
-                                        <div class="text-white-50 small text-uppercase">Vence en</div>
-                                        <div class="display-6 fw-bold {{ 'text-warning' if dias_restantes <= 3 else 'text-success' }}">{{ dias_restantes }}</div>
-                                        <div class="text-white-50 small">Días</div>
-                                    {% endif %}
-                                </div>
+                    <div class="mt-3 p-3 rounded border"
+                        style="background: rgba(220, 53, 69, 0.15); border-color: #dc3545 !important; backdrop-filter: blur(5px);">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-danger fw-bold text-uppercase mb-1"><i
+                                        class="bi bi-exclamation-circle-fill me-2"></i>Pago Pendiente</div>
+                                <h5 class="text-white m-0">{{ edificio.deuda_descripcion }}</h5>
+                                <div class="fs-4 fw-bold text-white mt-1">${{ "{:,.0f}".format(edificio.deuda_omnisoft) | replace(',', '.')
+                                    }}</div>
                             </div>
-                            <div class="mt-3 border-top border-danger border-opacity-25 pt-2">
-                                {% if edificio.estado_pago == 'REVISION' %}
-                                    <div class="text-warning fw-bold small"><i class="bi bi-hourglass-split"></i> Comprobante enviado. Esperando confirmación...</div>
+                            <div class="text-end">
+                                {% if alerta_deuda == 'VENCIDO' %}
+                                <div class="badge bg-danger fs-6 mb-2">¡VENCIDO!</div>
+                                <div class="text-white small">Hace {{ dias_restantes|abs }} días</div>
                                 {% else %}
-                                    <button class="btn btn-sm btn-danger w-100 fw-bold shadow" data-bs-toggle="modal" data-bs-target="#modalPagarServicio"><i class="bi bi-upload me-2"></i> SUBIR COMPROBANTE PAGO</button>
+                                <div class="text-white-50 small text-uppercase">Vence en</div>
+                                <div
+                                    class="display-6 fw-bold {{ 'text-warning' if dias_restantes <= 3 else 'text-success' }}">
+                                    {{ dias_restantes }}</div>
+                                <div class="text-white-50 small">Días</div>
                                 {% endif %}
                             </div>
                         </div>
-                    {% else %}
-                        <div class="mt-4 d-flex gap-5">
-                            <div><div class="display-6 fw-bold">{{ stats.unidades }}</div><small class="text-white-50 text-uppercase fw-bold">Unidades</small></div>
-                            <div><div class="display-6 fw-bold text-success">${{ "{:,.0f}".format(finanzas.saldo) }}</div><small class="text-white-50 text-uppercase fw-bold">Caja Chica</small></div>
+                        <div class="mt-3 border-top border-danger border-opacity-25 pt-2">
+                            {% if edificio.estado_pago == 'REVISION' %}
+                            <div class="text-warning fw-bold small"><i class="bi bi-hourglass-split"></i> Comprobante
+                                enviado. Esperando confirmación...</div>
+                            {% else %}
+                            <button class="btn btn-sm btn-danger w-100 fw-bold shadow" data-bs-toggle="modal"
+                                data-bs-target="#modalPagarServicio"><i class="bi bi-upload me-2"></i> SUBIR COMPROBANTE
+                                PAGO</button>
+                            {% endif %}
                         </div>
+                    </div>
+                    {% else %}
+                    <div class="mt-4 d-flex gap-5">
+                        <div>
+                            <div class="display-6 fw-bold">{{ stats.unidades }}</div><small
+                                class="text-white-50 text-uppercase fw-bold">Unidades</small>
+                        </div>
+                        <div>
+                            <div class="display-6 fw-bold text-success">${{ "{:,.0f}".format(finanzas.saldo) | replace(',', '.') }}</div>
+                            <small class="text-white-50 text-uppercase fw-bold">Caja Chica</small>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -130,22 +338,52 @@
         <div class="col-lg-6">
             <div class="card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="d-flex align-items-center gap-3">
-                        <a href="?month={{ nav.prev_m }}&year={{ nav.prev_y }}" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-left"></i></a>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="?month={{ nav.prev_m }}&year={{ nav.prev_y }}" class="btn btn-sm btn-outline-light"><i
+                                class="bi bi-chevron-left"></i></a>
                         <h4 class="fw-bold m-0">{{ mes_actual }} {{ anio_actual }}</h4>
-                        <a href="?month={{ nav.next_m }}&year={{ nav.next_y }}" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-right"></i></a>
+                        <a href="?month={{ nav.next_m }}&year={{ nav.next_y }}" class="btn btn-sm btn-outline-light"><i
+                                class="bi bi-chevron-right"></i></a>
                     </div>
-                    <a href="/admin/activos" class="btn btn-sm btn-info fw-bold text-dark" style="--bs-btn-bg: #66FCF1; --bs-btn-border-color: #66FCF1;"><i class="bi bi-gear-fill me-1"></i> Activos</a>
+                    <div class="d-flex gap-2">
+                        <a href="/admin/activos" class="btn btn-sm btn-info fw-bold text-dark" style="--bs-btn-bg: #66FCF1; --bs-btn-border-color: #66FCF1;"><i class="bi bi-gear-fill me-1"></i> Activos</a>
+                        <button class="btn btn-sm btn-outline-info fw-bold" onclick="exportCalendarToPDF()"><i class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
+                    </div>
                 </div>
-                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <div class="calendar-grid">
+                    {# Encabezados de los días #}
+                    <div class="text-center small text-uppercase text-white-50 fw-bold">Lun</div>
+                    <div class="text-center small text-uppercase text-white-50 fw-bold">Mar</div>
+                    <div class="text-center small text-uppercase text-white-50 fw-bold">Mié</div>
+                    <div class="text-center small text-uppercase text-white-50 fw-bold">Jue</div>
+                    <div class="text-center small text-uppercase text-white-50 fw-bold">Vie</div>
+                    <div class="text-center small text-uppercase text-white-50 fw-bold">Sáb</div>
+                    <div class="text-center small text-uppercase text-white-50 fw-bold">Dom</div>
+
+                    {# Días del calendario #}
                     {% for semana in calendario %}
                         {% for dia in semana %}
                             {% if dia > 0 %}
-                                {% set count = eventos.get(dia, [])|length %}
-                                <div class="cal-day {{ 'cal-active' if count > 0 }}" style="width: 13%;" {% if count > 0 %} onclick="verDetalleDia({{ dia }}, {{ eventos.get(dia, []) | tojson }})" {% endif %}>
-                                    {{ dia }} {% if count > 0 %}<div class="cal-badge"></div>{% endif %}
+                                {% set evs = eventos.get(dia, []) %}
+                                {% set count = evs|length %}
+                                <div class="cal-day {{ 'cal-active' if count > 0 }}">
+                                    {{ dia }}
+                                    {% if count > 0 %}
+                                    <div class="cal-badge"></div>
+                                    <div class="cal-tooltip">
+                                        <div class="text-info fw-bold mb-1 border-bottom border-secondary pb-1">Agenda Día {{ dia }}</div>
+                                        {% for e in evs %}
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>{{ e.nombre }}</span>
+                                            <span class="text-success">${{ "{:,.0f}".format(e.costo) | replace(',', '.') }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
                                 </div>
-                            {% else %}<div style="width: 13%;"></div>{% endif %}
+                            {% else %}
+                                <div></div> {# Celda vacía para mantener la grilla alineada #}
+                            {% endif %}
                         {% endfor %}
                     {% endfor %}
                 </div>
@@ -158,26 +396,34 @@
             <div class="card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold m-0"><i class="bi bi-stars text-warning me-2"></i> Amenities</h5>
-                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#formEspacio"><i class="bi bi-plus-lg"></i></button>
+                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#formEspacio"><i class="bi bi-plus-lg"></i></button>
                 </div>
                 <div class="collapse mb-3" id="formEspacio">
-                    <form action="/admin/espacios/guardar" method="POST" class="bg-black bg-opacity-25 p-3 rounded border border-secondary">
-                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre (Ej: Quincho)" required>
+                    <form action="/admin/espacios/guardar" method="POST"
+                        class="bg-black bg-opacity-25 p-3 rounded border border-secondary">
+                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre (Ej: Quincho)"
+                            required>
                         <div class="row g-2 mb-2">
-                            <div class="col"><input type="number" name="capacidad" class="form-control" placeholder="Cap." required></div>
-                            <div class="col"><input type="number" name="precio" class="form-control" placeholder="$" value="0"></div>
+                            <div class="col"><input type="number" name="capacidad" class="form-control"
+                                    placeholder="Cap." required></div>
+                            <div class="col"><input type="number" name="precio" class="form-control" placeholder="$"
+                                    value="0"></div>
                         </div>
                         <button class="btn btn-success w-100 btn-sm fw-bold">Guardar</button>
                     </form>
                 </div>
                 <div class="list-group list-group-flush">
                     {% for e in espacios %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom border-white border-opacity-10">
+                    <div
+                        class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom border-white border-opacity-10">
                         <div>
                             <div class="fw-bold">{{ e.nombre }}</div>
-                            <small class="text-white-50">Cap: {{ e.capacidad }} | <span class="text-success">${{ "{:,.0f}".format(e.precio) }}</span></small>
+                            <small class="text-white-50">Cap: {{ e.capacidad }} | <span class="text-success">${{
+                                    "{:,.0f}".format(e.precio) }}</span></small>
                         </div>
-                        <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('¿Eliminar?')"><i class="bi bi-trash-fill"></i></a>
+                        <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0"
+                            onclick="return confirm('¿Eliminar?')"><i class="bi bi-trash-fill"></i></a>
                     </div>
                     {% else %}
                     <div class="text-center text-white-50 py-3">Sin espacios creados.</div>
@@ -188,37 +434,51 @@
 
         <div class="col-lg-8">
             <div class="card p-0 h-100 overflow-hidden">
-                <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25" style="--bs-info-rgb: 102, 252, 241;">
+                <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25"
+                    style="--bs-info-rgb: 102, 252, 241;">
                     <h5 class="m-0 fw-bold"><i class="bi bi-calendar-check text-info me-2"></i> Reservas Recientes</h5>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
-                        <thead><tr class="text-white-50 small"><th>Fecha / Hora</th><th>Espacio</th><th>Unidad</th><th>Estado</th><th>Acción</th></tr></thead>
+                        <thead>
+                            <tr class="text-white-50 small">
+                                <th>Fecha / Hora</th>
+                                <th>Espacio</th>
+                                <th>Unidad</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {% for r in reservas %}
                             <tr>
                                 <td class="fw-bold">
-                                    {{ r.fecha_uso.strftime('%d/%m/%Y') }} 
+                                    {{ r.fecha_uso.strftime('%d/%m/%Y') }}
                                     <span class="text-info ms-1">{{ r.hora_inicio or '' }}</span>
                                 </td>
                                 <td class="text-info fw-bold">{{ r.nombre_espacio }}</td>
-                                <td><span class="badge bg-light text-dark border border-white">U. {{ r.numero_unidad }}</span></td>
+                                <td><span class="badge bg-light text-dark border border-white">U. {{ r.numero_unidad
+                                        }}</span></td>
                                 <td>
                                     {% if r.estado == 'CONFIRMADA' %}<span class="badge bg-success shadow-sm">OK</span>
                                     {% else %}<span class="badge bg-danger shadow-sm">CANCEL</span>{% endif %}
                                 </td>
                                 <td>
                                     {% if r.estado == 'CONFIRMADA' %}
-                                    <form action="/admin/reservas/cancelar" method="POST" class="d-inline" onsubmit="return confirm('¿Cancelar y devolver dinero?');">
+                                    <form action="/admin/reservas/cancelar" method="POST" class="d-inline"
+                                        onsubmit="return confirm('¿Cancelar y devolver dinero?');">
                                         <input type="hidden" name="reserva_id" value="{{ r.id }}">
                                         <input type="hidden" name="reembolsar" value="on">
-                                        <button class="btn btn-sm btn-danger py-0 fw-bold" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+                                        <button class="btn btn-sm btn-danger py-0 fw-bold" title="Cancelar"><i
+                                                class="bi bi-x-lg"></i></button>
                                     </form>
                                     {% endif %}
                                 </td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="5" class="text-center py-5 text-white-50">Sin reservas activas.</td></tr>
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-white-50">Sin reservas activas.</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -234,53 +494,61 @@
                 <i class="bi bi-gear-fill me-1"></i> Configurar
             </button>
         </div>
-    <div class="parking-grid">
+        <div class="parking-grid">
             {% for p in parking %}
             <div class="park-slot park-{{ p.estado }}">
                 <form action="/admin/parking/maintenance" method="POST">
                     <input type="hidden" name="slot_id" value="{{ p.id }}">
-                    <input type="hidden" name="accion" value="{{ 'desactivar' if p.estado == 'mantencion' else 'activar' }}">
-                    <button class="btn-maint" title="Activar/Desactivar Mantención"><i class="bi bi-cone-striped"></i></button>
+                    <input type="hidden" name="accion"
+                        value="{{ 'desactivar' if p.estado == 'mantencion' else 'activar' }}">
+                    <button class="btn-maint" title="Activar/Desactivar Mantención"><i
+                            class="bi bi-cone-striped"></i></button>
                 </form>
 
                 <div class="fw-bold">{{ p.nombre }}</div>
 
                 {% if p.estado == 'ocupado' %}
-                    <i class="bi bi-car-front-fill park-icon fs-4 my-1"></i>
-                    
-                    <span class="badge bg-danger mb-1" style="font-size: 0.6rem;">U. {{ p.unidad_numero }}</span>
-                    
-                    <div class="text-warning fw-bold small">{{ p.patente }}</div>
-                    <small class="text-white-50" style="font-size: 0.65rem;">{{ p.tiempo }}</small>
+                <i class="bi bi-car-front-fill park-icon fs-4 my-1"></i>
+
+                <span class="badge bg-danger mb-1" style="font-size: 0.6rem;">U. {{ p.unidad_numero }}</span>
+
+                <div class="text-warning fw-bold small">{{ p.patente }}</div>
+                <small class="text-white-50" style="font-size: 0.65rem;">{{ p.tiempo }}</small>
 
                 {% elif p.estado == 'libre' %}
-                    <i class="bi bi-check-circle park-icon fs-3 my-1"></i>
-                    <small class="text-success fw-bold" style="font-size: 0.7rem;">LIBRE</small>
+                <i class="bi bi-check-circle park-icon fs-3 my-1"></i>
+                <small class="text-success fw-bold" style="font-size: 0.7rem;">LIBRE</small>
 
                 {% elif p.estado == 'mantencion' %}
-                    <i class="bi bi-tools park-icon fs-4 my-1"></i>
-                    <small class="text-info fw-bold" style="font-size: 0.7rem;">MANT.</small>
+                <i class="bi bi-tools park-icon fs-4 my-1"></i>
+                <small class="text-info fw-bold" style="font-size: 0.7rem;">MANT.</small>
 
                 {% else %}
-                    <i class="bi bi-lock-fill park-icon fs-4 my-1"></i>
-                    <small class="text-white-50" style="font-size: 0.7rem;">U. {{ p.unidad_numero }}</small>
+                <i class="bi bi-lock-fill park-icon fs-4 my-1"></i>
+                <small class="text-white-50" style="font-size: 0.7rem;">U. {{ p.unidad_numero }}</small>
                 {% endif %}
             </div>
             {% endfor %}
-        </div>    
+        </div>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-wallet2" style="color: #66FCF1;"></i><span>Gastos</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i class="bi bi-person-badge-fill" style="color: #66FCF1;"></i><span>Conserjes</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i class="bi bi-journal-text" style="color: #66FCF1;"></i><span>Bitácora</span></a></div>
-        <div class="col-6 col-md-3"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i class="bi bi-whatsapp" style="color: #2ecc71;"></i><span>Soporte</span></a></div>
+        <div class="col-6 col-md-3"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-wallet2"
+                    style="color: #66FCF1;"></i><span>Gastos</span></a></div>
+        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i
+                    class="bi bi-person-badge-fill" style="color: #66FCF1;"></i><span>Conserjes</span></a></div>
+        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i
+                    class="bi bi-journal-text" style="color: #66FCF1;"></i><span>Bitácora</span></a></div>
+        <div class="col-6 col-md-3"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i
+                    class="bi bi-whatsapp" style="color: #2ecc71;"></i><span>Soporte</span></a></div>
     </div>
 
     <div class="card p-0 overflow-hidden">
-        <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25 d-flex justify-content-between align-items-center">
+        <div
+            class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25 d-flex justify-content-between align-items-center">
             <h5 class="m-0 fw-bold">Directorio Residentes</h5>
-            <input type="text" id="buscador" class="form-control form-control-sm w-auto bg-black bg-opacity-25" placeholder="Buscar unidad...">
+            <input type="text" id="buscador" class="form-control form-control-sm w-auto bg-black bg-opacity-25"
+                placeholder="Buscar unidad...">
         </div>
         <div class="table-responsive" style="max-height: 400px;">
             <table class="table table-hover mb-0 align-middle" id="tablaResidentes">
@@ -307,23 +575,28 @@
                         <td class="small text-white-50">{{ u.owner.email }}</td>
                         <td class="pe-4 text-end">
                             <div class="btn-group btn-action-group" role="group">
-                                <a href="https://wa.me/{{ u.tenant.fono or u.owner.fono }}" target="_blank" class="btn btn-outline-success" title="WhatsApp">
+                                <a href="https://wa.me/{{ u.tenant.fono or u.owner.fono }}" target="_blank"
+                                    class="btn btn-outline-success" title="WhatsApp">
                                     <i class="bi bi-whatsapp"></i>
                                 </a>
-                                
-                                <button type="button" class="btn btn-outline-light" title="Registrar Pago" onclick="abrirPago({{ u.id }}, '{{ u.numero }}')">
+
+                                <button type="button" class="btn btn-outline-light" title="Registrar Pago"
+                                    onclick="abrirPago({{ u.id }}, '{{ u.numero }}')">
                                     <i class="bi bi-cash-coin"></i>
                                 </button>
 
-                                <button type="button" class="btn btn-outline-danger" title="Multar" onclick="abrirMulta({{ u.id }}, '{{ u.numero }}')">
+                                <button type="button" class="btn btn-outline-danger" title="Multar"
+                                    onclick="abrirMulta({{ u.id }}, '{{ u.numero }}')">
                                     <i class="bi bi-receipt"></i>
                                 </button>
 
-                                <button type="button" class="btn btn-outline-warning" title="Editar Completo" onclick='abrirEditar({{ u | tojson }})'>
+                                <button type="button" class="btn btn-outline-warning" title="Editar Completo"
+                                    onclick='abrirEditar({{ u | tojson }})'>
                                     <i class="bi bi-pencil-fill"></i>
                                 </button>
 
-                                <button type="button" class="btn btn-outline-info" title="Reset Clave" onclick="resetClave({{ u.id }}, '{{ u.tenant.rut if u.tenant.rut else u.owner.rut }}')">
+                                <button type="button" class="btn btn-outline-info" title="Reset Clave"
+                                    onclick="resetClave({{ u.id }}, '{{ u.tenant.rut if u.tenant.rut else u.owner.rut }}')">
                                     <i class="bi bi-key-fill"></i>
                                 </button>
                             </div>
@@ -373,7 +646,8 @@
                     <input type="hidden" name="unidad_id" id="multaUnitId">
                     <div class="mb-3">
                         <label class="small text-white-50">Motivo</label>
-                        <input type="text" name="motivo" class="form-control" placeholder="Ej: Ruidos Molestos" required>
+                        <input type="text" name="motivo" class="form-control" placeholder="Ej: Ruidos Molestos"
+                            required>
                     </div>
                     <div class="mb-3">
                         <label class="small text-white-50">Monto Multa ($)</label>
@@ -386,22 +660,163 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalEditarUnidad" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Editar Ficha Unidad</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/admin/residentes/guardar_edicion" method="POST"><input type="hidden" name="unidad_id" id="editUnitId"><div class="row g-2 mb-3"><div class="col"><label class="text-white-50 small">Piso</label><input type="number" name="piso" id="editPiso" class="form-control"></div><div class="col"><label class="text-white-50 small">Prorrateo %</label><input type="text" name="prorrateo" id="editProrrateo" class="form-control"></div></div><h6 class="text-info border-bottom border-white border-opacity-10 pb-2 mb-3">Datos Residente (Arrendatario)</h6><div class="mb-2"><label class="small text-muted">Nombre</label><input type="text" name="tenant_nombre" id="editTenantNombre" class="form-control"></div><div class="mb-2"><label class="small text-muted">RUT</label><input type="text" name="tenant_rut" id="editTenantRut" class="form-control"></div><div class="mb-2"><label class="small text-muted">Email</label><input type="email" name="tenant_email" id="editTenantEmail" class="form-control"></div><div class="mb-3"><label class="small text-muted">Teléfono</label><input type="text" name="tenant_fono" id="editTenantFono" class="form-control"></div><button class="btn btn-warning w-100 mt-2 fw-bold">Guardar Ficha</button></form></div></div></div></div>
+<div class="modal fade" id="modalEditarUnidad" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Editar Ficha Unidad</h5><button type="button"
+                    class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/admin/residentes/guardar_edicion" method="POST"><input type="hidden" name="unidad_id"
+                        id="editUnitId">
+                    <div class="row g-2 mb-3">
+                        <div class="col"><label class="text-white-50 small">Piso</label><input type="number" name="piso"
+                                id="editPiso" class="form-control"></div>
+                        <div class="col"><label class="text-white-50 small">Prorrateo %</label><input type="text"
+                                name="prorrateo" id="editProrrateo" class="form-control"></div>
+                    </div>
+                    <h6 class="text-info border-bottom border-white border-opacity-10 pb-2 mb-3">Datos Residente
+                        (Arrendatario)</h6>
+                    <div class="mb-2"><label class="small text-muted">Nombre</label><input type="text"
+                            name="tenant_nombre" id="editTenantNombre" class="form-control"></div>
+                    <div class="mb-2"><label class="small text-muted">RUT</label><input type="text" name="tenant_rut"
+                            id="editTenantRut" class="form-control"></div>
+                    <div class="mb-2"><label class="small text-muted">Email</label><input type="email"
+                            name="tenant_email" id="editTenantEmail" class="form-control"></div>
+                    <div class="mb-3"><label class="small text-muted">Teléfono</label><input type="text"
+                            name="tenant_fono" id="editTenantFono" class="form-control"></div><button
+                        class="btn btn-warning w-100 mt-2 fw-bold">Guardar Ficha</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-<div class="modal fade" id="modalPagarServicio" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content card-glass" style="border-color: #dc3545;"><div class="modal-header border-0 bg-danger bg-opacity-25"><h5 class="modal-title fw-bold text-white">Reportar Pago AEXON</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="text-white-50 small">Sube comprobante del servicio de software.</p><form action="/admin/pagar_servicio" method="POST" enctype="multipart/form-data"><div class="mb-3"><input type="file" name="comprobante" class="form-control" required accept="image/*,.pdf"></div><button class="btn btn-danger w-100 fw-bold">ENVIAR</button></form></div></div></div></div>
-<div class="modal fade" id="modalConfigParking" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content card-glass"><div class="modal-header border-bottom border-white border-opacity-10"><h6 class="modal-title fw-bold text-white">Gestionar Espacios</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/admin/parking/agregar" method="POST" class="mb-4"><div class="input-group"><input type="text" name="nombre" class="form-control" placeholder="Ej: V-10" required><button class="btn btn-success fw-bold"><i class="bi bi-plus-lg"></i></button></div></form><div style="max-height: 200px; overflow-y: auto;">{% for p in parking %}<div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-black bg-opacity-25"><span class="fw-bold text-white small">{{ p.nombre }}</span>{% if p.estado == 'libre' or p.estado == 'mantencion' %}<form action="/admin/parking/eliminar" method="POST" onsubmit="return confirm('¿Eliminar?')"><input type="hidden" name="id" value="{{ p.id }}"><button class="btn btn-sm btn-danger py-0 px-2"><i class="bi bi-trash"></i></button></form>{% else %}<span class="badge bg-warning text-dark" style="font-size: 0.6rem;">OCUPADO</span>{% endif %}</div>{% endfor %}</div></div></div></div></div>
-<div class="modal fade" id="modalConserjes" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Equipo de Conserjería</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="bg-black bg-opacity-25 p-3 rounded mb-4 border border-secondary"><div class="mb-2 text-info small fw-bold"><i class="bi bi-info-circle"></i> Nuevo Conserje: El "Usuario" será su RUT.</div><div class="row g-2"><div class="col-md-4"><input id="newCRut" class="form-control" placeholder="RUT (Sin puntos)"></div><div class="col-md-5"><input id="newCNombre" class="form-control" placeholder="Nombre Completo"></div><div class="col-md-3"><button class="btn btn-success fw-bold w-100" onclick="crearConserje()"><i class="bi bi-plus-lg"></i> Agregar</button></div></div></div><h6 class="text-white-50 border-bottom border-white border-opacity-10 pb-2 mb-3">Personal Activo</h6><div id="listaConserjes"><div class="text-center text-white-50 py-3"><div class="spinner-border spinner-border-sm text-info"></div> Cargando...</div></div></div></div></div></div>
-<div class="modal fade" id="modalLogs" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header border-0 bg-black bg-opacity-25"><h5 class="modal-title fw-bold"><i class="bi bi-journal-text text-warning me-2"></i>Bitácora Diaria</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="p-3 bg-black bg-opacity-50 border-bottom border-secondary d-flex gap-2 align-items-center"><div class="input-group input-group-sm" style="max-width: 200px;"><span class="input-group-text bg-dark text-white border-secondary"><i class="bi bi-calendar"></i></span><input type="date" id="filtroFecha" class="form-control bg-dark text-white border-secondary"></div><div class="input-group input-group-sm" style="max-width: 150px;"><span class="input-group-text bg-dark text-white border-secondary">U.</span><input type="text" id="filtroUnidad" class="form-control bg-dark text-white border-secondary" placeholder="Depto..."></div><button class="btn btn-sm btn-info fw-bold text-dark" onclick="cargarLogs()"><i class="bi bi-search me-1"></i> Filtrar</button><button class="btn btn-sm btn-outline-secondary ms-auto" onclick="setHoy()">Hoy</button></div><div class="modal-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0 text-white"><thead class="bg-black bg-opacity-50 text-white-50 small text-uppercase"><tr><th class="ps-4">Hora</th><th>Unidad</th><th>Tipo</th><th>Detalle</th><th>Info Extra</th></tr></thead><tbody id="tablaLogsBody"></tbody></table></div></div><div class="modal-footer border-0 bg-black bg-opacity-25"><small class="text-white-50 ms-auto">Historial de seguridad.</small></div></div></div></div>
+<div class="modal fade" id="modalPagarServicio" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-glass" style="border-color: #dc3545;">
+            <div class="modal-header border-0 bg-danger bg-opacity-25">
+                <h5 class="modal-title fw-bold text-white">Reportar Pago AEXON</h5><button type="button"
+                    class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50 small">Sube comprobante del servicio de software.</p>
+                <form action="/admin/pagar_servicio" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3"><input type="file" name="comprobante" class="form-control" required
+                            accept="image/*,.pdf"></div><button class="btn btn-danger w-100 fw-bold">ENVIAR</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalConfigParking" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content card-glass">
+            <div class="modal-header border-bottom border-white border-opacity-10">
+                <h6 class="modal-title fw-bold text-white">Gestionar Espacios</h6><button type="button"
+                    class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/admin/parking/agregar" method="POST" class="mb-4">
+                    <div class="input-group"><input type="text" name="nombre" class="form-control"
+                            placeholder="Ej: V-10" required><button class="btn btn-success fw-bold"><i
+                                class="bi bi-plus-lg"></i></button></div>
+                </form>
+                <div style="max-height: 200px; overflow-y: auto;">{% for p in parking %}<div
+                        class="d-flex justify-content-between align-items-center mb-2 p-2 rounded bg-black bg-opacity-25">
+                        <span class="fw-bold text-white small">{{ p.nombre }}</span>{% if p.estado == 'libre' or
+                        p.estado == 'mantencion' %}<form action="/admin/parking/eliminar" method="POST"
+                            onsubmit="return confirm('¿Eliminar?')"><input type="hidden" name="id"
+                                value="{{ p.id }}"><button class="btn btn-sm btn-danger py-0 px-2"><i
+                                    class="bi bi-trash"></i></button></form>{% else %}<span
+                            class="badge bg-warning text-dark" style="font-size: 0.6rem;">OCUPADO</span>{% endif %}
+                    </div>{% endfor %}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalConserjes" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Equipo de Conserjería</h5><button type="button"
+                    class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="bg-black bg-opacity-25 p-3 rounded mb-4 border border-secondary">
+                    <div class="mb-2 text-info small fw-bold"><i class="bi bi-info-circle"></i> Nuevo Conserje: El
+                        "Usuario" será su RUT.</div>
+                    <div class="row g-2">
+                        <div class="col-md-4"><input id="newCRut" class="form-control" placeholder="RUT (Sin puntos)">
+                        </div>
+                        <div class="col-md-5"><input id="newCNombre" class="form-control" placeholder="Nombre Completo">
+                        </div>
+                        <div class="col-md-3"><button class="btn btn-success fw-bold w-100" onclick="crearConserje()"><i
+                                    class="bi bi-plus-lg"></i> Agregar</button></div>
+                    </div>
+                </div>
+                <h6 class="text-white-50 border-bottom border-white border-opacity-10 pb-2 mb-3">Personal Activo</h6>
+                <div id="listaConserjes">
+                    <div class="text-center text-white-50 py-3">
+                        <div class="spinner-border spinner-border-sm text-info"></div> Cargando...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalLogs" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-black bg-opacity-25">
+                <h5 class="modal-title fw-bold"><i class="bi bi-journal-text text-warning me-2"></i>Bitácora Diaria</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="p-3 bg-black bg-opacity-50 border-bottom border-secondary d-flex gap-2 align-items-center">
+                <div class="input-group input-group-sm" style="max-width: 200px;"><span
+                        class="input-group-text bg-dark text-white border-secondary"><i
+                            class="bi bi-calendar"></i></span><input type="date" id="filtroFecha"
+                        class="form-control bg-dark text-white border-secondary"></div>
+                <div class="input-group input-group-sm" style="max-width: 150px;"><span
+                        class="input-group-text bg-dark text-white border-secondary">U.</span><input type="text"
+                        id="filtroUnidad" class="form-control bg-dark text-white border-secondary"
+                        placeholder="Depto..."></div><button class="btn btn-sm btn-info fw-bold text-dark"
+                    onclick="cargarLogs()"><i class="bi bi-search me-1"></i> Filtrar</button><button
+                    class="btn btn-sm btn-outline-secondary ms-auto" onclick="setHoy()">Hoy</button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-white">
+                        <thead class="bg-black bg-opacity-50 text-white-50 small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Hora</th>
+                                <th>Unidad</th>
+                                <th>Tipo</th>
+                                <th>Detalle</th>
+                                <th>Info Extra</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaLogsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-black bg-opacity-25"><small class="text-white-50 ms-auto">Historial de
+                    seguridad.</small></div>
+        </div>
+    </div>
+</div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var map = L.map('miniMap', {zoomControl: false}).setView([{{ edificio.lat | default(-33.4) }}, {{ edificio.lon | default(-70.6) }}], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+    document.addEventListener("DOMContentLoaded", function () {
+        var map = L.map('miniMap', { zoomControl: false }).setView([{{ edificio.lat | default(- 33.4)
+    }}, {{ edificio.lon | default(- 70.6) }}], 15);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
     });
 
     function verDetalleDia(dia, eventos) {
         let html = '';
-        if(eventos.length === 0) { html = '<p class="text-white-50">Sin eventos.</p>'; } 
+        if (eventos.length === 0) { html = '<p class="text-white-50">Sin eventos.</p>'; }
         else {
             eventos.forEach(e => {
                 html += `<div class="text-start border-bottom border-white border-opacity-10 py-2"><strong class="text-info">${e.nombre}</strong><div class="d-flex justify-content-between"><span class="text-white-50 small">Costo</span><span class="text-success fw-bold">$${parseInt(e.costo).toLocaleString()}</span></div></div>`;
@@ -435,21 +850,21 @@
     }
 
     function resetClave(uid, rutUsuario) {
-        if(!confirm('¿Resetear clave?')) return;
+        if (!confirm('¿Resetear clave?')) return;
         fetch('/admin/residentes/reset_clave', {
-            method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `unidad_id=${uid}`
+            method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `unidad_id=${uid}`
         }).then(r => r.json()).then(d => {
-            if(d.status === 'success') {
-                Swal.fire({ 
-                    title: '¡Clave Generada!', 
+            if (d.status === 'success') {
+                Swal.fire({
+                    title: '¡Clave Generada!',
                     html: `
                         <div class="text-start bg-dark p-3 rounded border border-secondary">
                             <p class="mb-2 text-white-50">Acceso para el residente:</p>
                             <div class="mb-2">Usuario (RUT): <strong class="text-info fs-5">${rutUsuario}</strong></div>
                             <div>Contraseña: <strong class="text-warning fs-4">${d.password}</strong></div>
                         </div>
-                    `, 
-                    icon: 'success', background: '#1a1d24', color: '#fff' 
+                    `,
+                    icon: 'success', background: '#1a1d24', color: '#fff'
                 });
             } else { Swal.fire('Error', d.message, 'error'); }
         });
@@ -468,39 +883,44 @@
     }
     function crearConserje() {
         let r = document.getElementById('newCRut').value, n = document.getElementById('newCNombre').value;
-        if(!r || !n) return Swal.fire('Faltan datos','','warning');
-        fetch('/admin/conserjes/crear', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `rut=${r}&nombre=${n}&email=staff@habita.cl` })
-        .then(r=>r.json()).then(d => {
-            if(d.status==='success') { Swal.fire({title:'Creado', html:`Clave: <h2 class="text-warning">${d.password}</h2>`, icon:'success', background:'#1a1d24', color:'#fff'}); cargarConserjes(); }
-            else Swal.fire('Error','No se pudo crear','error');
-        });
+        if (!r || !n) return Swal.fire('Faltan datos', '', 'warning');
+        fetch('/admin/conserjes/crear', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `rut=${r}&nombre=${n}&email=staff@habita.cl` })
+            .then(r => r.json()).then(d => {
+                if (d.status === 'success') { Swal.fire({ title: 'Creado', html: `Clave: <h2 class="text-warning">${d.password}</h2>`, icon: 'success', background: '#1a1d24', color: '#fff' }); cargarConserjes(); }
+                else Swal.fire('Error', 'No se pudo crear', 'error');
+            });
     }
     function resetearClaveConserje(rut, nombre) {
-        if(confirm(`¿Nueva clave para ${nombre}?`)) fetch('/admin/conserjes/reset_clave', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `rut=${rut}` }).then(r=>r.json()).then(d=> Swal.fire({title:'Nueva Clave', html:`<h2 class="text-warning">${d.password}</h2>`, background:'#1a1d24', color:'#fff'}));
+        if (confirm(`¿Nueva clave para ${nombre}?`)) fetch('/admin/conserjes/reset_clave', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `rut=${rut}` }).then(r => r.json()).then(d => Swal.fire({ title: 'Nueva Clave', html: `<h2 class="text-warning">${d.password}</h2>`, background: '#1a1d24', color: '#fff' }));
     }
-    function eliminarConserje(rut) { if(confirm('¿Eliminar?')) fetch('/admin/conserjes/eliminar', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: `rut=${rut}` }).then(()=>cargarConserjes()); }
+    function eliminarConserje(rut) { if (confirm('¿Eliminar?')) fetch('/admin/conserjes/eliminar', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `rut=${rut}` }).then(() => cargarConserjes()); }
 
     // --- BITÁCORA ---
     function abrirModalLogs() { setHoy(false); new bootstrap.Modal(document.getElementById('modalLogs')).show(); cargarLogs(); }
-    function setHoy(recargar=true) { document.getElementById('filtroFecha').value = new Date().toISOString().split('T')[0]; document.getElementById('filtroUnidad').value=''; if(recargar) cargarLogs(); }
+    function setHoy(recargar = true) { document.getElementById('filtroFecha').value = new Date().toISOString().split('T')[0]; document.getElementById('filtroUnidad').value = ''; if (recargar) cargarLogs(); }
     function cargarLogs() {
         let f = document.getElementById('filtroFecha').value, u = document.getElementById('filtroUnidad').value;
         document.getElementById('tablaLogsBody').innerHTML = '<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm"></div></td></tr>';
-        fetch(`/admin/logs/listar?fecha=${f}&unidad=${u}`).then(r=>r.json()).then(d => {
+        fetch(`/admin/logs/listar?fecha=${f}&unidad=${u}`).then(r => r.json()).then(d => {
             let html = '';
-            if(d.length===0) html='<tr><td colspan="5" class="text-center py-4 text-white-50">Sin registros.</td></tr>';
+            if (d.length === 0) html = '<tr><td colspan="5" class="text-center py-4 text-white-50">Sin registros.</td></tr>';
             d.forEach(l => {
-                let color='secondary', icon='circle';
-                if(l.tipo==='VISITA'){color='primary';icon='person-walking';} else if(l.tipo==='PAGO'){color='success';icon='cash-coin';} else if(l.tipo==='INCIDENCIA'){color='danger';icon='exclamation-triangle';}
-                html += `<tr><td class="ps-4 text-info font-monospace">${l.fecha}</td><td>${l.unidad!=='-'?`<span class="badge bg-light text-dark">U. ${l.unidad}</span>`:'-'}</td><td><span class="badge bg-${color}"><i class="bi bi-${icon}"></i> ${l.tipo}</span></td><td>${l.detalle}</td><td class="small text-white-50">${l.extra}</td></tr>`;
+                let color = 'secondary', icon = 'circle';
+                if (l.tipo === 'VISITA') { color = 'primary'; icon = 'person-walking'; } else if (l.tipo === 'PAGO') { color = 'success'; icon = 'cash-coin'; } else if (l.tipo === 'INCIDENCIA') { color = 'danger'; icon = 'exclamation-triangle'; }
+                html += `<tr><td class="ps-4 text-info font-monospace">${l.fecha}</td><td>${l.unidad !== '-' ? `<span class="badge bg-light text-dark">U. ${l.unidad}</span>` : '-'}</td><td><span class="badge bg-${color}"><i class="bi bi-${icon}"></i> ${l.tipo}</span></td><td>${l.detalle}</td><td class="small text-white-50">${l.extra}</td></tr>`;
             });
             document.getElementById('tablaLogsBody').innerHTML = html;
         });
     }
 
-    document.getElementById('buscador').addEventListener('keyup', function() {
+    document.getElementById('buscador').addEventListener('keyup', function () {
         let val = this.value.toLowerCase();
         document.querySelectorAll('#tablaResidentes tbody tr').forEach(r => r.style.display = r.innerText.toLowerCase().includes(val) ? '' : 'none');
     });
 </script>
+    <script>
+        function exportCalendarToPDF() {
+            window.open(`/admin/activos/export_pdf?month={{ m }}&year={{ y }}`, '_blank');
+        }
+    </script>
 {% endblock %}

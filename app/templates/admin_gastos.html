@@ -57,18 +57,18 @@
                 <div class="row g-2 mb-3">
                     <div class="col-6 text-start border-end border-secondary">
                         <small class="text-success d-block">Ingresos</small>
-                        <span class="fs-5 fw-bold text-white">+${{ "{:,.0f}".format(total_ingresos) }}</span>
+                        <span class="fs-5 fw-bold text-white">+${{ "{:,.0f}".format(total_ingresos) | replace(',', '.') }}</span>
                     </div>
                     <div class="col-6 text-end">
                         <small class="text-warning d-block">Egresos</small>
-                        <span class="fs-5 fw-bold text-white">-${{ "{:,.0f}".format(total_gastos) }}</span>
+                        <span class="fs-5 fw-bold text-white">-${{ "{:,.0f}".format(total_gastos) | replace(',', '.') }}</span>
                     </div>
                 </div>
                 
                 <div class="pt-3 border-top border-secondary">
                     <small class="text-white-50">Saldo Neto</small>
                     <h2 class="display-6 fw-bold {% if balance >= 0 %}text-info{% else %}text-danger{% endif %}">
-                        ${{ "{:,.0f}".format(balance) }}
+                        ${{ "{:,.0f}".format(balance) | replace(',', '.') }}
                     </h2>
                 </div>
 
@@ -141,7 +141,7 @@
                                         <td class="small text-white-50 ps-4">{{ g.fecha }}</td>
                                         <td><span class="badge bg-secondary bg-opacity-50">{{ g.categoria }}</span></td>
                                         <td class="fw-bold">{{ g.descripcion }}</td>
-                                        <td class="text-end pe-4 text-warning fw-bold">-${{ "{:,.0f}".format(g.monto) }}</td>
+                                        <td class="text-end pe-4 text-warning fw-bold">-${{ "{:,.0f}".format(g.monto) | replace(',', '.') }}</td>
                                     </tr>
                                     {% else %}
                                     <tr><td colspan="4" class="text-center py-5 text-white-50">No hay gastos registrados este mes.</td></tr>
@@ -161,7 +161,7 @@
                                         <td class="small text-white-50 ps-4">{{ i.fecha }}</td>
                                         <td><span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25">U. {{ i.unidad_numero }}</span></td>
                                         <td class="small">{{ i.metodo }}</td>
-                                        <td class="text-end pe-4 text-success fw-bold">+${{ "{:,.0f}".format(i.monto) }}</td>
+                                        <td class="text-end pe-4 text-success fw-bold">+${{ "{:,.0f}".format(i.monto) | replace(',', '.') }}</td>
                                     </tr>
                                     {% else %}
                                     <tr><td colspan="4" class="text-center py-5 text-white-50">No hay pagos registrados para este periodo contable.</td></tr>

@@ -1,6 +1,8 @@
 # ==========================================
 # 1. IMPORTACIONES Y CONFIGURACIÓN HABIPRO
 # ==========================================
+from flask import send_file
+from io import BytesIO
 import os, json, random, calendar, io, csv, requests
 import psycopg2 # <--- ESTA LÍNEA ES LA QUE FALTA O ESTÁ MAL UBICADA
 from psycopg2.extras import RealDictCursor # <--- NECESARIA PARA RealDictCursor
@@ -8,6 +10,9 @@ from datetime import date, datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 # 1. CARGAR VARIABLES DE ENTORNO
@@ -447,7 +452,7 @@ def conserje_guardar_turno():
     nombre = session.get('nombre')
     
     # Formateamos el mensaje para que aparezca claro en la bitácora del admin
-    detalle = f"ENTREGA DE TURNO\nConserje: {nombre}\nCaja: ${caja}\nNovedades: {novedades}"
+    detalle = f"ENTREGA DE TURNO\nConserje: {nombre}\nCaja: ${'{:,.0f}'.format(int(caja)).replace(',', '.')}\nNovedades: {novedades}"
     
     conn = get_db_connection()
     cur = conn.cursor()
@@ -706,11 +711,20 @@ def panel_admin():
     f_fin = date(y, m, calendar.monthrange(y, m)[1])
     
     for a in activos:
-        if a['ultimo_servicio']:
+        if a['ultimo_servicio'] and a['periodicidad_dias'] and a['periodicidad_dias'] > 0:
             f = a['ultimo_servicio']
+            p = a['periodicidad_dias']
+            
+            # Optimización: Saltar fechas antiguas hasta llegar al mes actual
+            if f < f_ini:
+                dias_diff = (f_ini - f).days
+                ciclos = dias_diff // p
+                f += timedelta(days=ciclos * p)
+                if f < f_ini: f += timedelta(days=p)
+
             while f <= f_fin:
                 if f >= f_ini: eventos.setdefault(f.day, []).append({'nombre': a['nombre'], 'costo': a['costo_estimado']})
-                f += timedelta(days=a['periodicidad_dias'])
+                f += timedelta(days=p)
     
     # 6. Espacios Comunes y Reservas
     cur.execute("SELECT * FROM espacios WHERE edificio_id = %s AND activo = TRUE", (eid,))

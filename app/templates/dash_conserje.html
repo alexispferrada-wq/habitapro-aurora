@@ -5,8 +5,6 @@
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <style>
-    ∏
-
     /* Estilos Conserjería */
     .card-glass {
         background: rgba(20, 20, 30, 0.85);
@@ -216,23 +214,18 @@
                 data-bs-target="#modalTurno"><i class="bi bi-arrow-left-right"></i> Entrega Turno</button></div>
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-sos w-100" onclick="enviarAlerta()"><i
                     class="bi bi-megaphone"></i> Alerta SOS</button></div>
-    </div>
-
-    <!-- SECCIÓN DE ACCESOS REMOTOS (SIMULADOS) -->
-    <h6 class="text-white-50 text-uppercase small fw-bold mb-3 ps-1"><i class="bi bi-cpu me-1"></i> Accesos Remotos
-        (IoT)</h6>
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100"
-                onclick="abrirAcceso('Puerta Principal')">
-                <i class="bi bi-door-open-fill"></i> Abrir Principal</button></div>
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100"
                 onclick="abrirAcceso('Portón Vehicular')">
-                <i class="bi bi-p-circle-fill"></i> Abrir Portón</button></div>
-        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100"
-                onclick="abrirAcceso('Bóveda de Seguridad')">
-                <i class="bi bi-safe2-fill"></i> Abrir Bóveda</button></div>
-        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100" onclick="abrirAcceso('Gimnasio')">
-                <i class="bi bi-bicycle"></i> Abrir Gimnasio</button></div>
+                <i class="bi bi-p-circle-fill"></i> Abrir Portón
+                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 mt-1" style="font-size: 0.55rem;">NO CONTRATADO</span>
+            </button>
+        </div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100" 
+                onclick="abrirAcceso('Gimnasio')">
+                <i class="bi bi-bicycle"></i> Abrir Gimnasio
+                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 mt-1" style="font-size: 0.55rem;">NO CONTRATADO</span>
+            </button>
+        </div>
     </div>
 
     <div class="card-glass p-4 mb-5">
@@ -293,35 +286,47 @@
                     Llaves</h5>
                 <div class="d-flex gap-3 overflow-auto pb-2 mb-3">
                     {% for r in reservas_futuras %}
-                    <div id="reserva-card-{{ loop.index }}"
-                        class="bg-dark border border-secondary p-2 rounded text-center" style="min-width: 160px;">
+                    <div class="p-2 rounded text-center border position-relative" 
+                         style="min-width: 160px; 
+                         {% if r.estado == 'EN_USO' %}background: rgba(255, 193, 7, 0.1); border-color: #ffc107 !important;
+                         {% elif r.estado == 'FINALIZADA' %}background: rgba(220, 53, 69, 0.1); border-color: #dc3545 !important;
+                         {% else %}background: rgba(255, 255, 255, 0.05); border-color: rgba(255,255,255,0.1) !important;{% endif %}">
+                        
                         <div class="text-white fw-bold">{{ r.nombre_espacio }}</div>
-                        <div class="fw-bold small my-1" style="color: #66FCF1;">
+                        
+                        <div class="fw-bold small my-1 text-white-50">
                             {{ r.fecha_uso.strftime('%d/%m') }}
-                            <br>
-                            <span class="badge bg-warning text-dark">
-                                <i class="bi bi-clock"></i> {{ r.hora_inicio or '--:--' }}
-                            </span>
+                            <span class="badge bg-dark border border-secondary ms-1">{{ r.hora_inicio or '--:--' }}</span>
                         </div>
-                        <div class="small text-white-50 mb-2">U. {{ r.numero_unidad }}</div>
-                        <button id="reserva-btn-{{ loop.index }}" class="btn btn-xxs py-0" style="font-size: 0.6rem; --bs-btn-border-color: #66FCF1; --bs-btn-hover-bg: #66FCF1; --bs-btn-hover-border-color: #66FCF1; --bs-btn-hover-color: #0B0C10; --bs-btn-color: #66FCF1;"
-                            style="font-size: 0.6rem;"
-                            onclick="gestionarLlave('{{ r.nombre_espacio }}', '{{ r.numero_unidad }}', {{ loop.index }})">
-                            <i class="bi bi-key"></i> ENTREGAR LLAVE
-                        </button>
+                        
+                        <div class="fw-bold text-info mb-2">U. {{ r.numero_unidad }}</div>
+
+                        {% if r.estado == 'CONFIRMADA' %}
+                            <button class="btn btn-sm w-100 btn-outline-info py-0" style="font-size: 0.7rem;"
+                                onclick="cambiarEstadoReserva({{ r.id }}, 'EN_USO', '¿Entregar llave a Unidad {{ r.numero_unidad }}?')">
+                                <i class="bi bi-key"></i> ENTREGAR
+                            </button>
+                        
+                        {% elif r.estado == 'EN_USO' %}
+                            <div class="badge bg-warning text-dark mb-1 w-100">EN CURSO</div>
+                            <button class="btn btn-sm w-100 btn-outline-warning py-0" style="font-size: 0.7rem;"
+                                onclick="cambiarEstadoReserva({{ r.id }}, 'FINALIZADA', '¿Finalizar uso del espacio?')">
+                                <i class="bi bi-stop-circle"></i> FINALIZAR
+                            </button>
+
+                        {% elif r.estado == 'FINALIZADA' %}
+                            <div class="badge bg-danger mb-1 w-100">POR REVISAR</div>
+                            <button class="btn btn-sm w-100 btn-success py-0" style="font-size: 0.7rem;"
+                                onclick="cambiarEstadoReserva({{ r.id }}, 'ENTREGADO', '¿Confirmar recepción conforme?')">
+                                <i class="bi bi-check-lg"></i> LUGAR OK
+                            </button>
+                        {% endif %}
                     </div>
                     {% else %}
                     <div class="text-white-50 small">No hay reservas próximas.</div>
                     {% endfor %}
                 </div>
 
-                <div class="bg-black bg-opacity-25 rounded p-3 border border-secondary">
-                    <h6 class="small fw-bold mb-2" style="color: #66FCF1;"><i class="bi bi-key-fill me-1"></i> Llaves en Uso</h6>
-                    <div id="llavesEnUso">
-                        <div class="text-white-50 small italic">No hay llaves registradas como "fuera de conserjería".
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -641,9 +646,6 @@
 </div>
 
 <script>
-    // TIMER
-    const LLAVES_STORAGE_KEY = `habipro_llaves_{{ edificio.id }}`;
-
     document.addEventListener("DOMContentLoaded", function () {
         const slots = document.querySelectorAll('.slot-timer');
         slots.forEach(slot => {
@@ -663,8 +665,6 @@
                 if (remaining < 60) slot.style.color = '#ff4757';
             } else { slot.innerHTML = "¡TIEMPO AGOTADO!"; slot.style.backgroundColor = "#dc3545"; slot.style.color = "white"; }
         });
-
-        renderizarLlavesEnUso();
     });
 
     // ABRE EL MODAL DE EDICIÓN COMPLETA
@@ -823,73 +823,65 @@
     function gestionarParking(id, nombre, estado, patente) {
         if (estado === 'mantencion' || estado === 'asignado') return;
         if (estado === 'ocupado') {
-            Swal.fire({ title: `Liberar ${nombre}?`, text: `Patente actual: ${patente}`, showCancelButton: true, confirmButtonText: 'Liberar', confirmButtonColor: '#28a745', background: '#1a1d24', color: '#fff' }).then((r) => { if (r.isConfirmed) cambiarEstadoParking(id, 'liberar', ''); });
+            Swal.fire({ title: `Liberar ${nombre}?`, text: `Patente actual: ${patente}`, showCancelButton: true, confirmButtonText: 'Liberar', confirmButtonColor: '#28a745', background: '#1a1d24', color: '#fff' }).then((r) => { if (r.isConfirmed) cambiarEstadoParking(id, 'liberar', '', ''); });
         } else {
-            Swal.fire({ title: `Ocupar ${nombre}`, input: 'text', inputLabel: 'Patente Visita', showCancelButton: true, confirmButtonText: 'Registrar', background: '#1a1d24', color: '#fff' }).then((r) => { if (r.isConfirmed && r.value) cambiarEstadoParking(id, 'ocupar', r.value); });
+            Swal.fire({
+                title: `Ocupar ${nombre}`,
+                html: `
+                    <input id="swal-patente" class="swal2-input" placeholder="Patente (Ej: ABCD-12)" style="text-transform:uppercase; color:black;">
+                    <select id="swal-unidad" class="swal2-select" style="display:flex; width:80%; margin:10px auto; color:black;">
+                        <option value="">Seleccione Unidad (Opcional)</option>
+                        {% for u in unidades %}
+                        <option value="{{ u.id }}">{{ u.numero }}</option>
+                        {% endfor %}
+                    </select>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Registrar',
+                background: '#1a1d24', color: '#fff',
+                preConfirm: () => {
+                    return [
+                        document.getElementById('swal-patente').value,
+                        document.getElementById('swal-unidad').value
+                    ]
+                }
+            }).then((r) => {
+                if (r.isConfirmed) {
+                    const [pat, uid] = r.value;
+                    if (!pat) Swal.fire('Error', 'La patente es obligatoria', 'error');
+                    else cambiarEstadoParking(id, 'ocupar', pat, uid);
+                }
+            });
         }
     }
-    function cambiarEstadoParking(id, acc, pat) { fetch('/conserje/parking/toggle', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `slot_id=${id}&accion=${acc}&patente=${pat}` }).then(() => location.reload()); }
+    function cambiarEstadoParking(id, acc, pat, uid) { 
+        fetch('/conserje/parking/toggle', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
+            body: `slot_id=${id}&accion=${acc}&patente=${pat}&unidad_id=${uid || ''}` 
+        }).then(() => location.reload()); 
+    }
 
     function enviarAlerta() {
         Swal.fire({ title: 'Enviar Alerta SOS', text: 'Se notificará a todos.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff' }).then((r) => { if (r.isConfirmed) { let f = document.createElement('form'); f.method = 'POST'; f.action = '/admin/difusion'; let i = document.createElement('input'); i.name = 'mensaje'; i.value = 'EMERGENCIA'; f.appendChild(i); document.body.appendChild(f); f.submit(); } });
     }
 
-    function renderizarLlavesEnUso() {
-        const llaves = JSON.parse(localStorage.getItem(LLAVES_STORAGE_KEY) || '[]');
-        const container = document.getElementById('llavesEnUso');
-
-        if (llaves.length === 0) {
-            container.innerHTML = '<div class="text-white-50 small italic">No hay llaves registradas como "fuera de conserjería".</div>';
-            return;
-        }
-
-        let html = '';
-        llaves.forEach(llave => {
-            html += `
-                <div id="llave-en-uso-${llave.id}" class="d-flex justify-content-between align-items-center bg-dark p-2 rounded mb-1 border border-info">
-                    <div>
-                        <div class="fw-bold text-white">${llave.espacio}</div>
-                        <div class="small text-white-50">Unidad: ${llave.unidad}</div>
-                    </div>
-                    <button class="btn btn-sm btn-outline-warning py-0" onclick="devolverLlave(${llave.id})">
-                        <i class="bi bi-box-arrow-in-left"></i> Devolver
-                    </button>
-                </div>
-            `;
-            const btn = document.getElementById(`reserva-btn-${llave.id}`);
-            if (btn) {
-                btn.classList.remove('btn-outline-info');
-                btn.classList.add('btn-success');
-                btn.innerHTML = '<i class="bi bi-check-lg"></i> ENTREGADO';
-                btn.disabled = true;
-            }
-        });
-        container.innerHTML = html;
-    }
-
-    function devolverLlave(id) {
-        let llaves = JSON.parse(localStorage.getItem(LLAVES_STORAGE_KEY) || '[]');
-        llaves = llaves.filter(llave => llave.id !== id);
-        localStorage.setItem(LLAVES_STORAGE_KEY, JSON.stringify(llaves));
-
-        const btn = document.getElementById(`reserva-btn-${id}`);
-        if (btn) {
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-outline-info');
-            btn.innerHTML = '<i class="bi bi-key"></i> ENTREGAR LLAVE';
-            btn.disabled = false;
-        }
-        renderizarLlavesEnUso();
-    }
-
-    function gestionarLlave(espacio, unidad, id) {
-        Swal.fire({ title: 'Control de Llaves', text: `¿Confirmas la entrega de la llave de '${espacio}' a la Unidad ${unidad}?`, icon: 'question', showCancelButton: true, confirmButtonText: 'Sí, entregar', background: '#1a1d24', color: '#fff', confirmButtonColor: '#66FCF1' })
+    function cambiarEstadoReserva(id, nuevoEstado, pregunta) {
+        Swal.fire({ 
+            title: 'Control de Espacios', 
+            text: pregunta, 
+            icon: 'question', 
+            showCancelButton: true, 
+            confirmButtonText: 'Confirmar', 
+            background: '#1a1d24', color: '#fff', confirmButtonColor: '#66FCF1' 
+        })
             .then(r => {
                 if (r.isConfirmed) {
-                    const llaves = JSON.parse(localStorage.getItem(LLAVES_STORAGE_KEY) || '[]');
-                    if (!llaves.some(llave => llave.id === id)) { llaves.push({ id, espacio, unidad }); localStorage.setItem(LLAVES_STORAGE_KEY, JSON.stringify(llaves)); }
-                    Swal.fire({ title: 'Registrado', text: 'Llave marcada como entregada.', icon: 'success', background: '#1a1d24', color: '#fff', timer: 1500, showConfirmButton: false });
-                    renderizarLlavesEnUso();
+                    fetch('/conserje/reservas/cambiar_estado', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `reserva_id=${id}&nuevo_estado=${nuevoEstado}`
+                    }).then(() => location.reload());
                 }
             });
     }

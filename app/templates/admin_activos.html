@@ -99,7 +99,7 @@
 
             <div class="card-glass p-4 mt-4 text-center border-start border-4 border-info">
                 <small class="text-white-50 text-uppercase ls-1">Gasto Proyectado (Este Mes)</small>
-                <h2 class="text-info my-2 fw-bold">${{ "{:,.0f}".format(gasto_mes).replace(',', '.') }}</h2>
+                <h2 class="text-info my-2 fw-bold">${{ "{:,.0f}".format(gasto_mes) | replace(',', '.') }}</h2>
                 <small class="text-white-50 d-block">Basado en las fechas de mantención.</small>
             </div>
         </div>
@@ -117,6 +117,7 @@
                             <tr>
                                 <th class="ps-4">Activo</th>
                                 <th>Próxima Fecha</th>
+                                <th>Costo Mes</th>
                                 <th>Estado</th>
                                 <th class="text-end pe-4">Acciones</th>
                             </tr>
@@ -131,6 +132,9 @@
                                         {{ a.prox_fecha }}
                                     </div>
                                     <small class="text-white-50">Cada {{ a.periodicidad_dias }} días</small>
+                                </td>
+                                <td class="text-info fw-bold">
+                                    ${{ "{:,.0f}".format(a.costo_mes) | replace(',', '.') }}
                                 </td>
                                 <td>
                                     {% if a.dias_restantes < 0 %}

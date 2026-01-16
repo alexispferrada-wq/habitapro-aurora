@@ -1,9 +1,12 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, flash, current_app
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, flash, current_app, send_file
 from flask_login import login_required, current_user
 from app.database import get_db_cursor
 from werkzeug.security import generate_password_hash
 from datetime import date, datetime, timedelta
 import os
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 import json
 import random
 import calendar
@@ -170,11 +173,19 @@ def panel_admin():
         f_fin = date(y, m, calendar.monthrange(y, m)[1])
         
         for a in activos:
-            if a['ultimo_servicio']:
+            if a['ultimo_servicio'] and a['periodicidad_dias'] and a['periodicidad_dias'] > 0:
                 f = a['ultimo_servicio']
+                p = a['periodicidad_dias']
+                
+                if f < f_ini:
+                    dias_diff = (f_ini - f).days
+                    ciclos = dias_diff // p
+                    f += timedelta(days=ciclos * p)
+                    if f < f_ini: f += timedelta(days=p)
+
                 while f <= f_fin:
                     if f >= f_ini: eventos.setdefault(f.day, []).append({'nombre': a['nombre'], 'costo': a['costo_estimado']})
-                    f += timedelta(days=a['periodicidad_dias'])
+                    f += timedelta(days=p)
         
         # 6. Espacios Comunes y Reservas
         cur.execute("SELECT * FROM espacios WHERE edificio_id = %s AND activo = TRUE", (eid,))
@@ -446,27 +457,138 @@ def admin_activos():
 
     gasto_mes = 0
     hoy = date.today()
-    ultimo_dia_mes = date(hoy.year, hoy.month, calendar.monthrange(hoy.year, hoy.month)[1])
+    inicio_mes = date(hoy.year, hoy.month, 1)
+    fin_mes = date(hoy.year, hoy.month, calendar.monthrange(hoy.year, hoy.month)[1])
 
     for a in activos:
-        if a['ultimo_servicio']:
-            prox = a['ultimo_servicio']
-            periodo = a['periodicidad_dias']
-            costo = a['costo_estimado']
+        a['costo_mes'] = 0
+        a['prox_fecha'] = 'N/A'
+        a['dias_restantes'] = 0
 
-            while prox < hoy:
-                prox += timedelta(days=periodo)
+        if a['ultimo_servicio'] and a['periodicidad_dias'] and a['periodicidad_dias'] > 0:
+            periodo = a['periodicidad_dias']
+            costo = a['costo_estimado'] or 0
+            ultimo = a['ultimo_servicio']
+
+            # 1. Proyección Mensual
+            temp_date = ultimo
+            if temp_date < inicio_mes:
+                dias_diff = (inicio_mes - temp_date).days
+                ciclos = dias_diff // periodo
+                temp_date += timedelta(days=ciclos * periodo)
+                if temp_date < inicio_mes: temp_date += timedelta(days=periodo)
+            
+            while temp_date <= fin_mes:
+                if temp_date >= inicio_mes:
+                    a['costo_mes'] += costo
+                temp_date += timedelta(days=periodo)
+            gasto_mes += a['costo_mes']
+
+            # 2. Próxima Fecha
+            prox = ultimo
+            if prox < hoy:
+                dias_diff = (hoy - prox).days
+                ciclos = dias_diff // periodo
+                prox += timedelta(days=ciclos * periodo)
+                if prox < hoy: prox += timedelta(days=periodo)
             
             a['prox_fecha'] = prox.strftime('%d/%m/%Y')
             a['dias_restantes'] = (prox - hoy).days
 
-            temp_date = prox
-            while temp_date <= ultimo_dia_mes:
-                if temp_date.month == hoy.month and temp_date.year == hoy.year:
-                    gasto_mes += costo
-                temp_date += timedelta(days=periodo)
-
     return render_template('admin_activos.html', activos=activos, gasto_mes=gasto_mes)
+
+@admin_bp.route('/admin/activos/export_pdf')
+@login_required
+def admin_activos_export_pdf():
+    if session.get('rol') != 'admin':
+        flash("No autorizado para ver este contenido.", "error")
+        return redirect(url_for('auth.login'))
+
+    eid = session.get('edificio_id')
+    y = request.args.get('year', type=int)
+    m = request.args.get('month', type=int)
+
+    if not y or not m:
+        flash("Error: Año o mes no especificados para el PDF.", "error")
+        return redirect(url_for('admin.panel_admin'))
+
+    with get_db_cursor() as cur:
+        cur.execute("SELECT * FROM activos WHERE edificio_id = %s", (eid,))
+        activos = cur.fetchall()
+
+        eventos = {}
+        f_ini = date(y, m, 1)
+        f_fin = date(y, m, calendar.monthrange(y, m)[1])
+
+        for a in activos:
+            if a['ultimo_servicio'] and a['periodicidad_dias'] and a['periodicidad_dias'] > 0:
+                f = a['ultimo_servicio']
+                p = a['periodicidad_dias']
+
+                if f < f_ini:
+                    dias_diff = (f_ini - f).days
+                    ciclos = dias_diff // p
+                    f += timedelta(days=ciclos * p)
+                    if f < f_ini: f += timedelta(days=p)
+
+                while f <= f_fin:
+                    if f >= f_ini:
+                        eventos.setdefault(f.day, []).append({'nombre': a['nombre'], 'costo': a['costo_estimado']})
+                    f += timedelta(days=p)
+    
+    # --- PDF GENERATION ---
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    mes_nombre = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m]
+    p.setFont("Helvetica-Bold", 24)
+    p.drawString(inch, height - inch, f"Calendario de Mantenciones - {mes_nombre} {y}")
+
+    p.setFont("Helvetica", 10)
+    days_of_week = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+    x_start = inch
+    y_start = height - 1.5 * inch
+    col_width = (width - 2 * inch) / 7
+    row_height = 0.75 * inch
+
+    for i, day_name in enumerate(days_of_week):
+        p.drawString(x_start + i * col_width + (col_width / 2) - p.stringWidth(day_name, "Helvetica", 10) / 2, y_start, day_name)
+        p.line(x_start + i * col_width, y_start - 0.05 * inch, x_start + (i + 1) * col_width, y_start - 0.05 * inch)
+
+    cal = calendar.Calendar()
+    current_y = y_start - row_height
+    
+    for week in cal.monthdayscalendar(y, m):
+        for i, day_num in enumerate(week):
+            x_pos = x_start + i * col_width
+            y_pos = current_y
+
+            p.rect(x_pos, y_pos, col_width, row_height)
+
+            if day_num != 0:
+                p.setFont("Helvetica-Bold", 12)
+                p.drawString(x_pos + 5, y_pos + row_height - 15, str(day_num))
+
+                day_events = eventos.get(day_num, [])
+                event_y_pos = y_pos + row_height - 30
+                p.setFont("Helvetica", 7)
+                for event in day_events:
+                    if event_y_pos > y_pos + 5:
+                        p.drawString(x_pos + 5, event_y_pos, f"{event['nombre']} (${'{:,.0f}'.format(event['costo']).replace(',', '.')})")
+                        p.drawString(x_pos + 5, event_y_pos, f"{event['nombre']} (${'{:,.0f}'.format(event['costo']).replace(',', '.')})")
+                        p.drawString(x_pos + 5, event_y_pos, f"{event['nombre']} (${'{:,.0f}'.format(event['costo']).replace(',', '.')})")
+                        p.drawString(x_pos + 5, event_y_pos, f"{event['nombre']} (${'{:,.0f}'.format(event['costo']).replace(',', '.')})")
+                        p.drawString(x_pos + 5, event_y_pos, f"{event['nombre']} (${'{:,.0f}'.format(event['costo']).replace(',', '.')})")
+                        event_y_pos -= 10
+
+        current_y -= row_height
+
+    p.showPage()
+    p.save()
+
+    buffer.seek(0)
+    return send_file(buffer, as_attachment=True, download_name=f"mantenciones_{mes_nombre}_{y}.pdf", mimetype='application/pdf')
 
 @admin_bp.route('/admin/activos/guardar', methods=['POST'])
 def guardar_activo():
