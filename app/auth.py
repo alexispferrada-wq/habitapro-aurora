@@ -13,7 +13,7 @@ def formatear_rut(rut_raw):
     if "-" not in limpio and len(limpio) > 3: limpio = limpio[:-1] + "-" + limpio[-1]
     return limpio
 
-@auth_bp.route('/')
+@auth_bp.route('/home')
 def home():
     if not current_user.is_authenticated:
         return redirect(url_for('auth.login'))
