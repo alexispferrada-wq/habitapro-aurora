@@ -49,7 +49,10 @@ app.config['SESSION_COOKIE_NAME'] = 'habipro_session'
 # Ahora SQLAlchemy encontrará la URI cargada en app.config
 db = SQLAlchemy(app, engine_options={
     "pool_pre_ping": True, 
-    "pool_recycle": 300
+    "pool_recycle": 280,
+    "pool_size": 10,
+    "max_overflow": 5,
+    "pool_timeout": 30
 })
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -107,20 +110,24 @@ def calcular_navegacion(m, y):
     return {'prev_m': 12 if m == 1 else m - 1, 'prev_y': y - 1 if m == 1 else y,
             'next_m': 1 if m == 12 else m + 1, 'next_y': y + 1 if m == 12 else y}
     
-    
-        
 @app.route('/')
-def home():
+def landing():
+    # Si el usuario ya está logueado, lo mandamos a su panel. Si no, ve la landing.
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Esta ruta centraliza la redirección post-login.
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
-    
     rol = session.get('rol')
     if rol == 'superadmin': return redirect(url_for('panel_superadmin'))
     if rol == 'admin': return redirect(url_for('panel_admin'))
     if rol == 'conserje': return redirect(url_for('panel_conserje'))
     if rol == 'residente': return redirect(url_for('panel_residente'))
-    
-    return render_template('index.html')
 
 # --- NUEVAS RUTAS PARA LA SELECCIÓN MÚLTIPLE ---
 
@@ -128,7 +135,7 @@ def home():
 def seleccionar_unidad():
     opciones = session.get('opciones_login')
     if not opciones:
-        return redirect(url_for('home'))
+        return redirect(url_for('landing'))
     return render_template('select_unit.html', opciones=opciones)
 
 @app.route('/set_unidad/<int:uid>')
@@ -148,10 +155,10 @@ def set_unidad(uid):
         session.pop('opciones_login', None) # Limpiar temp
         return redirect(url_for('panel_residente'))
     
-    return redirect(url_for('home'))
+    return redirect(url_for('landing'))
 
 @app.route('/logout')
-def logout(): session.clear(); return redirect(url_for('home'))
+def logout(): session.clear(); return redirect(url_for('landing'))
 
 # --- UTILIDADES PARKING ---
 # --- LÓGICA DE PARKING REAL (CONECTADA A BD) ---
@@ -374,6 +381,81 @@ def conserje_entregar_encomienda():
 @app.route('/conserje/incidencias/guardar', methods=['POST'])
 def conserje_guardar_incidencia():
     conn=get_db_connection(); cur=conn.cursor(); cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", (session.get('edificio_id'), request.form.get('titulo'), request.form.get('descripcion'), session.get('nombre'))); conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_conserje'))
+
+@app.route('/conserje/medidores/guardar', methods=['POST'])
+def conserje_guardar_medidor():
+    if session.get('rol') != 'conserje': return redirect(url_for('home'))
+    uid = request.form.get('unidad_id')
+    tipo = request.form.get('tipo')
+    valor = request.form.get('valor')
+    eid = session.get('edificio_id')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Validación de consistencia: No permitir lecturas menores a la anterior
+        cur.execute("""
+            SELECT valor FROM lecturas_medidores 
+            WHERE unidad_id = %s AND tipo = %s 
+            ORDER BY fecha DESC LIMIT 1
+        """, (uid, tipo))
+        ultima_lectura = cur.fetchone()
+        
+        if ultima_lectura and float(valor) < float(ultima_lectura['valor']):
+            flash(f"❌ Error: El valor ({valor}) no puede ser menor a la última lectura registrada ({ultima_lectura['valor']}).")
+            return redirect(url_for('panel_conserje'))
+
+        cur.execute("""
+            INSERT INTO lecturas_medidores (edificio_id, unidad_id, tipo, valor, fecha, registrado_por)
+            VALUES (%s, %s, %s, %s, NOW(), %s)
+        """, (eid, uid, tipo, valor, session.get('nombre')))
+        conn.commit()
+        flash(f"✅ Lectura de {tipo} registrada correctamente.")
+    except Exception as e:
+        conn.rollback()
+        flash("❌ Error al guardar lectura de medidor.")
+    finally:
+        cur.close(); conn.close()
+    return redirect(url_for('panel_conserje'))
+
+@app.route('/conserje/medidores/ultima_lectura')
+def conserje_ultima_lectura():
+    if session.get('rol') != 'conserje': return jsonify({'status': 'error'})
+    uid = request.args.get('unidad_id')
+    tipo = request.args.get('tipo')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT valor, fecha FROM lecturas_medidores 
+        WHERE unidad_id = %s AND tipo = %s 
+        ORDER BY fecha DESC LIMIT 1
+    """, (uid, tipo))
+    res = cur.fetchone()
+    cur.close(); conn.close()
+    
+    if res:
+        return jsonify({'status': 'success', 'valor': res['valor'], 'fecha': res['fecha'].strftime('%d/%m/%Y')})
+    return jsonify({'status': 'success', 'valor': 0, 'fecha': 'N/A'})
+
+@app.route('/conserje/turno/guardar', methods=['POST'])
+def conserje_guardar_turno():
+    if session.get('rol') != 'conserje': return redirect(url_for('home'))
+    novedades = request.form.get('novedades')
+    caja = request.form.get('caja', 0)
+    eid = session.get('edificio_id')
+    nombre = session.get('nombre')
+    
+    # Formateamos el mensaje para que aparezca claro en la bitácora del admin
+    detalle = f"ENTREGA DE TURNO\nConserje: {nombre}\nCaja: ${caja}\nNovedades: {novedades}"
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", 
+               (eid, "ENTREGA DE TURNO", detalle, nombre))
+    conn.commit(); cur.close(); conn.close()
+    flash("✅ Turno finalizado y registrado en bitácora.")
+    return redirect(url_for('panel_conserje'))
 
 # ==========================================
 # RUTAS RESIDENTE (APP MÓVIL)
@@ -750,7 +832,7 @@ def listar_conserjes():
 def crear_conserje():
     try:
         new_pass = f"Conserje{random.randint(1000,9999)}"
-        hashed_pass = generate_password_hash(new_pass)
+        hashed_pass = generate_password_hash(new_pass, method='pbkdf2:sha256')
         rut = formatear_rut(request.form.get('rut'))
         conn = get_db_connection(); cur = conn.cursor()
         cur.execute("INSERT INTO usuarios (rut, nombre, email, telefono, rol, password, edificio_id, activo) VALUES (%s, %s, %s, %s, 'conserje', %s, %s, TRUE) ON CONFLICT (rut) DO NOTHING RETURNING rut", (rut, request.form.get('nombre'), request.form.get('email'), '', hashed_pass, session.get('edificio_id')))
@@ -764,7 +846,7 @@ def eliminar_conserje():
 @app.route('/admin/conserjes/reset_clave', methods=['POST'])
 def reset_clave_conserje():
     np = f"Conserje{random.randint(1000,9999)}"
-    hashed_np = generate_password_hash(np)
+    hashed_np = generate_password_hash(np, method='pbkdf2:sha256')
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("UPDATE usuarios SET password = %s WHERE rut = %s", (hashed_np, request.form.get('rut'))); conn.commit(); cur.close(); conn.close(); return jsonify({'status': 'success', 'password': np})
 
@@ -796,7 +878,7 @@ def reset_clave_residente():
 
     # 2. Generar nueva clave temporal
     nueva_pass = str(random.randint(1000, 9999))
-    hashed_pass = generate_password_hash(nueva_pass)
+    hashed_pass = generate_password_hash(nueva_pass, method='pbkdf2:sha256')
     
     # 3. Upsert en la tabla usuarios (Crea o Actualiza)
     cur.execute("""
@@ -939,7 +1021,7 @@ def guardar_edicion_residente():
 def generar_clave_residente():
     unidad_id = request.form.get('unidad_id')
     new_pass = f"Habita{random.randint(10000,99999)}"
-    hashed_pass = generate_password_hash(new_pass)
+    hashed_pass = generate_password_hash(new_pass, method='pbkdf2:sha256')
     
     conn = get_db_connection(); cur = conn.cursor()
     try:
@@ -1247,7 +1329,7 @@ def crear_admin_rapido():
     
     # Generar Password Aleatoria Segura
     new_pass = f"Habita{random.randint(1000,9999)}$"
-    hashed_pass = generate_password_hash(new_pass)
+    hashed_pass = generate_password_hash(new_pass, method='pbkdf2:sha256')
     
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1280,7 +1362,7 @@ def reset_pass_admin():
     
     # Generar Password Aleatoria
     new_pass = f"Reset{random.randint(1000,9999)}$"
-    hashed_pass = generate_password_hash(new_pass)
+    hashed_pass = generate_password_hash(new_pass, method='pbkdf2:sha256')
     
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1323,10 +1405,8 @@ def login():
     # 1. GET: Mostrar formulario
     if request.method == 'GET':
         if current_user.is_authenticated:
-            if session.get('rol') == 'superadmin': return redirect(url_for('panel_superadmin'))
-            if session.get('rol') == 'admin': return redirect(url_for('panel_admin'))
-            if session.get('rol') == 'conserje': return redirect(url_for('panel_conserje'))
-            if session.get('rol') == 'residente': return redirect(url_for('panel_residente'))
+            # Si ya está logueado, va al dashboard central.
+            return redirect(url_for('dashboard'))
         return render_template('login.html')
 
     # 2. POST: Procesar login
@@ -1403,12 +1483,8 @@ def login():
                         flash("Usuario válido, pero sin departamento asignado.", "warning")
                         return redirect(url_for('login'))
 
-                # Redirecciones Staff
-                if user_data['rol'] == 'superadmin': return redirect(url_for('panel_superadmin'))
-                if user_data['rol'] == 'admin': return redirect(url_for('panel_admin'))
-                if user_data['rol'] == 'conserje': return redirect(url_for('panel_conserje'))
-                
-                return redirect(url_for('home'))
+                # Redirección unificada para todos los roles al dashboard.
+                return redirect(url_for('dashboard'))
             else:
                 print(f"   ❌ CONTRASEÑA INCORRECTA. (DB: '{pass_db}' vs Input: '{pass_input}')")
                 flash("Contraseña incorrecta.", "error")
@@ -1473,7 +1549,7 @@ def fix_residente_demo():
         if not u: return "Error"
         uid = u['id']; eid = session.get('edificio_id') or 1
         rut_demo = formatear_rut("1-9") # 1-9
-        hashed_demo = generate_password_hash("1234")
+        hashed_demo = generate_password_hash("1234", method='pbkdf2:sha256')
         o = json.dumps({"rut": rut_demo, "nombre": "Residente Test", "email": "test@habita.cl"})
         cur.execute("UPDATE unidades SET owner_json = %s WHERE id = %s", (o, uid))
         cur.execute("INSERT INTO usuarios (rut, nombre, email, password, rol, edificio_id, activo) VALUES (%s, 'Residente Test', 'test@habita.cl', %s, 'residente', %s, TRUE) ON CONFLICT (rut) DO UPDATE SET rol='residente', edificio_id=%s, activo=TRUE", (rut_demo, hashed_demo, eid, eid))
@@ -2083,12 +2159,13 @@ def super_crear_edificio():
         # 3. Insertar con SQL Directo (Asegurando coincidencia con la tabla)
         cur.execute("""
             INSERT INTO edificios (nombre, direccion, latitud, longitud, activo, deuda_omnisoft, estado_pago)
-            VALUES (%s, %s, %s, %s, TRUE, 0, 'PENDIENTE')
+            VALUES (%s, %s, %s, %s, TRUE, 0, 'PENDIENTE') RETURNING id
         """, (nombre, direccion, lat_val, lon_val))
+        new_id = cur.fetchone()['id']
         
         conn.commit()
         flash(f'¡Éxito! El edificio "{nombre}" ya está en el sistema.', 'success')
-        
+        return redirect(url_for('panel_superadmin', highlight=new_id))
     except Exception as e:
         conn.rollback()
         print(f"🔥 Error SQL Crear Edificio: {e}")

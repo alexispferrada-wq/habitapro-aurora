@@ -221,7 +221,7 @@ def inicializar_tablas():
             );
         """)
 
-        # 14. ESPACIOS COMUNES (AMENITIES)
+        # 14. ESPACIOS COMUNES
         cur.execute("""
             CREATE TABLE IF NOT EXISTS espacios (
                 id SERIAL PRIMARY KEY,
@@ -244,6 +244,19 @@ def inicializar_tablas():
                 hora_inicio VARCHAR(10),
                 estado VARCHAR(20) DEFAULT 'CONFIRMADA', 
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # 16. LECTURAS DE MEDIDORES (NUEVO)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS lecturas_medidores (
+                id SERIAL PRIMARY KEY,
+                edificio_id INT,
+                unidad_id INT,
+                tipo VARCHAR(50),
+                valor FLOAT,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                registrado_por VARCHAR(100)
             );
         """)
 

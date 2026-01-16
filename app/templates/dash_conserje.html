@@ -5,6 +5,8 @@
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <style>
+    ∏
+
     /* Estilos Conserjería */
     .card-glass {
         background: rgba(20, 20, 30, 0.85);
@@ -121,23 +123,32 @@
     }
 
     .bg-qr {
-        background: linear-gradient(135deg, #6f42c1, #59359a);
+        background: linear-gradient(135deg, #45A29E, #2a615e); /* Muted Teal */
     }
 
     .bg-box {
-        background: linear-gradient(135deg, #fd7e14, #d35400);
+        background: linear-gradient(135deg, #6c757d, #495057); /* Gray */
     }
 
     .bg-log {
-        background: linear-gradient(135deg, #20c997, #198754);
+        background: linear-gradient(135deg, #66FCF1, #45A29E); /* Primary Accent */
     }
 
     .bg-sos {
-        background: linear-gradient(135deg, #dc3545, #a71d2a);
+        background: linear-gradient(135deg, #e74c3c, #c0392b); /* Red */
     }
 
     .bg-shift {
-        background: linear-gradient(135deg, #0dcaf0, #0d6efd);
+        background: linear-gradient(135deg, #45A29E, #1F2833); /* Muted Teal to Dark */
+    }
+
+    .bg-meter {
+        background: linear-gradient(135deg, #6c757d, #343a40); /* Gray */
+    }
+
+    .bg-access {
+        background: linear-gradient(135deg, #343a40, #212529);
+        border: 1px dashed rgba(255, 255, 255, 0.3) !important;
     }
 
     .table {
@@ -167,8 +178,8 @@
 {% block content %}
 <nav class="navbar navbar-glass fixed-top">
     <div class="container-fluid px-4">
-        <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
-            <i class="bi bi-shield-lock-fill text-info fs-3"></i>
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#" style="--bs-info-rgb: 102, 252, 241;">
+            <i class="bi bi-shield-lock-fill text-info fs-3" style="color: var(--accent-primary) !important;"></i>
             <span class="fw-bold fs-4">Conserjería <span class="fw-light opacity-50">{{ edificio.nombre }}</span></span>
         </a>
         <div class="d-flex align-items-center gap-3">
@@ -191,21 +202,42 @@
     {% endif %}
     {% endwith %}
 
-    <!-- BOTONES DE ACCIÓN RÁPIDA -->
-    <div class="row g-3 mb-5">
+    <!-- BOTONES DE ACCIÓN RÁPIDA (REORGANIZADOS ESTILO COMUNIDAD FELIZ) -->
+    <div class="row g-3 mb-4">
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-qr w-100" data-bs-toggle="modal"
                 data-bs-target="#modalQR"><i class="bi bi-qr-code-scan"></i> Escanear Pase</button></div>
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-box w-100" data-bs-toggle="modal"
                 data-bs-target="#modalEncomienda"><i class="bi bi-box-seam"></i> Recepción</button></div>
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-log w-100" data-bs-toggle="modal"
                 data-bs-target="#modalBitacora"><i class="bi bi-journal-text"></i> Bitácora</button></div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-meter w-100" data-bs-toggle="modal"
+                data-bs-target="#modalMedidores"><i class="bi bi-speedometer"></i> Medidores</button></div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-shift w-100" data-bs-toggle="modal"
+                data-bs-target="#modalTurno"><i class="bi bi-arrow-left-right"></i> Entrega Turno</button></div>
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-sos w-100" onclick="enviarAlerta()"><i
                     class="bi bi-megaphone"></i> Alerta SOS</button></div>
     </div>
 
+    <!-- SECCIÓN DE ACCESOS REMOTOS (SIMULADOS) -->
+    <h6 class="text-white-50 text-uppercase small fw-bold mb-3 ps-1"><i class="bi bi-cpu me-1"></i> Accesos Remotos
+        (IoT)</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100"
+                onclick="abrirAcceso('Puerta Principal')">
+                <i class="bi bi-door-open-fill"></i> Abrir Principal</button></div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100"
+                onclick="abrirAcceso('Portón Vehicular')">
+                <i class="bi bi-p-circle-fill"></i> Abrir Portón</button></div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100"
+                onclick="abrirAcceso('Bóveda de Seguridad')">
+                <i class="bi bi-safe2-fill"></i> Abrir Bóveda</button></div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100" onclick="abrirAcceso('Gimnasio')">
+                <i class="bi bi-bicycle"></i> Abrir Gimnasio</button></div>
+    </div>
+
     <div class="card-glass p-4 mb-5">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="m-0 fw-bold"><i class="bi bi-p-square-fill me-2 text-primary"></i> Control de Estacionamiento
+            <h4 class="m-0 fw-bold" style="--bs-primary-rgb: 102, 252, 241;"><i class="bi bi-p-square-fill me-2 text-primary"></i> Control de Estacionamiento
             </h4>
         </div>
 
@@ -214,7 +246,7 @@
             class="d-flex gap-4 mb-4 p-2 rounded bg-black bg-opacity-25 border border-secondary justify-content-center text-white-50 small">
             <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-success me-2"></i> Libre</span>
             <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-warning me-2"></i> Ocupado</span>
-            <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-info me-2"></i> Mantención</span>
+            <span class="d-flex align-items-center"><i class="bi bi-circle-fill me-2" style="color: #66FCF1;"></i> Mantención</span>
         </div>
 
         <div class="parking-grid">
@@ -255,26 +287,63 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-lg-12">
-            <div class="card-glass p-3 mb-10">
-                <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-success me-2"></i> Agenda Amenities</h5>
-                <div class="d-flex gap-2 overflow-auto pb-2">
+        <div class="col-lg-8">
+            <div class="card-glass p-3 h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-success me-2"></i> Agenda & Control de
+                    Llaves</h5>
+                <div class="d-flex gap-3 overflow-auto pb-2 mb-3">
                     {% for r in reservas_futuras %}
-                    <div class="bg-dark border border-secondary p-2 rounded text-center" style="min-width: 160px;">
+                    <div id="reserva-card-{{ loop.index }}"
+                        class="bg-dark border border-secondary p-2 rounded text-center" style="min-width: 160px;">
                         <div class="text-white fw-bold">{{ r.nombre_espacio }}</div>
-                        <div class="text-info fw-bold small my-1">
-                            {{ r.fecha_uso }}
+                        <div class="fw-bold small my-1" style="color: #66FCF1;">
+                            {{ r.fecha_uso.strftime('%d/%m') }}
                             <br>
                             <span class="badge bg-warning text-dark">
                                 <i class="bi bi-clock"></i> {{ r.hora_inicio or '--:--' }}
                             </span>
                         </div>
-                        <div class="small text-white-50">U. {{ r.numero_unidad }}</div>
+                        <div class="small text-white-50 mb-2">U. {{ r.numero_unidad }}</div>
+                        <button id="reserva-btn-{{ loop.index }}" class="btn btn-xxs py-0" style="font-size: 0.6rem; --bs-btn-border-color: #66FCF1; --bs-btn-hover-bg: #66FCF1; --bs-btn-hover-border-color: #66FCF1; --bs-btn-hover-color: #0B0C10; --bs-btn-color: #66FCF1;"
+                            style="font-size: 0.6rem;"
+                            onclick="gestionarLlave('{{ r.nombre_espacio }}', '{{ r.numero_unidad }}', {{ loop.index }})">
+                            <i class="bi bi-key"></i> ENTREGAR LLAVE
+                        </button>
                     </div>
                     {% else %}
                     <div class="text-white-50 small">No hay reservas próximas.</div>
                     {% endfor %}
                 </div>
+
+                <div class="bg-black bg-opacity-25 rounded p-3 border border-secondary">
+                    <h6 class="small fw-bold mb-2" style="color: #66FCF1;"><i class="bi bi-key-fill me-1"></i> Llaves en Uso</h6>
+                    <div id="llavesEnUso">
+                        <div class="text-white-50 small italic">No hay llaves registradas como "fuera de conserjería".
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card-glass p-3 h-100">
+                <h5 class="fw-bold mb-3" style="--bs-info-rgb: 102, 252, 241;"><i class="bi bi-info-circle text-info me-2"></i> Estado del Turno</h5>
+                <div class="list-group list-group-flush bg-transparent">
+                    <div class="list-group-item bg-transparent border-secondary px-0">
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-white-50">Conserje Actual:</span>
+                            <span class="text-white fw-bold">{{ session.nombre }}</span>
+                        </div>
+                    </div>
+                    <div class="list-group-item bg-transparent border-secondary px-0">
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-white-50">Inicio Turno:</span>
+                            <span class="fw-bold" style="color: #66FCF1;">08:00 AM</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-warning w-100 mt-3 fw-bold" data-bs-toggle="modal"
+                    data-bs-target="#modalTurno">FINALIZAR MI TURNO</button>
             </div>
         </div>
 
@@ -318,7 +387,7 @@
 
         <div class="col-lg-6">
             <div class="card-glass p-3 h-100">
-                <h5 class="fw-bold mb-3"><i class="bi bi-people-fill text-info me-2"></i> Directorio Residentes</h5>
+                <h5 class="fw-bold mb-3" style="--bs-info-rgb: 102, 252, 241;"><i class="bi bi-people-fill text-info me-2"></i> Directorio Residentes</h5>
                 <input type="text" id="buscadorResidentes" class="form-control mb-3"
                     placeholder="Buscar unidad o nombre...">
                 <div class="table-responsive" style="max-height: 400px;">
@@ -335,7 +404,7 @@
                         <tbody>
                             {% for u in unidades %}
                             <tr>
-                                <td><span class="fs-6 fw-bold text-info">{{ u.numero }}</span></td>
+                                <td><span class="fs-6 fw-bold" style="color: #66FCF1;">{{ u.numero }}</span></td>
                                 <td>
                                     <div class="small fw-bold">{{ u.residente }}</div>
                                     <div class="small text-white-50" style="font-size: 0.75rem;">{{ u.email }}</div>
@@ -371,7 +440,7 @@
                                             <i class="bi bi-receipt"></i>
                                         </button>
 
-                                        <button class="btn btn-sm btn-outline-info"
+                                        <button class="btn btn-sm" style="--bs-btn-border-color: #66FCF1; --bs-btn-hover-bg: #66FCF1; --bs-btn-hover-border-color: #66FCF1; --bs-btn-hover-color: #0B0C10; --bs-btn-color: #66FCF1;"
                                             onclick="resetClave({{ u.id }}, '{{ u.tenant.rut if u.tenant.rut else u.owner.rut }}')"
                                             title="Reset Clave">
                                             <i class="bi bi-key-fill"></i>
@@ -405,7 +474,7 @@
                                 name="prorrateo" id="editFullProrrateo" class="form-control"></div>
                     </div>
                     <hr class="border-secondary">
-                    <h6 class="text-info small mb-3">Datos de Contacto</h6>
+                    <h6 class="small mb-3" style="color: #66FCF1;">Datos de Contacto</h6>
                     <div class="mb-2"><label class="small text-muted">Nombre</label><input type="text"
                             name="tenant_nombre" id="editFullNombre" class="form-control"></div>
                     <div class="mb-2"><label class="small text-muted">RUT</label><input type="text" name="tenant_rut"
@@ -479,6 +548,78 @@
     </div>
 </div>
 
+<!-- MODAL MEDIDORES (NUEVO) -->
+<div class="modal fade" id="modalMedidores" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-speedometer me-2"></i>Lectura de Medidores</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="lastReadingInfo"
+                    class="alert alert-info bg-opacity-10 border-info text-info small mb-3 d-none">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Última lectura: <strong id="lastReadingValue">--</strong>
+                    (<span id="lastReadingDate">--</span>)
+                </div>
+
+                <form action="/conserje/medidores/guardar" method="POST">
+                    <div class="mb-3">
+                        <label class="small text-white-50">Unidad</label>
+                        <select name="unidad_id" id="meterUnitSelect"
+                            class="form-select bg-dark text-white border-secondary" onchange="fetchUltimaLectura()">
+                            {% for u in unidades %}<option value="{{ u.id }}">{{ u.numero }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-white-50">Tipo</label>
+                            <select name="tipo" id="meterTypeSelect"
+                                class="form-select bg-dark text-white border-secondary" onchange="fetchUltimaLectura()">
+                                <option>Agua Caliente</option>
+                                <option>Agua Fría</option>
+                                <option>Gas</option>
+                                <option>Electricidad</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-white-50">Lectura Actual</label>
+                            <input type="number" step="0.01" name="valor" class="form-control bg-dark text-white"
+                                required>
+                        </div>
+                    </div>
+                    <button class="btn btn-warning w-100 fw-bold">REGISTRAR LECTURA</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ENTREGA DE TURNO (NUEVO) -->
+<div class="modal fade" id="modalTurno" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-arrow-left-right me-2"></i>Entrega de Turno</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/conserje/turno/guardar" method="POST">
+                    <div class="mb-3"><label class="small text-white-50">Novedades Relevantes</label><textarea
+                            name="novedades" class="form-control bg-dark text-white" rows="3"
+                            placeholder="Ej: Se deja encargo de depto 204, portón con ruido..."></textarea></div>
+                    <div class="mb-3"><label class="small text-white-50">Efectivo en Caja ($)</label><input
+                            type="number" name="caja" class="form-control bg-dark text-white" value="0"></div>
+                    <div class="alert alert-info small py-2"><i class="bi bi-info-circle me-1"></i> Al confirmar, se
+                        generará un registro en la bitácora del administrador.</div>
+                    <button class="btn btn-info w-100 fw-bold text-dark">CONFIRMAR ENTREGA DE TURNO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalBitacora" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="background:#1a1d24; color:white;">
@@ -501,6 +642,8 @@
 
 <script>
     // TIMER
+    const LLAVES_STORAGE_KEY = `habipro_llaves_{{ edificio.id }}`;
+
     document.addEventListener("DOMContentLoaded", function () {
         const slots = document.querySelectorAll('.slot-timer');
         slots.forEach(slot => {
@@ -520,6 +663,8 @@
                 if (remaining < 60) slot.style.color = '#ff4757';
             } else { slot.innerHTML = "¡TIEMPO AGOTADO!"; slot.style.backgroundColor = "#dc3545"; slot.style.color = "white"; }
         });
+
+        renderizarLlavesEnUso();
     });
 
     // ABRE EL MODAL DE EDICIÓN COMPLETA
@@ -563,6 +708,17 @@
                     });
                 } else { Swal.fire({ title: 'Error', text: d.message, icon: 'error', background: '#1a1d24', color: '#fff' }); }
             });
+    }
+
+    function abrirAcceso(nombre) {
+        Swal.fire({
+            title: nombre,
+            text: 'Servicio no contratado',
+            icon: 'warning',
+            background: '#1a1d24',
+            color: '#fff',
+            confirmButtonColor: '#0dcaf0'
+        });
     }
 
     // QR & OTROS
@@ -677,6 +833,87 @@
     function enviarAlerta() {
         Swal.fire({ title: 'Enviar Alerta SOS', text: 'Se notificará a todos.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff' }).then((r) => { if (r.isConfirmed) { let f = document.createElement('form'); f.method = 'POST'; f.action = '/admin/difusion'; let i = document.createElement('input'); i.name = 'mensaje'; i.value = 'EMERGENCIA'; f.appendChild(i); document.body.appendChild(f); f.submit(); } });
     }
+
+    function renderizarLlavesEnUso() {
+        const llaves = JSON.parse(localStorage.getItem(LLAVES_STORAGE_KEY) || '[]');
+        const container = document.getElementById('llavesEnUso');
+
+        if (llaves.length === 0) {
+            container.innerHTML = '<div class="text-white-50 small italic">No hay llaves registradas como "fuera de conserjería".</div>';
+            return;
+        }
+
+        let html = '';
+        llaves.forEach(llave => {
+            html += `
+                <div id="llave-en-uso-${llave.id}" class="d-flex justify-content-between align-items-center bg-dark p-2 rounded mb-1 border border-info">
+                    <div>
+                        <div class="fw-bold text-white">${llave.espacio}</div>
+                        <div class="small text-white-50">Unidad: ${llave.unidad}</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-warning py-0" onclick="devolverLlave(${llave.id})">
+                        <i class="bi bi-box-arrow-in-left"></i> Devolver
+                    </button>
+                </div>
+            `;
+            const btn = document.getElementById(`reserva-btn-${llave.id}`);
+            if (btn) {
+                btn.classList.remove('btn-outline-info');
+                btn.classList.add('btn-success');
+                btn.innerHTML = '<i class="bi bi-check-lg"></i> ENTREGADO';
+                btn.disabled = true;
+            }
+        });
+        container.innerHTML = html;
+    }
+
+    function devolverLlave(id) {
+        let llaves = JSON.parse(localStorage.getItem(LLAVES_STORAGE_KEY) || '[]');
+        llaves = llaves.filter(llave => llave.id !== id);
+        localStorage.setItem(LLAVES_STORAGE_KEY, JSON.stringify(llaves));
+
+        const btn = document.getElementById(`reserva-btn-${id}`);
+        if (btn) {
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-info');
+            btn.innerHTML = '<i class="bi bi-key"></i> ENTREGAR LLAVE';
+            btn.disabled = false;
+        }
+        renderizarLlavesEnUso();
+    }
+
+    function gestionarLlave(espacio, unidad, id) {
+        Swal.fire({ title: 'Control de Llaves', text: `¿Confirmas la entrega de la llave de '${espacio}' a la Unidad ${unidad}?`, icon: 'question', showCancelButton: true, confirmButtonText: 'Sí, entregar', background: '#1a1d24', color: '#fff', confirmButtonColor: '#66FCF1' })
+            .then(r => {
+                if (r.isConfirmed) {
+                    const llaves = JSON.parse(localStorage.getItem(LLAVES_STORAGE_KEY) || '[]');
+                    if (!llaves.some(llave => llave.id === id)) { llaves.push({ id, espacio, unidad }); localStorage.setItem(LLAVES_STORAGE_KEY, JSON.stringify(llaves)); }
+                    Swal.fire({ title: 'Registrado', text: 'Llave marcada como entregada.', icon: 'success', background: '#1a1d24', color: '#fff', timer: 1500, showConfirmButton: false });
+                    renderizarLlavesEnUso();
+                }
+            });
+    }
+
+    function fetchUltimaLectura() {
+        const uid = document.getElementById('meterUnitSelect').value;
+        const tipo = document.getElementById('meterTypeSelect').value;
+        const infoBox = document.getElementById('lastReadingInfo');
+        const valSpan = document.getElementById('lastReadingValue');
+        const dateSpan = document.getElementById('lastReadingDate');
+
+        if (!uid || !tipo) return;
+
+        fetch(`/conserje/medidores/ultima_lectura?unidad_id=${uid}&tipo=${tipo}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    infoBox.classList.remove('d-none');
+                    valSpan.innerText = data.valor;
+                    dateSpan.innerText = data.fecha;
+                }
+            });
+    }
+    document.getElementById('modalMedidores').addEventListener('shown.bs.modal', fetchUltimaLectura);
 
     document.getElementById('buscadorResidentes').addEventListener('keyup', function () {
         let val = this.value.toLowerCase();

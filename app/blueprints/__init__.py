@@ -1,0 +1,1 @@
+# Este archivo permite que 'app.blueprints' sea tratado como un paquete.

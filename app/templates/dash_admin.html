@@ -19,7 +19,7 @@
 
     .form-control, .form-select {
         background-color: rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border: 1px solid rgba(102, 252, 241, 0.2) !important;
         color: white !important;
     }
     .form-control:focus { border-color: #0dcaf0 !important; box-shadow: 0 0 0 3px rgba(13, 202, 240, 0.25) !important; }
@@ -42,7 +42,7 @@
     /* BOTONES ACCIONES */
     .btn-action-group .btn { padding: 4px 8px; font-size: 0.85rem; }
     .cal-day { height: 45px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; cursor: default; }
-    .cal-active { background: #0dcaf0 !important; color: #000 !important; font-weight: 800; cursor: pointer !important; }
+    .cal-active { background: #66FCF1 !important; color: #0B0C10 !important; font-weight: 800; cursor: pointer !important; }
     .cal-badge { position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background: #e74c3c; border-radius: 50%; }
     
     .btn-quick { height: 110px; border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: white; transition: 0.3s; }
@@ -54,7 +54,7 @@
 {% block content %}
 <nav class="navbar navbar-glass fixed-top">
     <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold text-white" href="#"><i class="bi bi-building me-2 text-info"></i>Admin Panel</a>
+        <a class="navbar-brand fw-bold text-white" href="#" style="--bs-info-rgb: 102, 252, 241;"><i class="bi bi-building me-2 text-info"></i>Admin Panel</a>
         <div class="d-flex align-items-center gap-3">
             <span class="text-white small fw-bold">{{ session.nombre }}</span>
             <a href="/logout" class="btn btn-sm btn-danger border-0 shadow"><i class="bi bi-power"></i></a>
@@ -63,7 +63,7 @@
 </nav>
 <div class="bg-black border-bottom border-secondary py-1" style="margin-top: 56px;">
     <div class="container-fluid d-flex justify-content-end gap-4 text-white-50" style="font-size: 0.75rem;">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center" style="--bs-warning-rgb: 243, 156, 18;">
             <i class="bi bi-graph-up-arrow text-warning me-1"></i> 
             UF: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.uf) }}</span>
         </div>
@@ -71,7 +71,7 @@
             <i class="bi bi-bank text-success me-1"></i> 
             Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.2f}".format(indicadores.dolar) }}</span>
         </div>
-        <div class="d-flex align-items-center d-none d-md-flex">
+        <div class="d-flex align-items-center d-none d-md-flex" style="--bs-info-rgb: 102, 252, 241;">
             <i class="bi bi-file-earmark-text text-info me-1"></i> 
             UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) }}</span>
         </div>
@@ -135,7 +135,7 @@
                         <h4 class="fw-bold m-0">{{ mes_actual }} {{ anio_actual }}</h4>
                         <a href="?month={{ nav.next_m }}&year={{ nav.next_y }}" class="btn btn-sm btn-outline-light"><i class="bi bi-chevron-right"></i></a>
                     </div>
-                    <a href="/admin/activos" class="btn btn-sm btn-info fw-bold text-dark"><i class="bi bi-gear-fill me-1"></i> Activos</a>
+                    <a href="/admin/activos" class="btn btn-sm btn-info fw-bold text-dark" style="--bs-btn-bg: #66FCF1; --bs-btn-border-color: #66FCF1;"><i class="bi bi-gear-fill me-1"></i> Activos</a>
                 </div>
                 <div class="d-flex flex-wrap gap-2 justify-content-center">
                     {% for semana in calendario %}
@@ -188,7 +188,7 @@
 
         <div class="col-lg-8">
             <div class="card p-0 h-100 overflow-hidden">
-                <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25">
+                <div class="p-4 border-bottom border-white border-opacity-10 bg-black bg-opacity-25" style="--bs-info-rgb: 102, 252, 241;">
                     <h5 class="m-0 fw-bold"><i class="bi bi-calendar-check text-info me-2"></i> Reservas Recientes</h5>
                 </div>
                 <div class="table-responsive">
@@ -198,7 +198,7 @@
                             {% for r in reservas %}
                             <tr>
                                 <td class="fw-bold">
-                                    {{ r.fecha_uso }} 
+                                    {{ r.fecha_uso.strftime('%d/%m/%Y') }} 
                                     <span class="text-info ms-1">{{ r.hora_inicio or '' }}</span>
                                 </td>
                                 <td class="text-info fw-bold">{{ r.nombre_espacio }}</td>
@@ -271,10 +271,10 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-wallet2 text-success"></i><span>Gastos</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i class="bi bi-person-badge-fill text-info"></i><span>Conserjes</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i class="bi bi-journal-text text-warning"></i><span>Bitácora</span></a></div>
-        <div class="col-6 col-md-3"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i class="bi bi-whatsapp text-success"></i><span>Soporte</span></a></div>
+        <div class="col-6 col-md-3"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-wallet2" style="color: #66FCF1;"></i><span>Gastos</span></a></div>
+        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i class="bi bi-person-badge-fill" style="color: #66FCF1;"></i><span>Conserjes</span></a></div>
+        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i class="bi bi-journal-text" style="color: #66FCF1;"></i><span>Bitácora</span></a></div>
+        <div class="col-6 col-md-3"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i class="bi bi-whatsapp" style="color: #2ecc71;"></i><span>Soporte</span></a></div>
     </div>
 
     <div class="card p-0 overflow-hidden">
@@ -299,7 +299,7 @@
                         <td class="ps-4"><span class="badge bg-primary fs-6 shadow-sm">{{ u.numero }}</span></td>
                         <td>
                             <div class="fw-bold">{{ u.propietario }}</div>
-                            <small class="text-info fw-bold">{{ u.tenant.nombre or '' }}</small>
+                            <small class="fw-bold" style="color: #66FCF1;">{{ u.tenant.nombre or '' }}</small>
                         </td>
                         <td class="font-monospace text-info small">
                             {{ u.tenant.rut if u.tenant.rut else u.owner.rut }}

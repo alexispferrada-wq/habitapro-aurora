@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}| Bienvenido{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        --bs-primary: #66FCF1;
+        --bs-info: #66FCF1;
+        --bs-primary-rgb: 102, 252, 241;
+        --bs-info-rgb: 102, 252, 241;
+
+        /* Fondo de edificios con overlay oscuro para mantener la coherencia con el estilo Aurora y Glassmorphism */
+        background: linear-gradient(rgba(10, 15, 30, 0.85), rgba(10, 15, 30, 0.85)),
+            url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+
+    /* Animación de entrada suave */
+    .card-entrance {
+        animation: fadeInUp 0.8s ease-out both;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row align-items-center" style="min-height: 100vh;">
+        <!-- Columna Izquierda: Información Legal -->
+        <div class="col-lg-4 d-none d-lg-block">
+            <div class="card card-glass p-4 card-entrance"
+                style="height: 80vh; overflow-y: auto; animation-delay: 0.2s; --bs-info-rgb: 102, 252, 241;">
+                <h5 class="text-info fw-bold mb-3"><i class="bi bi-book-half me-2"></i> Ley de Copropiedad 21.442</h5>
+                <p class="small text-white-50">La nueva ley moderniza la vida en comunidad. Aquí algunos puntos clave:
+                </p>
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Registro de Administradores</h6>
+                        <p class="small text-white-50">Se crea un registro público y obligatorio de administradores,
+                            asegurando mayor transparencia y profesionalismo. ¡Consulte antes de contratar!</p>
+                    </li>
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Obligaciones Económicas</h6>
+                        <p class="small text-white-50">El no pago de gastos comunes puede generar intereses y multas, e
+                            incluso la suspensión de servicios eléctricos si el reglamento lo permite.</p>
+                    </li>
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Fondo de Reserva</h6>
+                        <p class="small text-white-50">Su uso se limita a gastos urgentes e imprevistos, protegiendo el
+                            patrimonio de la comunidad ante emergencias.</p>
+                    </li>
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Reglamento de Copropiedad</h6>
+                        <p class="small text-white-50">Es fundamental que cada condominio actualice su reglamento a la
+                            nueva ley para evitar conflictos y sanciones.</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Columna Central: Login -->
+        <div class="col-lg-4 col-md-8 mx-auto">
+            <div class="card card-glass p-4 p-md-5 card-entrance">
+                <div class="text-center mb-4" style="--bs-primary-rgb: 102, 252, 241;">
+                    <i class="bi bi-buildings-fill text-primary" style="font-size: 3rem;"></i>
+                    <h3 class="fw-bold text-white mt-2">Habipro</h3>
+                    <p class="text-white-50">Acceso a Residentes y Staff</p>
+                </div>
+
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                {% for msg in messages %}
+                <div class="alert alert-danger text-center border-0 small py-2 mb-3">
+                    <i class="bi bi-exclamation-circle me-1"></i> {{ msg }}
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <form action="/login" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 small">Usuario</label>
+                        <input type="text" name="email" class="form-control" placeholder="RUT (12345678-9) o Depto"
+                            required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-white-50 small">Contraseña</label>
+                        <input type="password" name="password" class="form-control" placeholder="••••" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-info w-100 fw-bold py-2 text-dark">
+                        INGRESAR <i class="bi bi-arrow-right-short"></i>
+                    </button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <small class="text-white-50">¿Olvidaste tu clave? Pídela en conserjería.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Consejos y Buenas Prácticas -->
+        <div class="col-lg-4 d-none d-lg-block">
+            <div class="card card-glass p-4 card-entrance"
+                style="height: 80vh; overflow-y: auto; animation-delay: 0.4s; --bs-warning-rgb: 243, 156, 18;">
+                <h5 class="text-warning fw-bold mb-3"><i class="bi bi-lightbulb-fill me-2"></i> Consejos para la
+                    Comunidad</h5>
+                <p class="small text-white-50">Una buena convivencia es tarea de todos. Aquí algunas recomendaciones:
+                </p>
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Comunicación es Clave</h6>
+                        <p class="small text-white-50">Utilice los canales oficiales (como esta plataforma) para
+                            informarse y comunicarse con la administración. Evite los rumores.</p>
+                    </li>
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Uso de Espacios Comunes</h6>
+                        <p class="small text-white-50">Respete los horarios y normas de uso de quinchos, piscinas y
+                            otras áreas. Reserve con anticipación y cuide las instalaciones.</p>
+                    </li>
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Mascotas y Tenencia Responsable</h6>
+                        <p class="small text-white-50">Asegúrese de que su mascota no genere ruidos molestos ni ensucie
+                            los espacios comunes. Siempre utilice correa en los traslados.</p>
+                    </li>
+                    <li class="mb-3">
+                        <h6 class="fw-bold text-white mb-1">Seguridad</h6>
+                        <p class="small text-white-50">No abra la puerta a desconocidos y reporte cualquier actividad
+                            sospechosa a conserjería. La seguridad es un esfuerzo conjunto.</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
