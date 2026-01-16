@@ -58,6 +58,10 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# Registro de Blueprints
+from app.auth import auth_bp
+app.register_blueprint(auth_bp)
+
 # ==========================================
 # 2. MODELOS Y UTILIDADES CRÍTICAS
 # ==========================================
@@ -120,6 +124,5 @@ def landing():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Esta
-
-    return app
+    # Redirigir a la lógica de paneles por rol definida en auth.home
+    return redirect(url_for('auth.home'))
