@@ -19,10 +19,10 @@ def home():
         return redirect(url_for('auth.login'))
     
     rol = session.get('rol')
-    if rol == 'superadmin': return redirect(url_for('superadmin.panel_superadmin'))
-    if rol == 'admin': return redirect(url_for('admin.panel_admin'))
-    if rol == 'conserje': return redirect(url_for('conserje.panel_conserje'))
-    if rol == 'residente': return redirect(url_for('residente.panel_residente'))
+    if rol == 'superadmin': return redirect(url_for('panel_superadmin'))
+    if rol == 'admin': return redirect(url_for('panel_admin'))
+    if rol == 'conserje': return redirect(url_for('panel_conserje'))
+    if rol == 'residente': return redirect(url_for('panel_residente'))
     
     return render_template('index.html')
 
@@ -85,7 +85,7 @@ def login():
                     if unidad:
                         session['unidad_id_residente'] = unidad['id']
                         session['numero_unidad'] = unidad['numero']
-                        return redirect(url_for('residente.panel_residente'))
+                        return redirect(url_for('panel_residente'))
                     else:
                         flash("Usuario válido, pero sin departamento asignado.", "warning")
                         return redirect(url_for('auth.login'))
