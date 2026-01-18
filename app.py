@@ -8,11 +8,14 @@ import psycopg2 # <--- ESTA LÍNEA ES LA QUE FALTA O ESTÁ MAL UBICADA
 from psycopg2.extras import RealDictCursor # <--- NECESARIA PARA RealDictCursor
 from datetime import date, datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.exceptions import abort
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash, make_response
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+import google.generativeai as genai
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 # 1. CARGAR VARIABLES DE ENTORNO
@@ -62,6 +65,13 @@ db = SQLAlchemy(app, engine_options={
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# --- CONFIGURACIÓN GEMINI AI ---
+GEMINI_KEY = os.getenv('GEMINI_API_KEY')
+if GEMINI_KEY:
+    genai.configure(api_key=GEMINI_KEY)
+else:
+    print("⚠️ ADVERTENCIA: GEMINI_API_KEY no encontrada en variables de entorno.")
 
 # ==========================================
 # 2. MODELOS Y UTILIDADES CRÍTICAS
@@ -790,14 +800,14 @@ def panel_admin():
         # Variables nuevas para la alerta
         dias_restantes=dias_restantes,
         alerta_deuda=alerta_deuda,
-        indicadores=obtener_indicadores()
-        
+        indicadores=obtener_indicadores(),
+        m=m, y=y
     )
     
     
 @app.route('/admin/gastos')
 def admin_gastos():
-    if session.get('rol') != 'admin': return redirect(url_for('home'))
+    if session.get('rol') != 'admin': return redirect(url_for('landing'))
     eid = session.get('edificio_id')
     y, m = get_safe_date_params()
     mes_nombre = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m]
@@ -815,7 +825,7 @@ def admin_gastos():
 
 @app.route('/admin/gastos/nuevo', methods=['POST'])
 def nuevo_gasto():
-    if session.get('rol') != 'admin': return redirect(url_for('home'))
+    if session.get('rol') != 'admin': return redirect(url_for('landing'))
     eid = session.get('edificio_id'); f = request.form.get('fecha'); dt = datetime.strptime(f, '%Y-%m-%d'); m, y = dt.month, dt.year
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("SELECT id FROM cierres_mes WHERE edificio_id=%s AND mes=%s AND anio=%s", (eid, m, y))
@@ -825,7 +835,7 @@ def nuevo_gasto():
 
 @app.route('/admin/gastos/cierre_mes', methods=['POST'])
 def cierre_mes():
-    if session.get('rol') != 'admin': return redirect(url_for('home'))
+    if session.get('rol') != 'admin': return redirect(url_for('landing'))
     eid = session.get('edificio_id'); m = int(request.form.get('mes')); y = int(request.form.get('anio'))
     tg = int(request.form.get('total_gastos')) if request.form.get('total_gastos') else 0
     conn = get_db_connection(); cur = conn.cursor()
@@ -1022,6 +1032,114 @@ def guardar_activo():
 def eliminar_activo(id):
     conn = get_db_connection(); cur = conn.cursor(); cur.execute("DELETE FROM activos WHERE id=%s", (id,)); conn.commit(); cur.close(); conn.close(); return redirect(url_for('admin_activos'))
 
+@app.route('/admin/activos/export_pdf')
+def admin_activos_export_pdf():
+    if session.get('rol') != 'admin':
+        abort(403)
+
+    eid = session.get('edificio_id')
+    try:
+        y = int(request.args.get('year'))
+        m = int(request.args.get('month'))
+    except (ValueError, TypeError):
+        today = date.today()
+        y, m = today.year, today.month
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT nombre FROM edificios WHERE id = %s", (eid,))
+    edificio = cur.fetchone()
+    edificio_nombre = edificio['nombre'] if edificio else 'Edificio Desconocido'
+
+    cur.execute("SELECT * FROM activos WHERE edificio_id = %s ORDER BY nombre", (eid,))
+    activos = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+
+    eventos_mes = []
+    f_ini = date(y, m, 1)
+    f_fin = date(y, m, calendar.monthrange(y, m)[1])
+    total_costo_mes = 0
+
+    for a in activos:
+        if a['ultimo_servicio']:
+            f = a['ultimo_servicio']
+            while f <= f_fin:
+                if f >= f_ini:
+                    costo = a.get('costo_estimado', 0)
+                    eventos_mes.append({'fecha': f, 'nombre': a['nombre'], 'costo': costo})
+                    total_costo_mes += costo
+                f += timedelta(days=a['periodicidad_dias'])
+    
+    eventos_mes.sort(key=lambda x: x['fecha'])
+
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    mes_nombre = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][m]
+    
+    p.setFont("Helvetica-Bold", 18)
+    p.drawCentredString(width / 2.0, height - 50, f"Calendario de Mantenciones - {mes_nombre} {y}")
+    p.setFont("Helvetica", 12)
+    p.drawCentredString(width / 2.0, height - 70, f"Edificio: {edificio_nombre}")
+
+    y_pos = height - 120
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(inch, y_pos, "Fecha"); p.drawString(inch * 2.5, y_pos, "Activo"); p.drawString(inch * 6, y_pos, "Costo Estimado")
+    p.line(inch, y_pos - 5, width - inch, y_pos - 5); y_pos -= 20
+
+    p.setFont("Helvetica", 9)
+    for evento in eventos_mes:
+        if y_pos < 60: p.showPage(); y_pos = height - 60; p.setFont("Helvetica", 9)
+        p.drawString(inch, y_pos, evento['fecha'].strftime('%d/%m/%Y')); p.drawString(inch * 2.5, y_pos, evento['nombre']); p.drawRightString(width - inch, y_pos, f"${evento['costo']:,.0f}".replace(",", "."))
+        y_pos -= 15
+
+    p.line(inch, y_pos, width - inch, y_pos); y_pos -= 20
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(inch, y_pos, "Costo Total Proyectado:"); p.drawRightString(width - inch, y_pos, f"${total_costo_mes:,.0f}".replace(",", "."))
+    p.save()
+
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=reporte_mantenciones_{y}_{m}.pdf'
+    return response
+
+@app.route('/admin/pagar_servicio', methods=['POST'])
+def admin_pagar_servicio():
+    if session.get('rol') != 'admin': return redirect(url_for('home'))
+    
+    eid = session.get('edificio_id')
+    file = request.files.get('comprobante')
+    
+    if not file:
+        flash("Debes subir una foto del comprobante.")
+        return redirect(url_for('panel_admin'))
+    
+    # 1. Definir nombre y ruta (Guardamos en static/uploads)
+    filename = f"pago_{eid}_{random.randint(1000,9999)}.jpg"
+    
+    # Asegúrate de que esta carpeta exista o créala
+    upload_folder = os.path.join(app.root_path, 'static', 'uploads')
+    os.makedirs(upload_folder, exist_ok=True) # Crea la carpeta si no existe
+    
+    # 2. Guardar el archivo físicamente
+    try:
+        file.save(os.path.join(upload_folder, filename))
+    except Exception as e:
+        flash(f"Error al guardar imagen: {e}")
+        return redirect(url_for('panel_admin'))
+    
+    # 3. Guardar referencia en BD
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("UPDATE edificios SET estado_pago = 'REVISION', deuda_comprobante_url = %s WHERE id = %s", (filename, eid))
+    conn.commit(); cur.close(); conn.close()
+    
+    flash("Comprobante enviado. Esperando validación de Aexon.")
+    return redirect(url_for('panel_admin'))
+
 @app.route('/admin/residentes/guardar_edicion', methods=['POST'])
 def guardar_edicion_residente():
     tenant_rut = formatear_rut(request.form.get('tenant_rut'))
@@ -1074,6 +1192,32 @@ def generar_clave_residente():
 def admin_auditoria(): return render_template('base.html')
 @app.route('/admin/difusion', methods=['POST'])
 def admin_difusion(): flash(f"📢 Alerta: {request.form.get('mensaje')}"); return redirect(url_for('panel_admin'))
+
+@app.route('/admin/gemini/redactar', methods=['POST'])
+def admin_gemini_redactar():
+    if session.get('rol') != 'admin': return jsonify({'status': 'error', 'message': 'No autorizado'})
+    
+    if not GEMINI_KEY:
+        return jsonify({'status': 'error', 'message': 'Falta API Key. Configura GEMINI_API_KEY en .env'})
+
+    tema = request.json.get('tema')
+    if not tema: return jsonify({'status': 'error', 'message': 'Falta el tema'})
+
+    try:
+        # Configuración del modelo: Usamos gemini-1.5-flash que es gratuito y rápido
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"""
+        Actúa como un administrador de edificios experto, cordial y profesional.
+        Redacta un comunicado oficial para la comunidad de residentes sobre el siguiente tema: "{tema}".
+        El tono debe ser formal pero cercano. Incluye un saludo y una despedida estándar.
+        Formato: Texto plano, listo para copiar y pegar en WhatsApp o Email.
+        """
+        
+        response = model.generate_content(prompt)
+        return jsonify({'status': 'success', 'texto': response.text})
+    except Exception as e:
+        print(f"Error Gemini: {e}")
+        return jsonify({'status': 'error', 'message': f'Error IA: {str(e)}'})
 
 # --- MÓDULO ESPACIOS COMUNES (NUEVO) ---
 @app.route('/admin/espacios/guardar', methods=['POST'])
@@ -1275,44 +1419,6 @@ def enviar_cobro():
     return redirect(url_for('super_detalle_edificio', id=eid))
 
 
-# --- REEMPLAZAR ESTA FUNCIÓN EN APP.PY ---
-@app.route('/admin/pagar_servicio', methods=['POST'])
-def admin_pagar_servicio():
-    if session.get('rol') != 'admin': return redirect(url_for('home'))
-    
-    eid = session.get('edificio_id')
-    file = request.files.get('comprobante')
-    
-    if not file:
-        flash("Debes subir una foto del comprobante.")
-        return redirect(url_for('panel_admin'))
-    
-    # 1. Definir nombre y ruta (Guardamos en static/uploads)
-    filename = f"pago_{eid}_{random.randint(1000,9999)}.jpg"
-    
-    # Asegúrate de que esta carpeta exista o créala
-    upload_folder = os.path.join(app.root_path, 'static', 'uploads')
-    os.makedirs(upload_folder, exist_ok=True) # Crea la carpeta si no existe
-    
-    # 2. Guardar el archivo físicamente
-    try:
-        file.save(os.path.join(upload_folder, filename))
-    except Exception as e:
-        flash(f"Error al guardar imagen: {e}")
-        return redirect(url_for('panel_admin'))
-    
-    # 3. Guardar referencia en BD
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("""
-        UPDATE edificios 
-        SET estado_pago = 'REVISION', 
-            deuda_comprobante_url = %s 
-        WHERE id = %s
-    """, (filename, eid))
-    conn.commit(); cur.close(); conn.close()
-    
-    flash("Comprobante enviado. Esperando validación de Aexon.")
-    return redirect(url_for('panel_admin'))
 # EN: app.py - SECCIÓN SUPER ADMIN
 
 

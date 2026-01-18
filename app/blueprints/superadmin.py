@@ -245,7 +245,7 @@ def crear_admin_rapido():
     email = request.form.get('email')
     edificio_id = request.form.get('edificio_id')
     
-    new_pass = f"Habipro{random.randint(1000,9999)}$"
+    new_pass = f"Habitex{random.randint(1000,9999)}$"
     hashed_pass = generate_password_hash(new_pass, method='pbkdf2:sha256')
     
     try:
@@ -508,7 +508,7 @@ def superadmin_broadcast():
         for ed in edificios:
             cur.execute("""
                 INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor)
-                VALUES (%s, %s, %s, NOW(), 'SOPORTE HABIPRO')
+                VALUES (%s, %s, %s, NOW(), 'SOPORTE HABITEX')
             """, (ed['id'], titulo, mensaje))
             count += 1
             

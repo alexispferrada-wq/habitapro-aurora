@@ -395,7 +395,7 @@
         <div class="col-lg-4">
             <div class="card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold m-0"><i class="bi bi-stars text-warning me-2"></i> Amenities</h5>
+                    <h5 class="fw-bold m-0"><i class="bi bi-stars text-warning me-2"></i> Espacios Comunes</h5>
                     <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse"
                         data-bs-target="#formEspacio"><i class="bi bi-plus-lg"></i></button>
                 </div>
@@ -533,13 +533,19 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-wallet2"
+        <div class="col-6 col-md-2"><a href="/admin/gastos" class="btn-quick"><i class="bi bi-wallet2"
                     style="color: #66FCF1;"></i><span>Gastos</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i
+        <div class="col-6 col-md-2"><a href="#" onclick="abrirModalConserjes()" class="btn-quick"><i
                     class="bi bi-person-badge-fill" style="color: #66FCF1;"></i><span>Conserjes</span></a></div>
-        <div class="col-6 col-md-3"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i
+        <div class="col-6 col-md-2"><a href="#" onclick="abrirModalLogs()" class="btn-quick"><i
                     class="bi bi-journal-text" style="color: #66FCF1;"></i><span>Bitácora</span></a></div>
-        <div class="col-6 col-md-3"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i
+        <!-- NUEVO BOTÓN IA -->
+        <div class="col-6 col-md-4">
+            <a href="#" data-bs-toggle="modal" data-bs-target="#modalGemini" class="btn-quick" style="border-color: #8e44ad; background: rgba(142, 68, 173, 0.1);">
+                <i class="bi bi-stars" style="color: #d2b4de;"></i><span>Redactor IA</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-2"><a href="https://wa.me/{{ whatsapp_soporte }}" target="_blank" class="btn-quick"><i
                     class="bi bi-whatsapp" style="color: #2ecc71;"></i><span>Soporte</span></a></div>
     </div>
 
@@ -766,6 +772,38 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL GEMINI AI -->
+<div class="modal fade" id="modalGemini" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-glass" style="border: 1px solid #8e44ad;">
+            <div class="modal-header border-0 bg-black bg-opacity-25">
+                <h5 class="modal-title fw-bold text-white">
+                    <i class="bi bi-stars me-2" style="color: #d2b4de;"></i>Asistente Gemini
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50 small">Describe brevemente qué quieres comunicar y la IA lo redactará formalmente por ti.</p>
+                <div class="mb-3">
+                    <textarea id="geminiInput" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="Ej: Avisar que mañana cortan el agua de 3 a 5 por reparaciones..."></textarea>
+                </div>
+                <button class="btn w-100 fw-bold text-white mb-3" onclick="generarTextoIA()" style="background: linear-gradient(45deg, #8e44ad, #3498db);">
+                    <i class="bi bi-magic me-2"></i> GENERAR COMUNICADO
+                </button>
+                
+                <div id="geminiResultContainer" class="d-none">
+                    <label class="small text-white-50 mb-1">Resultado:</label>
+                    <textarea id="geminiOutput" class="form-control bg-black text-info border-secondary mb-2" rows="6"></textarea>
+                    <button class="btn btn-sm btn-outline-light w-100" onclick="copiarTextoIA()">
+                        <i class="bi bi-clipboard me-2"></i> Copiar Texto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalLogs" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -910,6 +948,47 @@
                 html += `<tr><td class="ps-4 text-info font-monospace">${l.fecha}</td><td>${l.unidad !== '-' ? `<span class="badge bg-light text-dark">U. ${l.unidad}</span>` : '-'}</td><td><span class="badge bg-${color}"><i class="bi bi-${icon}"></i> ${l.tipo}</span></td><td>${l.detalle}</td><td class="small text-white-50">${l.extra}</td></tr>`;
             });
             document.getElementById('tablaLogsBody').innerHTML = html;
+        });
+    }
+
+    // --- FUNCIONES GEMINI AI ---
+    function generarTextoIA() {
+        const tema = document.getElementById('geminiInput').value;
+        if (!tema) return Swal.fire('Escribe un tema', '', 'warning');
+
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Pensando...';
+
+        fetch('/admin/gemini/redactar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({tema: tema})
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'success') {
+                document.getElementById('geminiOutput').value = d.texto;
+                document.getElementById('geminiResultContainer').classList.remove('d-none');
+            } else {
+                Swal.fire('Error', d.message, 'error');
+            }
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    }
+
+    function copiarTextoIA() {
+        const copyText = document.getElementById("geminiOutput");
+        copyText.select();
+        document.execCommand("copy");
+        Swal.fire({
+            toast: true, position: 'top-end', icon: 'success', 
+            title: 'Copiado al portapapeles', showConfirmButton: false, timer: 2000,
+            background: '#1a1d24', color: '#fff'
         });
     }
 

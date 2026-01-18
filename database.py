@@ -5,11 +5,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Fallback: Si no se cargó DB_URI, intentar cargar desde .env.txt (Igual que en app/__init__.py)
+if not os.getenv('DB_URI') and os.path.exists('.env.txt'):
+    print("⚠️  AVISO: Cargando configuración desde .env.txt en database.py")
+    load_dotenv('.env.txt')
+    
+    # FIX: Si .env.txt tiene solo la URL (sin DB_URI=), la leemos manualmente
+    if not os.getenv('DB_URI'):
+        try:
+            with open('.env.txt', 'r') as f:
+                content = f.read().strip()
+                if content.startswith('postgresql://'):
+                    os.environ['DB_URI'] = content
+        except: pass
+
 # --- CONFIGURACIÓN NEON (POSTGRESQL) ---
 DB_URI = os.environ.get('DB_URI')
 
 def get_db_connection():
     try:
+        if not DB_URI: raise ValueError("La variable DB_URI está vacía o no se encontró.")
         conn = psycopg2.connect(DB_URI, cursor_factory=RealDictCursor)
         return conn
     except Exception as e:

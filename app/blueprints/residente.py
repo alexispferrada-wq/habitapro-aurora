@@ -22,15 +22,15 @@ def parse_json_field(field_data):
 @residente_bp.route('/manifest.json')
 def manifest():
     return jsonify({
-        "name": "Habipro",
-        "short_name": "Habipro",
+        "name": "HABITEX",
+        "short_name": "HABITEX",
         "start_url": "/panel-residente",
         "display": "standalone",
         "background_color": "#1a1d24",
         "theme_color": "#0dcaf0",
         "icons": [
             {
-                "src": "https://icons.getbootstrap.com/assets/icons/buildings-fill.svg",
+                "src": "https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769649/logo_habitex_favicon_qpht7n.png",
                 "sizes": "any",
                 "type": "image/svg+xml"
             }

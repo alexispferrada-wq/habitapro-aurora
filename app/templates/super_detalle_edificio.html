@@ -9,25 +9,44 @@
         border-radius: 16px;
         color: white;
     }
-    .badge-status { font-size: 0.75rem; padding: 5px 12px; border-radius: 50px; }
-    .btn-action-admin { padding: 5px 10px; font-size: 0.85rem; }
-    
+
+    .badge-status {
+        font-size: 0.75rem;
+        padding: 5px 12px;
+        border-radius: 50px;
+    }
+
+    .btn-action-admin {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+    }
+
     /* ANIMACIÓN ALERTA PAGO */
     @keyframes pulse-gold {
-        0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        0% {
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+        }
     }
-    .alert-payment { 
-        animation: pulse-gold 2s infinite; 
-        border: 1px solid #ffc107; 
-        background: rgba(255, 193, 7, 0.15); 
+
+    .alert-payment {
+        animation: pulse-gold 2s infinite;
+        border: 1px solid #ffc107;
+        background: rgba(255, 193, 7, 0.15);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<nav class="navbar navbar-dark fixed-top" style="background: rgba(20,20,30,0.95); border-bottom: 1px solid rgba(255,255,255,0.1);">
+<nav class="navbar navbar-dark fixed-top"
+    style="background: rgba(20,20,30,0.95); border-bottom: 1px solid rgba(255,255,255,0.1);">
     <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/panel-superadmin">
             <i class="bi bi-arrow-left-circle text-secondary"></i> Volver al Panel
@@ -37,7 +56,7 @@
 </nav>
 
 <div class="container-fluid px-4" style="margin-top: 80px; padding-bottom: 50px;">
-    
+
     <div class="row mb-4">
         <div class="col-12">
             <div class="card-glass p-4 border-info">
@@ -49,7 +68,8 @@
                             </div>
                             <div>
                                 <h2 class="fw-bold mb-1">{{ e.nombre }}</h2>
-                                <p class="text-white-50 mb-0 fs-5"><i class="bi bi-geo-alt-fill me-2 text-danger"></i>{{ e.direccion }}</p>
+                                <p class="text-white-50 mb-0 fs-5"><i class="bi bi-geo-alt-fill me-2 text-danger"></i>{{
+                                    e.direccion }}</p>
                             </div>
                         </div>
                     </div>
@@ -61,11 +81,13 @@
                         <div class="d-inline-block text-start">
                             <div class="text-white-50 small">Estado del Sistema</div>
                             {% if e.activo %}
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 badge-status">
+                            <span
+                                class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 badge-status">
                                 <i class="bi bi-check-circle-fill me-1"></i> OPERATIVO
                             </span>
                             {% else %}
-                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 badge-status">
+                            <span
+                                class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 badge-status">
                                 <i class="bi bi-slash-circle me-1"></i> SUSPENDIDO
                             </span>
                             {% endif %}
@@ -78,20 +100,22 @@
 
     <div class="row g-4">
         <div class="col-lg-5">
-            
+
             {% if e.estado_pago == 'REVISION' %}
             <div class="card-glass p-4 mb-4 alert-payment">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold text-warning m-0"><i class="bi bi-bell-fill me-2"></i>Pago por Revisar</h5>
                     <span class="badge bg-warning text-dark">ACCIÓN REQUERIDA</span>
                 </div>
-                
-                <p class="small text-white-50">El administrador ha subido un comprobante. Por favor valida la información.</p>
-                
+
+                <p class="small text-white-50">El administrador ha subido un comprobante. Por favor valida la
+                    información.</p>
+
                 <div class="bg-black bg-opacity-25 p-3 rounded mb-3 border border-warning border-opacity-25">
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-white-50 small">Monto Reportado:</span>
-                        <span class="fw-bold text-success">${{ "{:,.0f}".format(e.deuda_omnisoft) | replace(',', '.') }}</span>
+                        <span class="fw-bold text-success">${{ "{:,.0f}".format(e.deuda_omnisoft) | replace(',', '.')
+                            }}</span>
                     </div>
                     <div class="d-flex justify-content-between">
                         <span class="text-white-50 small">Concepto:</span>
@@ -100,10 +124,11 @@
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-light btn-sm" onclick="verComprobante('{{ e.deuda_comprobante_url }}')">
+                    <button class="btn btn-outline-light btn-sm"
+                        onclick="verComprobante('{{ e.deuda_comprobante_url }}')">
                         <i class="bi bi-eye me-2"></i> Ver Comprobante (Foto)
                     </button>
-                    
+
                     <form action="/superadmin/registrar_pago_edificio" method="POST">
                         <input type="hidden" name="edificio_id" value="{{ e.id }}">
                         <button class="btn btn-success fw-bold w-100 py-2 shadow">
@@ -116,22 +141,26 @@
 
             <div class="card-glass p-4 mb-4 border-warning shadow-lg">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-warning m-0"><i class="bi bi-currency-exchange me-2"></i>Facturación Habipro</h5>
-                    <div class="badge bg-warning text-dark fw-bold">UF HOY: ${{ "{:,.0f}".format(indicadores.uf) | replace(',', '.') }}</div>
+                    <h5 class="fw-bold text-warning m-0"><i class="bi bi-currency-exchange me-2"></i>Facturación HABITEX
+                    </h5>
+                    <div class="badge bg-warning text-dark fw-bold">UF HOY: ${{ "{:,.0f}".format(indicadores.uf) |
+                        replace(',', '.') }}</div>
                 </div>
 
                 <div class="bg-black bg-opacity-25 p-3 rounded mb-3 border border-secondary">
                     <div class="row g-2 align-items-end">
                         <div class="col-6">
                             <label class="small text-white-50">Plan Base (1.32 UF)</label>
-                            <input type="number" step="0.01" id="baseUF" class="form-control bg-dark text-warning border-secondary fw-bold" 
-                                   value="{{ e.precio_base_uf or 1.32 }}" oninput="calcularCLP()">
+                            <input type="number" step="0.01" id="baseUF"
+                                class="form-control bg-dark text-warning border-secondary fw-bold"
+                                value="{{ e.precio_base_uf or 1.32 }}" oninput="calcularCLP()">
                             <div class="form-text text-white-50 x-small">Cubre hasta 50 Unidades</div>
                         </div>
                         <div class="col-6">
                             <label class="small text-white-50">Extra p/Unidad</label>
-                            <input type="number" step="0.001" id="extraUF" class="form-control bg-dark text-warning border-secondary fw-bold" 
-                                   value="{{ e.precio_extra_uf or 0.008 }}" oninput="calcularCLP()">
+                            <input type="number" step="0.001" id="extraUF"
+                                class="form-control bg-dark text-warning border-secondary fw-bold"
+                                value="{{ e.precio_extra_uf or 0.008 }}" oninput="calcularCLP()">
                             <div class="form-text text-white-50 x-small">0.008 UF x Unidad Extra</div>
                         </div>
                     </div>
@@ -139,15 +168,16 @@
 
                 <form action="/superadmin/enviar_cobro" method="POST">
                     <input type="hidden" name="edificio_id" value="{{ e.id }}">
-                    
+
                     <input type="hidden" name="detalle_calculo" id="inputDetalle">
 
                     <label class="small text-white-50 mb-1">Monto Total a Cobrar (CLP)</label>
                     <div class="input-group mb-2">
                         <span class="input-group-text bg-dark border-secondary text-white fw-bold">$</span>
-                        <input type="text" name="monto" id="inputPesos" class="form-control fw-bold text-success fs-4" readonly>
+                        <input type="text" name="monto" id="inputPesos" class="form-control fw-bold text-success fs-4"
+                            readonly>
                     </div>
-                    
+
                     <div class="bg-black bg-opacity-50 border border-secondary border-opacity-50 p-2 rounded mb-3">
                         <small class="text-white-50 d-block mb-1" style="font-size: 0.7rem;">DESGLOSE DEL COBRO:</small>
                         <div id="formulaVisual" class="font-monospace text-info small fw-bold">Calculando...</div>
@@ -155,14 +185,16 @@
 
                     <div class="mb-2">
                         <label class="small text-white-50">Concepto</label>
-                        <input type="text" name="descripcion" id="inputDesc" class="form-control bg-dark border-secondary text-white" required>
+                        <input type="text" name="descripcion" id="inputDesc"
+                            class="form-control bg-dark border-secondary text-white" required>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label class="small text-white-50">Vencimiento</label>
-                        <input type="date" name="vencimiento" class="form-control bg-dark border-secondary text-white" required id="dateVencimiento">
+                        <input type="date" name="vencimiento" class="form-control bg-dark border-secondary text-white"
+                            required id="dateVencimiento">
                     </div>
-                    
+
                     <button class="btn btn-warning w-100 fw-bold text-dark shadow">
                         <i class="bi bi-send-fill me-2"></i> ENVIAR COBRO AL EDIFICIO
                     </button>
@@ -172,23 +204,32 @@
             <!-- NUEVO: MÓDULOS ACTIVOS (FEATURE FLAGS) -->
             <div class="card-glass p-4 mb-4">
                 <h5 class="fw-bold mb-3"><i class="bi bi-toggles2 text-primary me-2"></i>Módulos Activos</h5>
-                <p class="small text-white-50">Activa o desactiva funcionalidades para esta comunidad. (Implementación pendiente)</p>
+                <p class="small text-white-50">Activa o desactiva funcionalidades para esta comunidad. (Implementación
+                    pendiente)</p>
                 <div class="list-group list-group-flush bg-transparent">
-                    <div class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
+                    <div
+                        class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-cash-coin me-2 text-success"></i> Módulo Financiero</span>
-                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" checked></div>
+                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox"
+                                role="switch" checked></div>
                     </div>
-                    <div class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
+                    <div
+                        class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-calendar-check me-2 text-info"></i> Módulo de Reservas</span>
-                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" checked></div>
+                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox"
+                                role="switch" checked></div>
                     </div>
-                    <div class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
+                    <div
+                        class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-qr-code-scan me-2 text-warning"></i> Control de Visitas (QR)</span>
-                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" checked></div>
+                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox"
+                                role="switch" checked></div>
                     </div>
-                    <div class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
+                    <div
+                        class="list-group-item bg-transparent px-0 border-secondary d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-cpu me-2 text-danger"></i> Accesos Remotos (IoT)</span>
-                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch"></div>
+                        <div class="form-check form-switch"><input class="form-check-input" type="checkbox"
+                                role="switch"></div>
                     </div>
                 </div>
             </div>
@@ -197,16 +238,25 @@
                 <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-success me-2"></i>Historial de Pagos</h5>
                 <div class="table-responsive" style="max-height: 200px;">
                     <table class="table table-sm table-hover">
-                        <thead><tr class="text-white-50 small"><th>Fecha</th><th>Concepto</th><th class="text-end">Monto</th></tr></thead>
+                        <thead>
+                            <tr class="text-white-50 small">
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th class="text-end">Monto</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {% for pago in historial_pagos %}
                             <tr>
                                 <td class="small text-white-50">{{ pago.fecha_pago.strftime('%d/%m/%Y') }}</td>
                                 <td class="small">{{ pago.concepto }}</td>
-                                <td class="text-end fw-bold text-success">${{ "{:,.0f}".format(pago.monto) | replace(',', '.') }}</td>
+                                <td class="text-end fw-bold text-success">${{ "{:,.0f}".format(pago.monto) |
+                                    replace(',', '.') }}</td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="3" class="text-center text-white-50 py-3 small">Sin pagos registrados.</td></tr>
+                            <tr>
+                                <td colspan="3" class="text-center text-white-50 py-3 small">Sin pagos registrados.</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -216,11 +266,12 @@
             <div class="card-glass p-4 mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h5 class="fw-bold m-0"><i class="bi bi-people-fill me-2 text-info"></i>Staff Administrativo</h5>
-                    <button class="btn btn-sm btn-info text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#modalNewAdmin">
+                    <button class="btn btn-sm btn-info text-dark fw-bold" data-bs-toggle="modal"
+                        data-bs-target="#modalNewAdmin">
                         <i class="bi bi-person-plus me-2"></i>Crear Admin
                     </button>
                 </div>
-                
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead>
@@ -239,25 +290,33 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1">
-                                        <form action="{{ url_for('superadmin.superadmin_ghost_login', user_rut=admin.rut) }}" method="POST" style="display:inline;">
-    <button class="btn btn-sm btn-warning btn-action-admin" title="Entrar como Fantasma">
-        <i class="bi bi-incognito"></i>
-    </button>
-</form>
-                                        <button class="btn btn-sm btn-outline-info btn-action-admin" onclick="editarAdmin('{{ admin.rut }}', '{{ admin.nombre }}', '{{ admin.email }}')" title="Editar Datos">
+                                        <form action="{{ url_for('superadmin_ghost_login', user_rut=admin.rut) }}"
+                                            method="POST" style="display:inline;">
+                                            <button class="btn btn-sm btn-warning btn-action-admin"
+                                                title="Entrar como Fantasma">
+                                                <i class="bi bi-incognito"></i>
+                                            </button>
+                                        </form>
+                                        <button class="btn btn-sm btn-outline-info btn-action-admin"
+                                            onclick="editarAdmin('{{ admin.rut }}', '{{ admin.nombre }}', '{{ admin.email }}')"
+                                            title="Editar Datos">
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger btn-action-admin" onclick="resetearClave('{{ admin.rut }}')" title="Resetear Clave">
+                                        <button class="btn btn-sm btn-outline-danger btn-action-admin"
+                                            onclick="resetearClave('{{ admin.rut }}')" title="Resetear Clave">
                                             <i class="bi bi-key-fill"></i>
                                         </button>
-                                        <a href="mailto:{{ admin.email }}" class="btn btn-sm btn-outline-light btn-action-admin" title="Enviar Email">
+                                        <a href="mailto:{{ admin.email }}"
+                                            class="btn btn-sm btn-outline-light btn-action-admin" title="Enviar Email">
                                             <i class="bi bi-envelope-at"></i>
                                         </a>
                                     </div>
                                 </td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="2" class="text-center text-white-50 py-3">Sin personal asignado.</td></tr>
+                            <tr>
+                                <td colspan="2" class="text-center text-white-50 py-3">Sin personal asignado.</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -267,9 +326,11 @@
 
         <div class="col-lg-7">
             <div class="card-glass p-0 overflow-hidden h-100">
-                <div class="p-3 bg-black bg-opacity-25 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                <div
+                    class="p-3 bg-black bg-opacity-25 border-bottom border-secondary d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold">Unidades / Departamentos</h5>
-                    <button class="btn btn-sm btn-outline-info fw-bold" data-bs-toggle="modal" data-bs-target="#modalCargaMasiva">
+                    <button class="btn btn-sm btn-outline-info fw-bold" data-bs-toggle="modal"
+                        data-bs-target="#modalCargaMasiva">
                         <i class="bi bi-file-earmark-spreadsheet me-2"></i>Carga CSV
                     </button>
                 </div>
@@ -288,7 +349,8 @@
                                 <td class="ps-3 fw-bold text-info">{{ u.numero }}</td>
                                 <td>
                                     <div class="small fw-bold">{{ u.owner.nombre or 'Sin Propietario' }}</div>
-                                    <div class="text-white-50" style="font-size: 0.7rem;">{{ u.tenant.nombre or 'Sin Residente' }}</div>
+                                    <div class="text-white-50" style="font-size: 0.7rem;">{{ u.tenant.nombre or 'Sin
+                                        Residente' }}</div>
                                 </td>
                                 <td class="text-end pe-3 font-monospace">{{ u.prorrateo }}%</td>
                             </tr>
@@ -301,52 +363,88 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalNewAdmin" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content card-glass"><div class="modal-header border-0"><h5 class="fw-bold">Crear Administrador</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form action="/superadmin/crear_admin_rapido" method="POST"><input type="hidden" name="edificio_id" value="{{ e.id }}"><div class="mb-2"><input name="rut" class="form-control" placeholder="RUT" required></div><div class="mb-2"><input name="nombre" class="form-control" placeholder="Nombre" required></div><div class="mb-3"><input name="email" class="form-control" placeholder="Email" required></div><button class="btn btn-info w-100 fw-bold text-dark">Crear Admin</button></form></div></div></div></div>
-<div class="modal fade" id="modalCargaMasiva" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content card-glass"><div class="modal-header border-0"><h5 class="fw-bold">Carga Masiva (CSV)</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="small text-white-50">CSV: <code>numero, piso, metraje, prorrateo, owner_rut, owner_nombre, owner_email</code></p><form action="/superadmin/carga_masiva_csv" method="POST" enctype="multipart/form-data"><input type="hidden" name="edificio_id_retorno" value="{{ e.id }}"><input type="file" name="archivo_csv" class="form-control mb-3" required accept=".csv"><button class="btn btn-success w-100 fw-bold">Procesar CSV</button></form></div></div></div></div>
+<div class="modal fade" id="modalNewAdmin" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-glass">
+            <div class="modal-header border-0">
+                <h5 class="fw-bold">Crear Administrador</h5><button class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/superadmin/crear_admin_rapido" method="POST"><input type="hidden" name="edificio_id"
+                        value="{{ e.id }}">
+                    <div class="mb-2"><input name="rut" class="form-control" placeholder="RUT" required></div>
+                    <div class="mb-2"><input name="nombre" class="form-control" placeholder="Nombre" required></div>
+                    <div class="mb-3"><input name="email" class="form-control" placeholder="Email" required></div>
+                    <button class="btn btn-info w-100 fw-bold text-dark">Crear Admin</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalCargaMasiva" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-glass">
+            <div class="modal-header border-0">
+                <h5 class="fw-bold">Carga Masiva (CSV)</h5><button class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-white-50">CSV:
+                    <code>numero, piso, metraje, prorrateo, owner_rut, owner_nombre, owner_email</code>
+                </p>
+                <form action="/superadmin/carga_masiva_csv" method="POST" enctype="multipart/form-data"><input
+                        type="hidden" name="edificio_id_retorno" value="{{ e.id }}"><input type="file"
+                        name="archivo_csv" class="form-control mb-3" required accept=".csv"><button
+                        class="btn btn-success w-100 fw-bold">Procesar CSV</button></form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     // === LÓGICA DEL CEREBRO (INTACTA) ===
-    const VALOR_UF = {{ indicadores.uf }};
-    const UNIDADES_TOTALES = {{ unidades|length }};
+    const VALOR_UF = {{ indicadores.uf | tojson }};
+    const UNIDADES_TOTALES = {{ unidades | length | tojson }};
     const UMBRAL = 50;
 
     function calcularCLP() {
         let base = parseFloat(document.getElementById('baseUF').value) || 0;
         let extra = parseFloat(document.getElementById('extraUF').value) || 0;
-        
+
         // Cálculo de excedente
         let extrasCount = Math.max(0, UNIDADES_TOTALES - UMBRAL);
-        
+
         let totalUF = base + (extrasCount * extra);
         let totalCLP = Math.round(totalUF * VALOR_UF);
-        
+
         document.getElementById('inputPesos').value = totalCLP.toLocaleString('de-DE');
-        
+
         // Texto visual de la fórmula (PARA VERIFICACIÓN Y PDF)
         let textoFormula = "";
         let textoPDF = ""; // Guardaremos esto en el input oculto
 
         if (extrasCount > 0) {
-            textoFormula = `Base (${base} UF) + ${extrasCount} Extras (${(extrasCount*extra).toFixed(3)} UF) = ${totalUF.toFixed(2)} UF`;
-            textoPDF = `Plan Base: ${base} UF | Unidades Extra: ${extrasCount} (Total Extras: ${(extrasCount*extra).toFixed(3)} UF)`;
+            textoFormula = `Base (${base} UF) + ${extrasCount} Extras (${(extrasCount * extra).toFixed(3)} UF) = ${totalUF.toFixed(2)} UF`;
+            textoPDF = `Plan Base: ${base} UF | Unidades Extra: ${extrasCount} (Total Extras: ${(extrasCount * extra).toFixed(3)} UF)`;
         } else {
             textoFormula = `Plan Base (${base} UF) - Sin cobro extra`;
             textoPDF = `Plan Base: ${base} UF (Cubre hasta ${UMBRAL} unidades)`;
         }
-        
+
         document.getElementById('formulaVisual').innerText = textoFormula;
         document.getElementById('inputDetalle').value = textoPDF; // Guardar para Backend
-        
+
         // Descripción automática
         let d = new Date();
         const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        document.getElementById('inputDesc').value = `Servicio Habipro - ${monthNames[d.getMonth()]} (${totalUF.toFixed(2)} UF)`;
+        document.getElementById('inputDesc').value = `Servicio HABITEX - ${monthNames[d.getMonth()]} (${totalUF.toFixed(2)} UF)`;
     }
 
     // === ACCIONES DE ADMIN Y VISUALIZADOR DE PAGOS ===
     function verComprobante(url) {
-        if(!url || url === 'None') {
-            Swal.fire({icon:'error', title:'Sin Archivo', text:'El administrador no adjuntó imagen.', background:'#1a1d24', color:'#fff'});
+        if (!url || url === 'None') {
+            Swal.fire({ icon: 'error', title: 'Sin Archivo', text: 'El administrador no adjuntó imagen.', background: '#1a1d24', color: '#fff' });
             return;
         }
         Swal.fire({
@@ -390,11 +488,11 @@
                 formData.append('telefono', result.value.telefono);
                 formData.append('edificio_id', '{{ e.id }}'); // Importante para volver aquí
 
-                fetch('/superadmin/editar_admin', {method: 'POST', body: formData})
-                .then(() => {
-                    Swal.fire({title: '¡Guardado!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#1a1d24', color: '#fff'})
-                    .then(() => location.reload());
-                });
+                fetch('/superadmin/editar_admin', { method: 'POST', body: formData })
+                    .then(() => {
+                        Swal.fire({ title: '¡Guardado!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#1a1d24', color: '#fff' })
+                            .then(() => location.reload());
+                    });
             }
         });
     }
@@ -413,8 +511,8 @@
                 let form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/superadmin/reset_pass_admin';
-                let i1 = document.createElement('input'); i1.name='rut_admin'; i1.value=rut;
-                let i2 = document.createElement('input'); i2.name='edificio_id'; i2.value='{{ e.id }}';
+                let i1 = document.createElement('input'); i1.name = 'rut_admin'; i1.value = rut;
+                let i2 = document.createElement('input'); i2.name = 'edificio_id'; i2.value = '{{ e.id }}';
                 form.appendChild(i1); form.appendChild(i2);
                 document.body.appendChild(form);
                 form.submit();
@@ -422,7 +520,7 @@
         })
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         let d = new Date(); d.setDate(d.getDate() + 10);
         document.getElementById('dateVencimiento').valueAsDate = d;
         calcularCLP();
@@ -430,27 +528,27 @@
 </script>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                {% for category, message in messages %}
-                    {% if category == 'credenciales_new_admin' or category == 'credenciales_reset' %}
-                        var data = "{{ message }}".split("|");
-                        Swal.fire({
-                            title: 'ACCESO GENERADO',
-                            html: `
+{% if messages %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        {% for category, message in messages %}
+        {% if category == 'credenciales_new_admin' or category == 'credenciales_reset' %}
+        var data = "{{ message }}".split("|");
+        Swal.fire({
+            title: 'ACCESO GENERADO',
+            html: `
                                 <div class="text-start bg-dark p-3 rounded border border-secondary">
                                     <div class="mb-2"><small class="text-white-50">Usuario (RUT):</small><br><strong class="text-info fs-5">${data[1]}</strong></div>
                                     <div><small class="text-warning">Contraseña:</small><br><strong class="text-white fs-4 border border-white p-1 rounded">${data[2]}</strong></div>
                                 </div>
                                 <div class="mt-3 text-center"><small>Copia estos datos, no se volverán a mostrar.</small></div>
                             `,
-                            icon: 'success', background: '#1a1d24', color: '#fff'
-                        });
-                    {% endif %}
-                {% endfor %}
-            });
-        </script>
-    {% endif %}
+            icon: 'success', background: '#1a1d24', color: '#fff'
+        });
+        {% endif %}
+        {% endfor %}
+    });
+</script>
+{% endif %}
 {% endwith %}
 {% endblock %}

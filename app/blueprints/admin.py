@@ -352,7 +352,7 @@ def reset_clave_conserje():
 @admin_bp.route('/admin/residentes/reset_clave', methods=['POST'])
 def generar_clave_residente():
     unidad_id = request.form.get('unidad_id')
-    new_pass = f"Habipro{random.randint(10000,99999)}"
+    new_pass = f"Habitex{random.randint(10000,99999)}"
     hashed_pass = generate_password_hash(new_pass, method='pbkdf2:sha256')
     
     try:
@@ -687,7 +687,7 @@ def admin_pagar_servicio():
             WHERE id = %s
         """, (filename, eid))
     
-    flash("Comprobante enviado. Esperando validación de Habipro.")
+    flash("Comprobante enviado. Esperando validación de HABITEX.")
     return redirect(url_for('admin.panel_admin'))
 
 @admin_bp.route('/admin/logs/listar')
