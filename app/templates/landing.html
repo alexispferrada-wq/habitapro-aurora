@@ -15,7 +15,7 @@
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        background-attachment: fixed;
+        background-attachment: scroll; /* FIX: 'fixed' no funciona bien en móviles */
     }
 
     .navbar-landing {
@@ -300,6 +300,16 @@
     .back-to-top:hover {
         background: var(--accent-secondary);
         color: white;
+    }
+
+    /* --- RESPONSIVE DESIGN --- */
+    @media (max-width: 768px) {
+        .hero-section h1 {
+            font-size: 2.2rem; /* Reducir tamaño de fuente para móviles */
+        }
+        .hero-section .lead {
+            font-size: 1rem;
+        }
     }
 </style>
 {% endblock %}
@@ -651,7 +661,7 @@
                         </div>
                         <div class="col-12 text-center">
                             <button type="submit" class="btn btn-cta shadow mt-3">
-                                Enviar Solicitud de Asesoría y cotización
+                                Solicitar Asesoría y Cotización
                             </button>
                         </div>
                     </div>

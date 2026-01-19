@@ -2317,7 +2317,6 @@ def send_notification_email(app, name, email, whatsapp, unidades):
             mail_receiver = 'alexispferrada@gmail.com'
 
             if mail_sender and mail_password:
-                subject = f"Nuevo Contacto desde Landing Page: {name}"
                 subject = f"Nuevo Prospecto para Cotización: {name}"
                 body = f"""
                 ¡Hola!
@@ -2370,52 +2369,9 @@ def send_contact_form():
     print(f"Unidades: {unidades}")
     print("-----------------------------------------")
 
-    # --- LÓGICA DE ENVÍO DE CORREO ---
-    try:
-        mail_sender = os.getenv('MAIL_USERNAME')
-        mail_password = os.getenv('MAIL_PASSWORD')
-        mail_receiver = 'alexispferrada@gmail.com'
     # Iniciar el envío de correo en un hilo separado para no bloquear la respuesta al usuario
-    thread = threading.Thread(target=send_notification_email, args=(app, name, email))
     thread = threading.Thread(target=send_notification_email, args=(app, name, email, whatsapp, unidades))
     thread.start()
-
-        if mail_sender and mail_password:
-            subject = f"Nuevo Contacto desde Landing Page: {name}"
-            body = f"""
-            ¡Hola!
-            
-            Se ha registrado un nuevo contacto a través del formulario de la página de inicio.
-            
-            Nombre: {name}
-            Email: {email}
-            
-            ¡Contacta a este nuevo prospecto lo antes posible!
-            
-            Saludos,
-            Sistema HABITEX
-            """
-
-            em = EmailMessage()
-            em['From'] = mail_sender
-            em['To'] = mail_receiver
-            em['Subject'] = subject
-            em.set_content(body)
-
-            context = ssl.create_default_context()
-            mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-            mail_port = int(os.getenv('MAIL_PORT', 465))
-
-            with smtplib.SMTP_SSL(mail_server, mail_port, context=context) as smtp:
-                smtp.login(mail_sender, mail_password)
-                smtp.sendmail(mail_sender, mail_receiver, em.as_string())
-            
-            print("✅ Correo de notificación enviado exitosamente.")
-        else:
-            print("⚠️  AVISO: Credenciales de correo no configuradas. No se envió la notificación.")
-
-    except Exception as e:
-        print(f"🔥 ERROR AL ENVIAR CORREO: {e}")
 
     flash('¡Gracias por tu interés! Hemos recibido tu solicitud y te contactaremos pronto.')
     return redirect(url_for('landing') + '#contacto')
