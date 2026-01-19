@@ -8,6 +8,9 @@
 
     <link rel="icon" type="image/png"
         href="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769649/logo_habitex_favicon_qpht7n.png">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('residente.manifest') }}">
+
     <link rel="apple-touch-icon"
         href="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769649/logo_habitex_favicon_qpht7n.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -21,46 +24,39 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         /* =========================================
-           ESTILO MAESTRO: CYBER-GLASS DARK
+           ESTILO MAESTRO: TEMA UNIFICADO (INSPIRADO EN LANDING)
            ========================================= */
 
         :root {
+            --dark-bg: #0B0C10;
+            --primary-dark: #1F2833;
             --accent-primary: #66FCF1;
-            /* Vibrant Cyan/Green */
             --accent-secondary: #45A29E;
-            /* Muted Teal */
-            --glass-bg: rgba(20, 20, 30, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-light: #ffffff;
+            --text-muted: #C5C6C7;
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #050505;
-            /* Fondo Degradado Aurora (Estilo Invitación) */
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(60, 10, 80, 0.25) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(10, 50, 80, 0.25) 0%, transparent 40%),
-                url('https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=2073&auto=format&fit=crop');
-            background-blend-mode: multiply;
+            background-color: var(--dark-bg);
+            /* Fondo simplificado inspirado en Landing Page */
+            background-image: radial-gradient(circle at top, var(--primary-dark) 0%, var(--dark-bg) 70%);
             background-attachment: fixed;
-            background-size: cover;
-            color: #ffffff;
+            color: var(--text-light);
             min-height: 100vh;
         }
 
-        /* --- TARJETAS DE VIDRIO (GLOBAL) --- */
+        /* --- COMPONENTES SÓLIDOS (REEMPLAZO DE GLASS) --- */
         .card,
         .modal-content,
         .list-group-item,
         .card-glass,
         .card-app,
         .card-dark-solid {
-            background: var(--glass-bg) !important;
-            backdrop-filter: blur(25px) !important;
-            -webkit-backdrop-filter: blur(25px) !important;
-            border: 1px solid var(--glass-border) !important;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
-            border-radius: 20px !important;
+            background: var(--primary-dark) !important;
+            border: 1px solid rgba(102, 252, 241, 0.1) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+            border-radius: 16px !important;
             color: white !important;
         }
 
@@ -70,10 +66,10 @@
         input,
         select,
         textarea {
-            background-color: rgba(0, 0, 0, 0.4) !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            background-color: #0B0C10 !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
             color: #ffffff !important;
-            border-radius: 12px !important;
+            border-radius: 10px !important;
             padding: 12px 15px;
         }
 
@@ -81,7 +77,7 @@
         .form-select:focus {
             border-color: var(--accent-primary) !important;
             box-shadow: 0 0 0 3px rgba(102, 252, 241, 0.15) !important;
-            background-color: rgba(0, 0, 0, 0.6) !important;
+            background-color: #0B0C10 !important;
         }
 
         /* --- BOTONES NEÓN --- */
@@ -96,13 +92,13 @@
             padding: 10px 20px !important;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
             transition: all 0.3s ease;
         }
 
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary)) !important;
-            color: white !important;
+            color: #0B0C10 !important;
         }
 
         .btn-success {
@@ -126,12 +122,11 @@
             background: rgba(255, 255, 255, 0.05) !important;
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
             color: white !important;
-            backdrop-filter: blur(5px);
         }
 
         /* --- NAVBAR --- */
         .navbar-glass {
-            background: rgba(5, 5, 10, 0.85) !important;
+            background: rgba(11, 12, 16, 0.8) !important;
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
@@ -144,18 +139,18 @@
 
         .table td,
         .table th {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(102, 252, 241, 0.1);
             padding: 15px 10px;
             vertical-align: middle;
         }
 
         .table-hover tbody tr:hover td {
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: rgba(102, 252, 241, 0.05);
         }
 
         /* --- UTILIDADES --- */
         .text-muted {
-            color: rgba(255, 255, 255, 0.5) !important;
+            color: var(--text-muted) !important;
         }
 
         .badge {
@@ -166,13 +161,79 @@
 
         /* SweetAlert al estilo Glass */
         div:where(.swal2-container) div:where(.swal2-popup) {
-            background: #151520 !important;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--primary-dark) !important;
+            border: 1px solid var(--glass-border);
         }
 
         .swal2-title,
         .swal2-html-container {
             color: white !important;
+        }
+    </style>
+    <style>
+        /* Light Theme Overrides */
+        html[data-bs-theme="light"] {
+            --dark-bg: #f0f2f5;
+            --primary-dark: #ffffff;
+            --accent-primary: #007bff;
+            --text-light: #212529;
+            --text-muted: #6c757d;
+        }
+
+        html[data-bs-theme="light"] body {
+            background-color: #f0f2f5;
+            background-image: none;
+            color: #0B0C10;
+        }
+
+        html[data-bs-theme="light"] .card,
+        html[data-bs-theme="light"] .modal-content,
+        html[data-bs-theme="light"] .list-group-item,
+        html[data-bs-theme="light"] .card-glass,
+        html[data-bs-theme="light"] .card-app,
+        html[data-bs-theme="light"] .card-dark-solid {
+            background: var(--primary-dark) !important;
+            color: var(--text-light) !important;
+            border: 1px solid rgba(0, 0, 0, 0.1) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        html[data-bs-theme="light"] .navbar-glass {
+            background: rgba(255, 255, 255, 0.85) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        html[data-bs-theme="light"] .navbar-brand,
+        html[data-bs-theme="light"] .text-white {
+            color: #0B0C10 !important;
+        }
+
+        html[data-bs-theme="light"] .form-control,
+        html[data-bs-theme="light"] .form-select,
+        html[data-bs-theme="light"] input,
+        html[data-bs-theme="light"] select,
+        html[data-bs-theme="light"] textarea {
+            background-color: rgba(255, 255, 255, 0.5) !important;
+            border: 1px solid #ced4da !important;
+            color: var(--text-light) !important;
+        }
+
+        html[data-bs-theme="light"] .table {
+            color: var(--text-light) !important;
+        }
+
+        html[data-bs-theme="light"] .table td,
+        html[data-bs-theme="light"] .table th {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        html[data-bs-theme="light"] div:where(.swal2-container) div:where(.swal2-popup) {
+            background: #f0f2f5 !important;
+        }
+
+        html[data-bs-theme="light"] .swal2-title,
+        html[data-bs-theme="light"] .swal2-html-container {
+            color: var(--text-light) !important;
         }
     </style>
     {% block styles %}{% endblock %}
@@ -216,7 +277,47 @@
         }
     </style>
     {% endif %}
+    <script>
+        (function () {
+            const themeToggle = document.getElementById('theme-toggle');
+            if (!themeToggle) return;
 
+            const htmlElement = document.documentElement;
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            htmlElement.setAttribute('data-bs-theme', currentTheme);
+            updateIcon(currentTheme);
+
+            themeToggle.addEventListener('click', function () {
+                const newTheme = htmlElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                htmlElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
+            });
+
+            function updateIcon(theme) {
+                const icon = themeToggle.querySelector('i');
+                if (theme === 'dark') {
+                    icon.classList.remove('bi-moon-stars-fill');
+                    icon.classList.add('bi-sun-fill');
+                } else {
+                    icon.classList.remove('bi-sun-fill');
+                    icon.classList.add('bi-moon-stars-fill');
+                }
+            }
+        })();
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/static/js/sw.js').then(function (registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function (err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+    </script>
 </body>
 
 </html>

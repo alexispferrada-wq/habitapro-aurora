@@ -107,6 +107,13 @@
                     </button>
                 </form>
 
+                <!-- Botón de Instalación PWA -->
+                <div class="text-center mt-4" id="install-container" style="display: none;">
+                    <button id="install-button" class="btn btn-outline-light w-100 fw-bold py-2">
+                        <i class="bi bi-phone-fill me-2"></i> Instalar App en tu Celular
+                    </button>
+                </div>
+
                 <div class="text-center mt-4">
                     <small class="text-white-50">¿Olvidaste tu clave? Pídela en conserjería.</small>
                 </div>
@@ -147,4 +154,33 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let deferredPrompt;
+        const installContainer = document.getElementById('install-container');
+        const installButton = document.getElementById('install-button');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+          // Prevenir que el mini-infobar aparezca en móviles
+          e.preventDefault();
+          // Guardar el evento para poder dispararlo después
+          deferredPrompt = e;
+          // Mostrar nuestro botón de instalación personalizado
+          if (installContainer) {
+            installContainer.style.display = 'block';
+          }
+        });
+
+        if (installButton) {
+            installButton.addEventListener('click', async () => {
+              if (!deferredPrompt) { return; }
+              // Mostrar el diálogo de instalación del navegador
+              deferredPrompt.prompt();
+              // Ya no podemos usar el prompt, lo descartamos
+              deferredPrompt = null;
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -235,6 +235,51 @@
         background: #333;
         border-radius: 3px;
     }
+
+    /* LIGHT THEME OVERRIDES */
+    html[data-bs-theme="light"] .global-status-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    html[data-bs-theme="light"] .stat-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.1);
+        color: #000;
+    }
+    html[data-bs-theme="light"] .user-count-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.1);
+        color: #000;
+    }
+    html[data-bs-theme="light"] .user-count-card:hover {
+        background: #f8f9fa;
+    }
+    html[data-bs-theme="light"] .log-row:hover {
+        background: rgba(0,0,0,0.05);
+    }
+    html[data-bs-theme="light"] .header-dark {
+        background-color: #f8f9fa !important;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        color: #000;
+    }
+    html[data-bs-theme="light"] .pac-container {
+        background-color: #fff;
+        color: #000;
+    }
+    html[data-bs-theme="light"] .pac-item {
+        color: #666;
+        border-top-color: #eee;
+    }
+    html[data-bs-theme="light"] .pac-item:hover {
+        background-color: #f0f0f0;
+    }
+    html[data-bs-theme="light"] .pac-item-query {
+        color: #000;
+    }
+    html[data-bs-theme="light"] .bg-black {
+        background-color: #f8f9fa !important;
+    }
 </style>
 {% endblock %}
 
@@ -246,6 +291,9 @@
             <span class="fw-bold">AEXON <span class="fw-light opacity-75">Overlord</span></span>
         </a>
         <div class="d-flex align-items-center gap-3">
+            <button id="theme-toggle" class="btn btn-outline-secondary border-0 fs-4" style="width: 48px; height: 48px;">
+                <i class="bi bi-sun-fill"></i>
+            </button>
             <button class="btn btn-sm btn-outline-warning fw-bold" data-bs-toggle="modal"
                 data-bs-target="#modalGhostLogin">
                 <i class="bi bi-incognito me-2"></i> MODO FANTASMA

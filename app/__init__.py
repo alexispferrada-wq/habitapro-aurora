@@ -37,6 +37,36 @@ database_uri = os.getenv('DB_URI')
 if not database_uri:
     raise RuntimeError("⚠️ ERROR CRÍTICO: La variable de entorno DB_URI no está configurada.")
 
+# --- FIX: CORRECCIÓN DE URI PARA PSYCOPG2 ---
+if database_uri:
+    database_uri = database_uri.strip().strip("'").strip('"')  # Eliminar espacios y comillas
+    if database_uri.startswith("postgres://"):
+        database_uri = database_uri.replace("postgres://", "postgresql://", 1)
+    
+    # FIX: Re-codificar query params para evitar errores con caracteres especiales (ej: options=project=...)
+    try:
+        if "://" in database_uri:
+            from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+            u = urlparse(database_uri)
+            if u.query:
+                q_args = parse_qsl(u.query, keep_blank_values=True)
+                
+                # FIX for malformed .env file where GEMINI_API_KEY is concatenated to sslmode
+                new_q_args = []
+                for k, v in q_args:
+                    if k == 'sslmode' and 'GEMINI_API_KEY' in v:
+                        sslmode_val = v.split('GEMINI_API_KEY')[0]
+                        new_q_args.append((k, sslmode_val))
+                    else:
+                        new_q_args.append((k, v))
+                q_args = new_q_args
+                # ---
+                
+                new_query = urlencode(q_args)
+                database_uri = urlunparse((u.scheme, u.netloc, u.path, u.params, new_query, u.fragment))
+    except Exception as e:
+        print(f"⚠️ Advertencia: No se pudo normalizar la URI de BD: {e}")
+
 app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'habitex_secret_key_master_2026')

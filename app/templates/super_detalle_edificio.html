@@ -290,7 +290,8 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1">
-                                        <form action="{{ url_for('superadmin_ghost_login', user_rut=admin.rut) }}"
+                                        <form
+                                            action="{{ url_for('superadmin.superadmin_ghost_login', user_rut=admin.rut) }}"
                                             method="POST" style="display:inline;">
                                             <button class="btn btn-sm btn-warning btn-action-admin"
                                                 title="Entrar como Fantasma">

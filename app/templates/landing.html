@@ -3,23 +3,19 @@
 
 {% block styles %}
 <style>
-    :root {
-        --dark-bg: #0A0A0F;
-        --primary-dark: #1F2833;
-        /* Darker, less saturated blue */
-        --accent-primary: #66FCF1;
-        /* Vibrant Cyan/Green */
-        --accent-secondary: #45A29E;
-        /* Muted Teal */
-        --text-light: #ffffff;
-        /* Light Gray */
-        --text-muted: #e0e0e0;
-        /* Darker Gray */
+    /* Animación de scroll suave */
+    html {
+        scroll-behavior: smooth;
     }
 
+    /* FIX: Forzar la imagen de fondo sobre el estilo de base.html */
     body {
-        background-color: var(--dark-bg);
-        color: var(--text-light);
+        background-image: linear-gradient(rgba(10, 10, 15, 0.4), rgba(10, 10, 15, 0.7)),
+            url('https://res.cloudinary.com/dqsz4ua73/image/upload/v1768850088/cerrar-mano-sosteniendo-smartphone_23-2149142241_iblmey.avif') !important;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
     }
 
     .navbar-landing {
@@ -37,13 +33,8 @@
         text-align: center;
         padding: 0;
         overflow: hidden;
-
-        /* Imagen de fondo con overlay */
-        background-image: linear-gradient(rgba(10, 10, 15, 0.4), rgba(10, 10, 15, 0.7)),
-            url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1920&auto=format&fit=crop');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
+        background: transparent;
+        /* Hacemos transparente para que se vea el fondo del body */
     }
 
     .hero-section h1 {
@@ -60,19 +51,21 @@
         font-size: 1.2rem;
     }
 
-    .btn-cta {
+    .btn-cta,
+    .btn-cta-secondary {
         background-color: var(--accent-primary);
         color: var(--dark-bg) !important;
         font-weight: 700;
         padding: 15px 35px;
         border-radius: 50px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
         transition: all 0.3s ease;
         border: 2px solid var(--accent-primary);
     }
 
-    .btn-cta:hover {
+    .btn-cta:hover,
+    .btn-cta-secondary:hover {
         transform: scale(1.05) translateY(-3px);
         box-shadow: 0 10px 20px rgba(102, 252, 241, 0.2);
         background-color: transparent;
@@ -225,8 +218,8 @@
     }
 
     .roles-section {
-        background-image: linear-gradient(rgba(10, 10, 15, 0.8), rgba(10, 10, 15, 0.7)),
-            url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1920&auto=format&fit=crop');
+        background-image: linear-gradient(rgba(10, 10, 15, 0.7), rgba(10, 10, 15, 0.7)),
+            url('https://res.cloudinary.com/dqsz4ua73/image/upload/v1768850088/entrada-moderna-condominio-puertas-automaticas-puertas-elegantes-color-gris-oscuro-abiertas-pasarela-pavimentada_1343747-7972_kgnt32.avif');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -276,6 +269,38 @@
             opacity: 0;
         }
     }
+
+    /* Botón para volver arriba */
+    .back-to-top {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: var(--accent-primary);
+        color: var(--dark-bg);
+        text-align: center;
+        line-height: 45px;
+        font-size: 1.5rem;
+        z-index: 1000;
+        transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(20px);
+        box-shadow: 0 5px 15px rgba(102, 252, 241, 0.2);
+    }
+
+    .back-to-top.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .back-to-top:hover {
+        background: var(--accent-secondary);
+        color: white;
+    }
 </style>
 {% endblock %}
 
@@ -299,11 +324,13 @@
 <!-- ===== SECCIÓN HERO ===== -->
 <section class="hero-section">
     <div class="container position-relative" style="z-index: 2;">
-        <h1 class="display-4">El Control Total de tu Comunidad, <br>en una Sola Plataforma</h1>
+        <h1 class="display-4">La Primera Plataforma para Comunidades <br>Potenciada con Inteligencia Artificial</h1>
         <p class="lead">
             <span id="typewriter-text"></span><span class="cursor">|</span>
         </p>
-        <a href="#contacto" class="btn btn-cta shadow">Contactar con un especialista</a>
+        <a href="#contacto" class="btn btn-cta shadow">
+            Agenda una Asesoría Estratégica
+        </a>
     </div>
 
     <!-- Indicador de Scroll Down -->
@@ -373,6 +400,62 @@
     </div>
 </section>
 
+<!-- ===== SECCIÓN DE PRUEBA SOCIAL (TESTIMONIOS) ===== -->
+<section id="testimonials" class="section" style="background-color: #0B0C10;">
+    <div class="container">
+        <div class="text-center">
+            <h2 class="section-title">La Tranquilidad de Nuestros Clientes es Nuestro Mayor Logro</h2>
+            <p class="section-subtitle">Opiniones Reales, Resultados Reales</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="testimonial-card">
+                    <p>"Desde que implementamos HABITEX, el control de acceso vehicular se transformó. Los QR para
+                        visitas son un cambio radical en seguridad y eficiencia. Nuestros conserjes ahora tienen todo
+                        registrado y a la mano."</p>
+                    <div class="mt-4">
+                        <div class="testimonial-author">Carlos Valenzuela</div>
+                        <div class="testimonial-role">Administrador, Edificio Capital</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="testimonial-card">
+                    <p>"La gestión financiera era un dolor de cabeza. Con HABITEX, el cierre de mes es automático y
+                        transparente. Los residentes pueden ver sus gastos y pagar en línea, lo que ha reducido la
+                        morosidad en un 40%."</p>
+                    <div class="mt-4">
+                        <div class="testimonial-author">Sofía Rojas</div>
+                        <div class="testimonial-role">Miembro del Comité, Condominio Los Almendros</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== SECCIÓN LOGOS CLIENTES ===== -->
+<div class="py-5" style="background-color: #050508;">
+    <div class="container">
+        <h6 class="text-center text-white-50 text-uppercase small fw-bold mb-4">Comunidades que confían en nosotros para
+            su seguridad y gestión</h6>
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-5">
+            <!-- NOTA: Reemplaza estos 'src' con los logos reales de tus clientes -->
+            <img src="https://via.placeholder.com/150x50/FFFFFF/000000?text=Cliente+1" alt="Logo Cliente 1"
+                class="tech-logo tech-invert" style="max-height: 40px;">
+            <img src="https://via.placeholder.com/150x50/FFFFFF/000000?text=Cliente+2" alt="Logo Cliente 2"
+                class="tech-logo tech-invert" style="max-height: 40px;">
+            <img src="https://via.placeholder.com/150x50/FFFFFF/000000?text=Cliente+3" alt="Logo Cliente 3"
+                class="tech-logo tech-invert" style="max-height: 40px;">
+            <img src="https://via.placeholder.com/150x50/FFFFFF/000000?text=Cliente+4" alt="Logo Cliente 4"
+                class="tech-logo tech-invert" style="max-height: 40px;">
+            <img src="https://via.placeholder.com/150x50/FFFFFF/000000?text=Cliente+5" alt="Logo Cliente 5"
+                class="tech-logo tech-invert" style="max-height: 40px;">
+        </div>
+    </div>
+</div>
+
+
 <!-- ===== SECCIÓN PARA QUIÉN ES ===== -->
 <section class="section roles-section">
     <div class="container">
@@ -414,17 +497,18 @@
 <section class="section"
     style="background: linear-gradient(180deg, #0f1219 0%, #151922 100%); border-top: 1px solid rgba(102, 252, 241, 0.1); border-bottom: 1px solid rgba(102, 252, 241, 0.1);">
     <div class="container text-center">
-        <p class="section-subtitle mb-4">Impulsado por Tecnología de Clase Mundial</p>
+        <h2 class="section-title">Construido sobre una Base Tecnológica Inquebrantable</h2>
+        <p class="section-subtitle mb-4">Líderes en Innovación para tu Seguridad</p>
         <p class="text-white-50 mb-5 mx-auto" style="max-width: 800px; font-size: 1.1rem;">
-            En <strong>HABITEX</strong> ocupamos tecnología única para el resguardo de información. Utilizamos
-            <strong>Neon</strong> para bases de datos serverless de última generación, garantizando integridad y
-            velocidad. Nuestro ecosistema se completa con <strong>Python</strong>, <strong>Flask</strong>,
-            <strong>Render</strong> y <strong>Cloudinary</strong>, todo orquestado con la potencia de <strong>Google
+            En <strong>HABITEX</strong>, la seguridad no es una opción. Utilizamos <strong>Neon DB</strong> para bases
+            de datos serverless de última generación, garantizando integridad y velocidad. Nuestro ecosistema se
+            completa con la robustez de <strong>Python</strong> y <strong>Flask</strong>, desplegado en la nube de
+            <strong>Render</strong> y potenciado por la <strong>Inteligencia Artificial de Google
                 Gemini</strong>.
         </p>
         <div class="d-flex justify-content-center align-items-center flex-wrap gap-5">
-            <img src="https://cdn.simpleicons.org/neon/ffffff" alt="Neon" class="tech-logo"
-                title="Neon Serverless Postgres">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768847594/neon-logomark-dark-mono_yobgml.png"
+                alt="Neon" class="tech-logo" title="Neon Serverless Postgres">
             <img src="https://cdn.simpleicons.org/python/ffffff" alt="Python" class="tech-logo" title="Python Backend">
             <img src="https://cdn.simpleicons.org/flask/ffffff" alt="Flask" class="tech-logo" title="Flask Framework">
             <img src="https://cdn.simpleicons.org/postgresql/ffffff" alt="PostgreSQL" class="tech-logo"
@@ -532,13 +616,48 @@
 
 <!-- ===== SECCIÓN FINAL CTA ===== -->
 <section id="contacto" class="section" style="background-color: #0B0C10;">
-    <div class="container text-center">
-        <h2 class="section-title">¿Listo para transformar la seguridad de tu comunidad?</h2>
-        <p class="lead text-white-50 mx-auto" style="max-width: 600px;">
-            Nuestro equipo de especialistas está listo para mostrarte cómo HABITEX puede adaptarse a las necesidades
-            específicas de tu edificio.
-        </p>
-        <a href="mailto:contacto@habitex.cl" class="btn btn-cta shadow mt-3">Contactar un especialista</a>
+    <div class="container">
+        <div class="text-center">
+            <h2 class="section-title">¿Listo para transformar la seguridad de tu comunidad?</h2>
+            <p class="lead text-white-50 mx-auto" style="max-width: 700px;">
+                Completa el formulario y uno de nuestros especialistas se pondrá en contacto contigo a la brevedad para
+                agendar una asesoría estratégica.
+            </p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-success text-center border-0 fw-bold mb-4">
+                    {{ message }}
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+                <form action="/send_contact_form" method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" name="name" class="form-control" placeholder="Tu Nombre" required style="padding: 15px;">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="email" name="email" class="form-control" placeholder="Tu Email" required style="padding: 15px;">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="tel" name="whatsapp" class="form-control" placeholder="Tu WhatsApp (Ej: +569...)" required style="padding: 15px;">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="number" name="unidades" class="form-control" placeholder="Nº de Unidades/Deptos" required style="padding: 15px;">
+                        </div>
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-cta shadow mt-3">
+                                Enviar Solicitud de Asesoría y cotización
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -560,6 +679,9 @@
         </div>
     </div>
 </footer>
+
+<!-- ===== BOTÓN VOLVER ARRIBA ===== -->
+<a href="#" class="back-to-top"><i class="bi bi-arrow-up"></i></a>
 
 
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
@@ -584,7 +706,7 @@
         });
 
         // Efecto Typewriter Moderno
-        const text = "HABITEX integra tecnología de vanguardia para ofrecer seguridad, gestión y comunicación sin precedentes a tu edificio o condominio.";
+        const text = "HABITEX integra IA para ofrecer seguridad, gestión y comunicación sin precedentes a tu edificio o condominio.";
         const element = document.getElementById("typewriter-text");
         let i = 0;
         function typeWriter() {
@@ -595,6 +717,17 @@
             }
         }
         setTimeout(typeWriter, 500); // Iniciar con un pequeño retraso
+
+        // Lógica para el botón "Volver Arriba"
+        const backToTopButton = document.querySelector('.back-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) { // Muestra el botón después de 300px de scroll
+                backToTopButton.classList.add('show');
+            } else {
+                backToTopButton.classList.remove('show');
+            }
+        });
+
     });
 </script>
 {% endblock %}

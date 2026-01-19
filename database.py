@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,6 +22,35 @@ if not os.getenv('DB_URI') and os.path.exists('.env.txt'):
 
 # --- CONFIGURACIÓN NEON (POSTGRESQL) ---
 DB_URI = os.environ.get('DB_URI')
+
+# --- FIX: CORRECCIÓN DE URI PARA PSYCOPG2 ---
+if DB_URI:
+    DB_URI = DB_URI.strip().strip("'").strip('"')  # Eliminar espacios y comillas
+    if DB_URI.startswith("postgres://"):
+        DB_URI = DB_URI.replace("postgres://", "postgresql://", 1)
+
+    # FIX: Re-codificar query params para evitar errores con caracteres especiales (ej: options=project=...)
+    try:
+        if "://" in DB_URI:
+            u = urlparse(DB_URI)
+            if u.query:
+                q_args = parse_qsl(u.query, keep_blank_values=True)
+                
+                # FIX for malformed .env file where GEMINI_API_KEY is concatenated to sslmode
+                new_q_args = []
+                for k, v in q_args:
+                    if k == 'sslmode' and 'GEMINI_API_KEY' in v:
+                        sslmode_val = v.split('GEMINI_API_KEY')[0]
+                        new_q_args.append((k, sslmode_val))
+                    else:
+                        new_q_args.append((k, v))
+                q_args = new_q_args
+                # ---
+                
+                new_query = urlencode(q_args)
+                DB_URI = urlunparse((u.scheme, u.netloc, u.path, u.params, new_query, u.fragment))
+    except Exception as e:
+        print(f"⚠️ Advertencia: No se pudo normalizar la URI de BD en database.py: {e}")
 
 def get_db_connection():
     try:
@@ -272,6 +302,17 @@ def inicializar_tablas():
                 valor FLOAT,
                 fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 registrado_por VARCHAR(100)
+            );
+        """)
+
+        # 17. PAGOS DE EDIFICIOS (A HABITAPRO)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS pagos_edificios (
+                id SERIAL PRIMARY KEY,
+                edificio_id INT,
+                monto INT,
+                concepto TEXT,
+                fecha_pago TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
 

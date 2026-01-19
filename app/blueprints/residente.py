@@ -26,13 +26,18 @@ def manifest():
         "short_name": "HABITEX",
         "start_url": "/panel-residente",
         "display": "standalone",
-        "background_color": "#1a1d24",
-        "theme_color": "#0dcaf0",
+        "background_color": "#0B0C10",
+        "theme_color": "#151820",
         "icons": [
             {
                 "src": "https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769649/logo_habitex_favicon_qpht7n.png",
-                "sizes": "any",
-                "type": "image/svg+xml"
+                "sizes": "192x192",
+                "type": "image/png"
+            },
+            {
+                "src": "https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769649/logo_habitex_favicon_qpht7n.png",
+                "sizes": "512x512",
+                "type": "image/png"
             }
         ]
     })

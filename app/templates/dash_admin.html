@@ -18,16 +18,16 @@
         border-radius: 16px !important;
     }
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6,
-    strong,
-    span,
-    p,
-    div {
+    html[data-bs-theme="dark"] h1,
+    html[data-bs-theme="dark"] h2,
+    html[data-bs-theme="dark"] h3,
+    html[data-bs-theme="dark"] h4,
+    html[data-bs-theme="dark"] h5,
+    html[data-bs-theme="dark"] h6,
+    html[data-bs-theme="dark"] strong,
+    html[data-bs-theme="dark"] span,
+    html[data-bs-theme="dark"] p,
+    html[data-bs-theme="dark"] div {
         color: #ffffff !important;
     }
 
@@ -239,6 +239,143 @@
         font-size: 2.5rem;
         margin-bottom: 10px;
     }
+
+    /* Light Theme Specific Overrides */
+    html[data-bs-theme="light"] .card,
+    html[data-bs-theme="light"] .modal-content,
+    html[data-bs-theme="light"] .card-glass,
+    html[data-bs-theme="light"] .list-group-item {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        color: #0B0C10 !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+
+    html[data-bs-theme="light"] .text-white-50,
+    html[data-bs-theme="light"] .small {
+        color: rgba(0, 0, 0, 0.6) !important;
+    }
+
+    html[data-bs-theme="light"] .form-control,
+    html[data-bs-theme="light"] .form-select {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+        border: 1px solid rgba(0, 0, 0, 0.2) !important;
+        color: #0B0C10 !important;
+    }
+    
+    html[data-bs-theme="light"] .hero-content {
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.95) 40%, rgba(255, 255, 255, 0.4) 100%);
+    }
+
+    /* Fix text colors and backgrounds for light mode */
+    html[data-bs-theme="light"] h1, html[data-bs-theme="light"] h2, html[data-bs-theme="light"] h3, html[data-bs-theme="light"] h4, html[data-bs-theme="light"] h5, html[data-bs-theme="light"] h6, html[data-bs-theme="light"] strong, html[data-bs-theme="light"] span, html[data-bs-theme="light"] p, html[data-bs-theme="light"] div {
+        color: #0B0C10;
+    }
+    html[data-bs-theme="light"] .bg-black {
+        background-color: #f8f9fa !important;
+    }
+
+    /* MEJORAS CONTRASTE MODO DÍA (Directorio & Botones) */
+    
+    /* 1. Directorio Residentes */
+    html[data-bs-theme="light"] .card .bg-black.bg-opacity-25 {
+        background-color: #e9ecef !important;
+        color: #212529 !important;
+        border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+    }
+    
+    html[data-bs-theme="light"] #tablaResidentes thead {
+        background-color: #dee2e6 !important;
+        color: #212529 !important;
+    }
+    
+    html[data-bs-theme="light"] #tablaResidentes thead th {
+        color: #495057 !important;
+        font-weight: 700;
+    }
+
+    html[data-bs-theme="light"] small[style*="#66FCF1"] {
+        color: #0d6efd !important; /* Arreglo color nombre residente */
+    }
+
+    /* 2. Botones Rápidos (General) */
+    html[data-bs-theme="light"] .btn-quick {
+        background-color: #ffffff !important;
+        border: 1px solid #dee2e6 !important;
+        color: #495057 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    html[data-bs-theme="light"] .btn-quick:hover {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+    }
+    html[data-bs-theme="light"] .btn-quick i[style*="#66FCF1"] { color: #0d6efd !important; }
+    html[data-bs-theme="light"] .btn-quick i[style*="#2ecc71"] { color: #198754 !important; }
+
+    /* 3. Botón IA (Contraste Morado) */
+    html[data-bs-theme="light"] .btn-quick[data-bs-target="#modalGemini"] {
+        background-color: rgba(142, 68, 173, 0.15) !important;
+        border-color: #8e44ad !important;
+        color: #6c3483 !important; /* Morado oscuro para texto */
+    }
+    html[data-bs-theme="light"] .btn-quick[data-bs-target="#modalGemini"] i {
+        color: #8e44ad !important; /* Morado oscuro para icono */
+    }
+
+    /* MEJORAS PARKING MODO DÍA */
+    html[data-bs-theme="light"] .park-slot {
+        background-color: #ffffff !important;
+        border: 1px solid #dee2e6 !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    /* Estado: LIBRE (Fondo verde suave, texto verde oscuro) */
+    html[data-bs-theme="light"] .park-libre {
+        background-color: #d1e7dd !important;
+        border-color: #badbcc !important;
+    }
+    html[data-bs-theme="light"] .park-libre .park-icon {
+        color: #198754 !important;
+    }
+    html[data-bs-theme="light"] .park-libre .text-success {
+        color: #0f5132 !important;
+    }
+
+    /* Estado: OCUPADO (Fondo amarillo suave, texto marrón/dorado) */
+    html[data-bs-theme="light"] .park-ocupado {
+        background-color: #fff3cd !important;
+        border-color: #ffecb5 !important;
+    }
+    html[data-bs-theme="light"] .park-ocupado .park-icon,
+    html[data-bs-theme="light"] .park-ocupado .text-warning {
+        color: #664d03 !important;
+    }
+    html[data-bs-theme="light"] .park-ocupado .text-white-50 {
+        color: rgba(102, 77, 3, 0.7) !important;
+    }
+
+    /* Estado: MANTENCION (Fondo cian suave, texto azul oscuro) */
+    html[data-bs-theme="light"] .park-mantencion {
+        background-color: #cff4fc !important;
+        border-color: #b6effb !important;
+    }
+    html[data-bs-theme="light"] .park-mantencion .park-icon,
+    html[data-bs-theme="light"] .park-mantencion .text-info {
+        color: #055160 !important;
+    }
+    
+    html[data-bs-theme="light"] .btn-maint {
+        color: #6c757d !important;
+    }
+
+    /* FIX ICONOS DIRECTORIO MODO DÍA */
+    html[data-bs-theme="light"] .btn-action-group .btn {
+        color: #495057 !important;
+    }
+    html[data-bs-theme="light"] .btn-action-group .btn-outline-light { color: #6c757d !important; border-color: #ced4da !important; }
+    html[data-bs-theme="light"] .btn-action-group .btn-outline-success { color: #198754 !important; border-color: #198754 !important; }
+    html[data-bs-theme="light"] .btn-action-group .btn-outline-danger { color: #dc3545 !important; border-color: #dc3545 !important; }
+    html[data-bs-theme="light"] .btn-action-group .btn-outline-warning { color: #d39e00 !important; border-color: #ffc107 !important; }
+    html[data-bs-theme="light"] .btn-action-group .btn-outline-info { color: #0aa2c0 !important; border-color: #0dcaf0 !important; }
 </style>
 {% endblock %}
 
@@ -248,6 +385,9 @@
         <a class="navbar-brand fw-bold text-white" href="#" style="--bs-info-rgb: 102, 252, 241;"><i
                 class="bi bi-building me-2 text-info"></i>Admin Panel</a>
         <div class="d-flex align-items-center gap-3">
+            <button id="theme-toggle" class="btn btn-outline-secondary border-0 fs-4" style="width: 48px; height: 48px;">
+                <i class="bi bi-sun-fill"></i>
+            </button>
             <span class="text-white small fw-bold">{{ session.nombre }}</span>
             <a href="/logout" class="btn btn-sm btn-danger border-0 shadow"><i class="bi bi-power"></i></a>
         </div>

@@ -176,6 +176,71 @@ def conserje_guardar_incidencia():
         cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", (session.get('edificio_id'), request.form.get('titulo'), request.form.get('descripcion'), session.get('nombre')))
     return redirect(url_for('conserje.panel_conserje'))
 
+@conserje_bp.route('/conserje/medidores/guardar', methods=['POST'])
+def conserje_guardar_medidor():
+    if session.get('rol') != 'conserje': return redirect(url_for('auth.login'))
+    uid = request.form.get('unidad_id')
+    tipo = request.form.get('tipo')
+    valor = request.form.get('valor')
+    eid = session.get('edificio_id')
+    
+    try:
+        with get_db_cursor(commit=True) as cur:
+            # Validación de consistencia: No permitir lecturas menores a la anterior
+            cur.execute("""
+                SELECT valor FROM lecturas_medidores 
+                WHERE unidad_id = %s AND tipo = %s 
+                ORDER BY fecha DESC LIMIT 1
+            """, (uid, tipo))
+            ultima_lectura = cur.fetchone()
+            
+            if ultima_lectura and float(valor) < float(ultima_lectura['valor']):
+                flash(f"❌ Error: El valor ({valor}) no puede ser menor a la última lectura registrada ({ultima_lectura['valor']}).")
+                return redirect(url_for('conserje.panel_conserje'))
+
+            cur.execute("""
+                INSERT INTO lecturas_medidores (edificio_id, unidad_id, tipo, valor, fecha, registrado_por)
+                VALUES (%s, %s, %s, %s, NOW(), %s)
+            """, (eid, uid, tipo, valor, session.get('nombre')))
+        flash(f"✅ Lectura de {tipo} registrada correctamente.")
+    except Exception as e:
+        flash("❌ Error al guardar lectura de medidor.")
+    return redirect(url_for('conserje.panel_conserje'))
+
+@conserje_bp.route('/conserje/medidores/ultima_lectura')
+def conserje_ultima_lectura():
+    if session.get('rol') != 'conserje': return jsonify({'status': 'error'})
+    uid = request.args.get('unidad_id')
+    tipo = request.args.get('tipo')
+    
+    with get_db_cursor() as cur:
+        cur.execute("""
+            SELECT valor, fecha FROM lecturas_medidores 
+            WHERE unidad_id = %s AND tipo = %s 
+            ORDER BY fecha DESC LIMIT 1
+        """, (uid, tipo))
+        res = cur.fetchone()
+    
+    if res:
+        return jsonify({'status': 'success', 'valor': res['valor'], 'fecha': res['fecha'].strftime('%d/%m/%Y')})
+    return jsonify({'status': 'success', 'valor': 0, 'fecha': 'N/A'})
+
+@conserje_bp.route('/conserje/turno/guardar', methods=['POST'])
+def conserje_guardar_turno():
+    if session.get('rol') != 'conserje': return redirect(url_for('auth.login'))
+    novedades = request.form.get('novedades')
+    caja = request.form.get('caja', 0)
+    eid = session.get('edificio_id')
+    nombre = session.get('nombre')
+    
+    detalle = f"ENTREGA DE TURNO\nConserje: {nombre}\nCaja: ${'{:,.0f}'.format(int(caja)).replace(',', '.')}\nNovedades: {novedades}"
+    
+    with get_db_cursor(commit=True) as cur:
+        cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", 
+                   (eid, "ENTREGA DE TURNO", detalle, nombre))
+    flash("✅ Turno finalizado y registrado en bitácora.")
+    return redirect(url_for('conserje.panel_conserje'))
+
 @conserje_bp.route('/conserje/visitas/confirmar_vehiculo', methods=['POST'])
 def confirmar_ingreso_vehiculo():
     token = request.form.get('token')

@@ -1,9 +1,14 @@
 # ==========================================
 # 1. IMPORTACIONES Y CONFIGURACIÓN HABIPRO
 # ==========================================
+import smtplib
+import ssl
+from email.message import EmailMessage
+import threading
 from flask import send_file
 from io import BytesIO
 import os, json, random, calendar, io, csv, requests
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 import psycopg2 # <--- ESTA LÍNEA ES LA QUE FALTA O ESTÁ MAL UBICADA
 from psycopg2.extras import RealDictCursor # <--- NECESARIA PARA RealDictCursor
 from datetime import date, datetime, timedelta
@@ -44,6 +49,24 @@ database_uri = os.getenv('DB_URI')
 # Si la URI está vacía, usamos el valor directo para que no falle (SOLO PARA PRUEBAS)
 if not database_uri:
     raise RuntimeError("⚠️ ERROR CRÍTICO: La variable de entorno DB_URI no está configurada.")
+
+# --- FIX: CORRECCIÓN DE URI PARA PSYCOPG2 ---
+if database_uri:
+    database_uri = database_uri.strip().strip("'").strip('"')  # Eliminar espacios y comillas
+    if database_uri.startswith("postgres://"):
+        database_uri = database_uri.replace("postgres://", "postgresql://", 1)
+
+    # FIX: Re-codificar query params para evitar errores con caracteres especiales (ej: options=project=...)
+    # Este bloque es CRÍTICO para que psycopg2 pueda procesar URIs con parámetros complejos.
+    try:
+        if "://" in database_uri:
+            u = urlparse(database_uri)
+            if u.query:
+                q_args = parse_qsl(u.query, keep_blank_values=True)
+                new_query = urlencode(q_args)
+                database_uri = urlunparse((u.scheme, u.netloc, u.path, u.params, new_query, u.fragment))
+    except Exception as e:
+        print(f"⚠️ Advertencia: No se pudo normalizar la URI de BD en app.py: {e}")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -392,85 +415,6 @@ def conserje_guardar_encomienda():
 @app.route('/conserje/encomiendas/entregar', methods=['POST'])
 def conserje_entregar_encomienda():
     conn=get_db_connection(); cur=conn.cursor(); cur.execute("UPDATE encomiendas SET entrega = NOW() WHERE id = %s", (request.form.get('encomienda_id'),)); conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_conserje'))
-
-@app.route('/conserje/incidencias/guardar', methods=['POST'])
-def conserje_guardar_incidencia():
-    conn=get_db_connection(); cur=conn.cursor(); cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", (session.get('edificio_id'), request.form.get('titulo'), request.form.get('descripcion'), session.get('nombre'))); conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_conserje'))
-
-@app.route('/conserje/medidores/guardar', methods=['POST'])
-def conserje_guardar_medidor():
-    if session.get('rol') != 'conserje': return redirect(url_for('home'))
-    uid = request.form.get('unidad_id')
-    tipo = request.form.get('tipo')
-    valor = request.form.get('valor')
-    eid = session.get('edificio_id')
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    try:
-        # Validación de consistencia: No permitir lecturas menores a la anterior
-        cur.execute("""
-            SELECT valor FROM lecturas_medidores 
-            WHERE unidad_id = %s AND tipo = %s 
-            ORDER BY fecha DESC LIMIT 1
-        """, (uid, tipo))
-        ultima_lectura = cur.fetchone()
-        
-        if ultima_lectura and float(valor) < float(ultima_lectura['valor']):
-            flash(f"❌ Error: El valor ({valor}) no puede ser menor a la última lectura registrada ({ultima_lectura['valor']}).")
-            return redirect(url_for('panel_conserje'))
-
-        cur.execute("""
-            INSERT INTO lecturas_medidores (edificio_id, unidad_id, tipo, valor, fecha, registrado_por)
-            VALUES (%s, %s, %s, %s, NOW(), %s)
-        """, (eid, uid, tipo, valor, session.get('nombre')))
-        conn.commit()
-        flash(f"✅ Lectura de {tipo} registrada correctamente.")
-    except Exception as e:
-        conn.rollback()
-        flash("❌ Error al guardar lectura de medidor.")
-    finally:
-        cur.close(); conn.close()
-    return redirect(url_for('panel_conserje'))
-
-@app.route('/conserje/medidores/ultima_lectura')
-def conserje_ultima_lectura():
-    if session.get('rol') != 'conserje': return jsonify({'status': 'error'})
-    uid = request.args.get('unidad_id')
-    tipo = request.args.get('tipo')
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT valor, fecha FROM lecturas_medidores 
-        WHERE unidad_id = %s AND tipo = %s 
-        ORDER BY fecha DESC LIMIT 1
-    """, (uid, tipo))
-    res = cur.fetchone()
-    cur.close(); conn.close()
-    
-    if res:
-        return jsonify({'status': 'success', 'valor': res['valor'], 'fecha': res['fecha'].strftime('%d/%m/%Y')})
-    return jsonify({'status': 'success', 'valor': 0, 'fecha': 'N/A'})
-
-@app.route('/conserje/turno/guardar', methods=['POST'])
-def conserje_guardar_turno():
-    if session.get('rol') != 'conserje': return redirect(url_for('home'))
-    novedades = request.form.get('novedades')
-    caja = request.form.get('caja', 0)
-    eid = session.get('edificio_id')
-    nombre = session.get('nombre')
-    
-    # Formateamos el mensaje para que aparezca claro en la bitácora del admin
-    detalle = f"ENTREGA DE TURNO\nConserje: {nombre}\nCaja: ${'{:,.0f}'.format(int(caja)).replace(',', '.')}\nNovedades: {novedades}"
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", 
-               (eid, "ENTREGA DE TURNO", detalle, nombre))
-    conn.commit(); cur.close(); conn.close()
-    flash("✅ Turno finalizado y registrado en bitácora.")
-    return redirect(url_for('panel_conserje'))
 
 # ==========================================
 # RUTAS RESIDENTE (APP MÓVIL)
@@ -2362,5 +2306,119 @@ def super_detalle_edificio(id):
                            admins=admins, 
                            unidades=unidades_procesadas,
                            indicadores=obtener_indicadores()) # <--- ESTO ES LO QUE FALTABA
+
+
+def send_notification_email(app, name, email, whatsapp, unidades):
+    with app.app_context():
+        # --- LÓGICA DE ENVÍO DE CORREO ---
+        try:
+            mail_sender = os.getenv('MAIL_USERNAME')
+            mail_password = os.getenv('MAIL_PASSWORD')
+            mail_receiver = 'alexispferrada@gmail.com'
+
+            if mail_sender and mail_password:
+                subject = f"Nuevo Contacto desde Landing Page: {name}"
+                subject = f"Nuevo Prospecto para Cotización: {name}"
+                body = f"""
+                ¡Hola!
+                
+                Se ha registrado un nuevo contacto a través del formulario de la página de inicio.
+                
+                Nombre: {name}
+                Email: {email}
+                WhatsApp: {whatsapp}
+                Cantidad de Unidades: {unidades}
+                
+                ¡Contacta a este nuevo prospecto lo antes posible!
+                
+                Saludos,
+                Sistema HABITEX
+                """
+
+                em = EmailMessage()
+                em['From'] = mail_sender
+                em['To'] = mail_receiver
+                em['Subject'] = subject
+                em.set_content(body)
+
+                context = ssl.create_default_context()
+                mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+                mail_port = int(os.getenv('MAIL_PORT', 465))
+
+                with smtplib.SMTP_SSL(mail_server, mail_port, context=context) as smtp:
+                    smtp.login(mail_sender, mail_password)
+                    smtp.sendmail(mail_sender, mail_receiver, em.as_string())
+                
+                print("✅ Correo de notificación enviado exitosamente (en segundo plano).")
+            else:
+                print("⚠️  AVISO: Credenciales de correo no configuradas. No se envió la notificación (en segundo plano).")
+
+        except Exception as e:
+            print(f"🔥 ERROR AL ENVIAR CORREO (en segundo plano): {e}")
+
+@app.route('/send_contact_form', methods=['POST'])
+def send_contact_form():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    whatsapp = request.form.get('whatsapp')
+    unidades = request.form.get('unidades')
+
+    print("--- NUEVO CONTACTO DESDE LANDING PAGE ---")
+    print(f"Nombre: {name}")
+    print(f"Email: {email}")
+    print(f"WhatsApp: {whatsapp}")
+    print(f"Unidades: {unidades}")
+    print("-----------------------------------------")
+
+    # --- LÓGICA DE ENVÍO DE CORREO ---
+    try:
+        mail_sender = os.getenv('MAIL_USERNAME')
+        mail_password = os.getenv('MAIL_PASSWORD')
+        mail_receiver = 'alexispferrada@gmail.com'
+    # Iniciar el envío de correo en un hilo separado para no bloquear la respuesta al usuario
+    thread = threading.Thread(target=send_notification_email, args=(app, name, email))
+    thread = threading.Thread(target=send_notification_email, args=(app, name, email, whatsapp, unidades))
+    thread.start()
+
+        if mail_sender and mail_password:
+            subject = f"Nuevo Contacto desde Landing Page: {name}"
+            body = f"""
+            ¡Hola!
+            
+            Se ha registrado un nuevo contacto a través del formulario de la página de inicio.
+            
+            Nombre: {name}
+            Email: {email}
+            
+            ¡Contacta a este nuevo prospecto lo antes posible!
+            
+            Saludos,
+            Sistema HABITEX
+            """
+
+            em = EmailMessage()
+            em['From'] = mail_sender
+            em['To'] = mail_receiver
+            em['Subject'] = subject
+            em.set_content(body)
+
+            context = ssl.create_default_context()
+            mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+            mail_port = int(os.getenv('MAIL_PORT', 465))
+
+            with smtplib.SMTP_SSL(mail_server, mail_port, context=context) as smtp:
+                smtp.login(mail_sender, mail_password)
+                smtp.sendmail(mail_sender, mail_receiver, em.as_string())
+            
+            print("✅ Correo de notificación enviado exitosamente.")
+        else:
+            print("⚠️  AVISO: Credenciales de correo no configuradas. No se envió la notificación.")
+
+    except Exception as e:
+        print(f"🔥 ERROR AL ENVIAR CORREO: {e}")
+
+    flash('¡Gracias por tu interés! Hemos recibido tu solicitud y te contactaremos pronto.')
+    return redirect(url_for('landing') + '#contacto')
+
 if __name__ == '__main__':
     app.run(debug=True, port=5004)

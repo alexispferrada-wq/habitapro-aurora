@@ -195,6 +195,50 @@
         display: block;
         margin-bottom: 2px;
     }
+
+    /* LIGHT THEME OVERRIDES */
+    html[data-bs-theme="light"] body {
+        background: #f0f2f5;
+    }
+    html[data-bs-theme="light"] .app-header {
+        background: #ffffff;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    html[data-bs-theme="light"] .card-app {
+        background: #ffffff;
+        border-color: rgba(0,0,0,0.1);
+        color: #000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    html[data-bs-theme="light"] .btn-invite {
+        background: #ffffff;
+        border-color: rgba(0,0,0,0.1);
+        color: #000;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    html[data-bs-theme="light"] .bottom-nav {
+        background: #ffffff;
+        border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    html[data-bs-theme="light"] .nav-item-app {
+        color: rgba(0,0,0,0.5);
+    }
+    html[data-bs-theme="light"] .nav-item-app.active {
+        color: #0d6efd;
+        text-shadow: none;
+    }
+    html[data-bs-theme="light"] .dash-card {
+        border-color: rgba(0,0,0,0.1);
+        background: #ffffff;
+        color: #000;
+    }
+    html[data-bs-theme="light"] .dash-card.card-package { background: linear-gradient(135deg, #ffc107, #ffdb72); color: #000; }
+    html[data-bs-theme="light"] .dash-card.card-alert { background: linear-gradient(135deg, #dc3545, #ff8b94); color: #fff; }
+    html[data-bs-theme="light"] .dash-card.card-visit { background: linear-gradient(135deg, #0dcaf0, #6edff6); color: #000; }
+    html[data-bs-theme="light"] .dash-card.card-empty { background: #f8f9fa; color: #6c757d; border-color: #dee2e6; }
+    html[data-bs-theme="light"] .bg-black {
+        background-color: #f8f9fa !important;
+    }
 </style>
 {% endblock %}
 
@@ -210,7 +254,12 @@
                     style="font-size: 0.65rem;">Residente</span>
             </div>
         </div>
-        <a href="/logout" class="text-white-50"><i class="bi bi-power fs-4"></i></a>
+        <div class="d-flex align-items-center gap-3">
+            <button id="theme-toggle" class="btn btn-link text-white-50 border-0 fs-4 p-0">
+                <i class="bi bi-sun-fill"></i>
+            </button>
+            <a href="/logout" class="text-white-50"><i class="bi bi-power fs-4"></i></a>
+        </div>
     </div>
     <div
         class="building-info p-2 rounded border border-secondary bg-black bg-opacity-25 d-flex align-items-center justify-content-between">
