@@ -164,6 +164,11 @@
         cursor: pointer !important;
     }
 
+    /* FIX: Forzar color oscuro en días activos para contraste en modo noche */
+    html[data-bs-theme="dark"] .cal-active {
+        color: #0B0C10 !important;
+    }
+
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
@@ -376,6 +381,89 @@
     html[data-bs-theme="light"] .btn-action-group .btn-outline-danger { color: #dc3545 !important; border-color: #dc3545 !important; }
     html[data-bs-theme="light"] .btn-action-group .btn-outline-warning { color: #d39e00 !important; border-color: #ffc107 !important; }
     html[data-bs-theme="light"] .btn-action-group .btn-outline-info { color: #0aa2c0 !important; border-color: #0dcaf0 !important; }
+
+    /* --- REFACTORIZACIÓN UI (EXPERTO) --- */
+    :root {
+        --ui-radius-card: 16px;
+        --ui-radius-elem: 10px;
+        --ui-sp-sm: 0.5rem;   /* 8px */
+        --ui-sp-md: 1rem;     /* 16px */
+        --ui-sp-lg: 1.5rem;   /* 24px */
+    }
+
+    .ui-card {
+        border-radius: var(--ui-radius-card) !important;
+        padding: var(--ui-sp-lg) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: #1a1d24 !important;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ui-card-warning {
+        border-color: rgba(255, 193, 7, 0.2) !important;
+        background: linear-gradient(180deg, rgba(255, 193, 7, 0.05) 0%, rgba(26, 29, 36, 0) 100%) !important;
+    }
+    
+    .ui-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+    }
+    
+    .ui-card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #fff;
+    }
+
+    .ui-list-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .ui-item-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: var(--ui-radius-elem);
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+    }
+
+    .ui-item-card:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .ui-text-primary { font-size: 0.95rem; font-weight: 600; color: #fff; line-height: 1.2; margin-bottom: 0.25rem; }
+    .ui-text-secondary { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); font-weight: 500; }
+
+    .ui-btn-icon {
+        width: 36px; height: 36px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        border: 1px solid transparent; transition: 0.2s; color: #fff;
+        background: rgba(255, 255, 255, 0.05); cursor: pointer; text-decoration: none;
+    }
+    .ui-btn-icon:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+    .ui-btn-action-group { display: flex; align-items: center; gap: 0.5rem; }
+    .ui-btn-action {
+        width: 32px; height: 32px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        border: none; transition: 0.2s; color: white; cursor: pointer;
+    }
+    .ui-btn-action:hover { transform: scale(1.1); }
 </style>
 {% endblock %}
 
@@ -393,27 +481,41 @@
         </div>
     </div>
 </nav>
-<div class="bg-black border-bottom border-secondary py-1" style="margin-top: 56px;">
-    <div class="container-fluid d-flex justify-content-end gap-4 text-white-50" style="font-size: 0.75rem;">
-        <div class="d-flex align-items-center" style="--bs-warning-rgb: 243, 156, 18;">
-            <i class="bi bi-graph-up-arrow text-warning me-1"></i>
-            UF: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.uf) | replace(',', '.') }}</span>
-        </div>
-        <div class="d-flex align-items-center">
-            <i class="bi bi-bank text-success me-1"></i>
-            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.dolar) | replace(',', '.') }}</span>
-        </div>
-        <div class="d-flex align-items-center d-none d-md-flex" style="--bs-info-rgb: 102, 252, 241;">
-            <i class="bi bi-file-earmark-text text-info me-1"></i>
-            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) | replace(',', '.') }}</span>
-        </div>
-    </div>
-</div>
 
 <div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
     {% with messages = get_flashed_messages() %}{% if messages %}{% for msg in messages %}<div
         class="alert alert-info border-0 text-center mb-4 fw-bold shadow">{{ msg }}</div>{% endfor %}{% endif %}{%
     endwith %}
+
+    <!-- NUEVA SECCIÓN: INDICADORES ECONÓMICOS CENTRALIZADOS -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-glass p-3 text-center">
+                <div class="d-flex justify-content-center gap-4 gap-md-5 align-items-center flex-wrap mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-warning fw-bold fs-4">UF:</span>
+                        <span class="text-white fs-4">${{ "{:,.2f}".format(indicadores.uf)|replace(',','X')|replace('.',',')|replace('X','.') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-success fw-bold fs-4">DÓLAR:</span>
+                        <span class="text-white fs-4">${{ "{:,.2f}".format(indicadores.dolar)|replace(',','X')|replace('.',',')|replace('X','.') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-info fw-bold fs-4">UTM:</span>
+                        <span class="text-white fs-4">${{ "{:,.0f}".format(indicadores.utm)|replace(',','.') }}</span>
+                    </div>
+                </div>
+                <div class="row border-top border-white border-opacity-10 pt-2">
+                    <div class="col-6 border-end border-white border-opacity-10">
+                        <small class="text-white-50" style="font-size: 0.7rem;">Fuente: Banco Central</small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-white-50" style="font-size: 0.7rem;">Actualizado: Hoy</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row g-4 mb-4">
         <div class="col-lg-6">
@@ -533,40 +635,43 @@
 
     <div class="row g-4 mb-4">
         <div class="col-lg-4">
-            <div class="card p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold m-0"><i class="bi bi-stars text-warning me-2"></i> Espacios Comunes</h5>
-                    <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#formEspacio"><i class="bi bi-plus-lg"></i></button>
+            <div class="ui-card">
+                <div class="ui-card-header">
+                    <h5 class="ui-card-title"><i class="bi bi-stars text-warning"></i> Espacios Comunes</h5>
+                    <button class="ui-btn-icon bg-primary border-0 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formEspacio">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
                 </div>
+                
                 <div class="collapse mb-3" id="formEspacio">
-                    <form action="/admin/espacios/guardar" method="POST"
-                        class="bg-black bg-opacity-25 p-3 rounded border border-secondary">
-                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre (Ej: Quincho)"
-                            required>
+                    <form action="/admin/espacios/guardar" method="POST" class="p-3 rounded-3 border border-secondary" style="background: rgba(0,0,0,0.2);">
+                        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre (Ej: Quincho)" required style="font-size: 0.9rem;">
                         <div class="row g-2 mb-2">
-                            <div class="col"><input type="number" name="capacidad" class="form-control"
-                                    placeholder="Cap." required></div>
-                            <div class="col"><input type="number" name="precio" class="form-control" placeholder="$"
-                                    value="0"></div>
+                            <div class="col"><input type="number" name="capacidad" class="form-control" placeholder="Cap." required style="font-size: 0.9rem;"></div>
+                            <div class="col"><input type="number" name="precio" class="form-control" placeholder="$" value="0" style="font-size: 0.9rem;"></div>
                         </div>
-                        <button class="btn btn-success w-100 btn-sm fw-bold">Guardar</button>
+                        <button class="btn btn-success w-100 btn-sm fw-bold rounded-3">Guardar</button>
                     </form>
                 </div>
-                <div class="list-group list-group-flush">
+
+                <div class="ui-list-container">
                     {% for e in espacios %}
-                    <div
-                        class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-bottom border-white border-opacity-10">
+                    <div class="ui-item-card">
                         <div>
-                            <div class="fw-bold">{{ e.nombre }}</div>
-                            <small class="text-white-50">Cap: {{ e.capacidad }} | <span class="text-success">${{
-                                    "{:,.0f}".format(e.precio) }}</span></small>
+                            <div class="ui-text-primary">{{ e.nombre|title }}</div>
+                            <div class="ui-text-secondary">
+                                Cap: {{ e.capacidad }} • <span class="text-success fw-bold">${{ "{:,.0f}".format(e.precio) }}</span>
+                            </div>
                         </div>
-                        <a href="/admin/espacios/eliminar/{{ e.id }}" class="btn btn-sm btn-outline-danger border-0"
-                            onclick="return confirm('¿Eliminar?')"><i class="bi bi-trash-fill"></i></a>
+                        <a href="/admin/espacios/eliminar/{{ e.id }}" class="ui-btn-icon text-danger" style="background: rgba(220, 53, 69, 0.1);" onclick="return confirm('¿Eliminar?')">
+                            <i class="bi bi-trash-fill"></i>
+                        </a>
                     </div>
                     {% else %}
-                    <div class="text-center text-white-50 py-3">Sin espacios creados.</div>
+                    <div class="text-center text-white-50 py-4 small">
+                        <i class="bi bi-inbox fs-4 d-block mb-2 opacity-50"></i>
+                        Sin espacios creados.
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -597,8 +702,7 @@
                                     <span class="text-info ms-1">{{ r.hora_inicio or '' }}</span>
                                 </td>
                                 <td class="text-info fw-bold">{{ r.nombre_espacio }}</td>
-                                <td><span class="badge bg-light text-dark border border-white">U. {{ r.numero_unidad
-                                        }}</span></td>
+                                <td><span class="badge bg-light text-dark border border-white" style="color: #000 !important;">U. {{ r.numero_unidad }}</span></td>
                                 <td>
                                     {% if r.estado == 'CONFIRMADA' %}<span class="badge bg-success shadow-sm">OK</span>
                                     {% else %}<span class="badge bg-danger shadow-sm">CANCEL</span>{% endif %}
@@ -627,48 +731,91 @@
         </div>
     </div>
 
-    <div class="card p-4 mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold m-0">🅿️ Estacionamientos Visita</h5>
-            <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalConfigParking">
-                <i class="bi bi-gear-fill me-1"></i> Configurar
-            </button>
-        </div>
-        <div class="parking-grid">
-            {% for p in parking %}
-            <div class="park-slot park-{{ p.estado }}">
-                <form action="/admin/parking/maintenance" method="POST">
-                    <input type="hidden" name="slot_id" value="{{ p.id }}">
-                    <input type="hidden" name="accion"
-                        value="{{ 'desactivar' if p.estado == 'mantencion' else 'activar' }}">
-                    <button class="btn-maint" title="Activar/Desactivar Mantención"><i
-                            class="bi bi-cone-striped"></i></button>
-                </form>
-
-                <div class="fw-bold">{{ p.nombre }}</div>
-
-                {% if p.estado == 'ocupado' %}
-                <i class="bi bi-car-front-fill park-icon fs-4 my-1"></i>
-
-                <span class="badge bg-danger mb-1" style="font-size: 0.6rem;">U. {{ p.unidad_numero }}</span>
-
-                <div class="text-warning fw-bold small">{{ p.patente }}</div>
-                <small class="text-white-50" style="font-size: 0.65rem;">{{ p.tiempo }}</small>
-
-                {% elif p.estado == 'libre' %}
-                <i class="bi bi-check-circle park-icon fs-3 my-1"></i>
-                <small class="text-success fw-bold" style="font-size: 0.7rem;">LIBRE</small>
-
-                {% elif p.estado == 'mantencion' %}
-                <i class="bi bi-tools park-icon fs-4 my-1"></i>
-                <small class="text-info fw-bold" style="font-size: 0.7rem;">MANT.</small>
-
-                {% else %}
-                <i class="bi bi-lock-fill park-icon fs-4 my-1"></i>
-                <small class="text-white-50" style="font-size: 0.7rem;">U. {{ p.unidad_numero }}</small>
-                {% endif %}
+    <!-- NUEVA FILA: PAGOS (4) + PARKING (8) -->
+    <div class="row g-4 mb-4">
+        <!-- TARJETA PAGOS POR REVISAR (COL-4) -->
+        <div class="col-lg-4">
+            <div class="ui-card ui-card-warning">
+                <div class="ui-card-header">
+                    <h5 class="ui-card-title text-warning">
+                        <i class="bi bi-exclamation-circle-fill"></i> Pagos <span class="badge bg-warning text-dark rounded-pill ms-1" style="font-size: 0.7rem;">{{ pagos_pendientes|length }}</span>
+                    </h5>
+                </div>
+                
+                <div class="ui-list-container">
+                    {% for p in pagos_pendientes %}
+                    <div class="ui-item-card d-block">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-info text-dark fw-bold shadow-sm" style="border-radius: 6px;">U. {{ p.unidad_numero }}</span>
+                            <small class="ui-text-secondary font-monospace">{{ p.fecha.strftime('%d/%m') }}</small>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-white fs-5">${{ "{:,.0f}".format(p.monto).replace(',', '.') }}</span>
+                            <div class="ui-btn-action-group">
+                                <a href="/static/uploads/{{ p.comprobante_url }}" target="_blank" class="ui-btn-action bg-dark border border-secondary text-white-50" title="Ver Comprobante"><i class="bi bi-eye"></i></a>
+                                <form action="/admin/pagos/aprobar" method="POST" class="d-inline">
+                                    <input type="hidden" name="pago_id" value="{{ p.id }}">
+                                    <button class="ui-btn-action bg-success text-white shadow-sm" title="Aprobar"><i class="bi bi-check-lg"></i></button>
+                                </form>
+                                <a href="/admin/pagos/rechazar/{{ p.id }}" class="ui-btn-action bg-danger text-white shadow-sm" onclick="return confirm('¿Rechazar?')" title="Rechazar"><i class="bi bi-x-lg"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-white-50 py-5">
+                        <i class="bi bi-check-circle fs-1 d-block mb-2 opacity-25"></i>
+                        <span class="small">Todo al día.</span>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            {% endfor %}
+        </div>
+
+        <!-- TARJETA PARKING (COL-8) -->
+        <div class="col-lg-8">
+            <div class="card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold m-0">🅿️ Estacionamientos Visita</h5>
+                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalConfigParking">
+                        <i class="bi bi-gear-fill me-1"></i> Configurar
+                    </button>
+                </div>
+                <div class="parking-grid">
+                    {% for p in parking %}
+                    <div class="park-slot park-{{ p.estado }}">
+                        <form action="/admin/parking/maintenance" method="POST">
+                            <input type="hidden" name="slot_id" value="{{ p.id }}">
+                            <input type="hidden" name="accion"
+                                value="{{ 'desactivar' if p.estado == 'mantencion' else 'activar' }}">
+                            <button class="btn-maint" title="Activar/Desactivar Mantención"><i
+                                    class="bi bi-cone-striped"></i></button>
+                        </form>
+
+                        <div class="fw-bold">{{ p.nombre }}</div>
+
+                        {% if p.estado == 'ocupado' %}
+                        <div class="d-flex flex-column align-items-center justify-content-center mt-1 w-100">
+                            <span class="badge bg-danger mb-1 shadow-sm" style="font-size: 0.7rem;">U. {{ p.unidad_numero }}</span>
+                            <div class="text-warning fw-bold font-monospace lh-1 mb-1" style="font-size: 0.85rem;">{{ p.patente }}</div>
+                            <small class="text-white-50 lh-1" style="font-size: 0.65rem;">{{ p.tiempo }}</small>
+                        </div>
+
+                        {% elif p.estado == 'libre' %}
+                        <i class="bi bi-check-circle park-icon fs-3 my-1"></i>
+                        <small class="text-success fw-bold" style="font-size: 0.7rem;">LIBRE</small>
+
+                        {% elif p.estado == 'mantencion' %}
+                        <i class="bi bi-tools park-icon fs-4 my-1"></i>
+                        <small class="text-info fw-bold" style="font-size: 0.7rem;">MANT.</small>
+
+                        {% else %}
+                        <i class="bi bi-lock-fill park-icon fs-4 my-1"></i>
+                        <small class="text-white-50" style="font-size: 0.7rem;">U. {{ p.unidad_numero }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -919,7 +1066,7 @@
         <div class="modal-content card-glass" style="border: 1px solid #8e44ad;">
             <div class="modal-header border-0 bg-black bg-opacity-25">
                 <h5 class="modal-title fw-bold text-white">
-                    <i class="bi bi-stars me-2" style="color: #d2b4de;"></i>Asistente Gemini
+                    <i class="bi bi-stars me-2" style="color: #d2b4de;"></i>Asistente IA (Groq)
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -928,7 +1075,7 @@
                 <div class="mb-3">
                     <textarea id="geminiInput" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="Ej: Avisar que mañana cortan el agua de 3 a 5 por reparaciones..."></textarea>
                 </div>
-                <button class="btn w-100 fw-bold text-white mb-3" onclick="generarTextoIA()" style="background: linear-gradient(45deg, #8e44ad, #3498db);">
+                <button class="btn w-100 fw-bold text-white mb-3" onclick="generarTextoIA(this)" style="background: linear-gradient(45deg, #8e44ad, #3498db);">
                     <i class="bi bi-magic me-2"></i> GENERAR COMUNICADO
                 </button>
                 
@@ -1092,11 +1239,10 @@
     }
 
     // --- FUNCIONES GEMINI AI ---
-    function generarTextoIA() {
+    function generarTextoIA(btn) {
         const tema = document.getElementById('geminiInput').value;
         if (!tema) return Swal.fire('Escribe un tema', '', 'warning');
 
-        const btn = event.target;
         const originalText = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Pensando...';

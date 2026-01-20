@@ -13,7 +13,7 @@ def landing():
 @login_required
 def dashboard():
     # Redirigir a la lógica de paneles por rol definida en auth.home
-    return redirect(url_for('auth.home'))
+    return redirect(url_for('auth.dashboard'))
 
 @main_bp.route('/conserje/reservas/cambiar_estado', methods=['POST'])
 @login_required

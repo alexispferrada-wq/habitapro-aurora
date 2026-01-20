@@ -356,6 +356,38 @@ def super_crear_edificio():
         
     return redirect(url_for('superadmin.panel_superadmin'))
 
+@superadmin_bp.route('/superadmin/editar_edificio', methods=['POST'])
+@login_required
+def superadmin_editar_edificio():
+    if current_user.rol != 'superadmin':
+        return redirect(url_for('auth.login'))
+
+    edificio_id = request.form.get('edificio_id')
+    nombre = request.form.get('nombre')
+    direccion = request.form.get('direccion')
+    lat = request.form.get('lat')
+    lon = request.form.get('lon')
+
+    try:
+        lat_val = float(lat) if lat and lat.strip() else None
+        lon_val = float(lon) if lon and lon.strip() else None
+    except ValueError:
+        lat_val = None
+        lon_val = None
+
+    try:
+        with get_db_cursor(commit=True) as cur:
+            cur.execute("""
+                UPDATE edificios
+                SET nombre = %s, direccion = %s, latitud = %s, longitud = %s
+                WHERE id = %s
+            """, (nombre, direccion, lat_val, lon_val, edificio_id))
+        flash('¡Edificio actualizado con éxito!', 'success')
+    except Exception as e:
+        flash('Error al actualizar el edificio en la base de datos.', 'error')
+
+    return redirect(url_for('superadmin.super_detalle_edificio', id=edificio_id))
+
 @superadmin_bp.route('/superadmin/toggle_edificio/<int:edificio_id>', methods=['POST'])
 def superadmin_toggle_edificio(edificio_id):
     if session.get('rol') != 'superadmin': return jsonify({'status': 'error'})

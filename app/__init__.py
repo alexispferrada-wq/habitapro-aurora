@@ -86,7 +86,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
 # Registro de Blueprints
-from .auth import auth_bp
+from .blueprints.auth import auth_bp
 from .blueprints.admin import admin_bp
 from .blueprints.conserje import conserje_bp
 from .blueprints.residente import residente_bp

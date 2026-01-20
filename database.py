@@ -316,6 +316,33 @@ def inicializar_tablas():
             );
         """)
 
+        # 18. MARKETPLACE (NUEVO)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS marketplace (
+                id SERIAL PRIMARY KEY,
+                edificio_id INT,
+                unidad_id INT,
+                titulo VARCHAR(100),
+                descripcion TEXT,
+                precio INT,
+                contacto VARCHAR(50),
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # 19. PAGOS PENDIENTES (Residentes)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS pagos_pendientes (
+                id SERIAL PRIMARY KEY,
+                edificio_id INT,
+                unidad_id INT,
+                monto INT,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                comprobante_url TEXT,
+                estado VARCHAR(20) DEFAULT 'PENDIENTE'
+            );
+        """)
+
         # ==========================================
         # ZONA DE PARCHES (ALTER TABLES)
         # Para corregir bases de datos ya creadas

@@ -11,6 +11,10 @@ import json
 import random
 import calendar
 import requests
+try:
+    from groq import Groq
+except ImportError:
+    Groq = None
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -140,7 +144,7 @@ def panel_admin():
         cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,))
         ed = cur.fetchone()
         
-        cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (eid,))
+        cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY LENGTH(numero), numero ASC", (eid,))
         units = cur.fetchall()
         
         deuda_aexon = ed.get('deuda_omnisoft', 0)
@@ -200,8 +204,18 @@ def panel_admin():
             ORDER BY r.fecha_uso DESC LIMIT 20
         """, (eid,))
         reservas = cur.fetchall()
+
+        # 7. Pagos Pendientes de Revisión (NUEVO)
+        cur.execute("""
+            SELECT p.*, u.numero as unidad_numero 
+            FROM pagos_pendientes p 
+            JOIN unidades u ON p.unidad_id = u.id 
+            WHERE p.edificio_id = %s AND p.estado = 'PENDIENTE'
+            ORDER BY p.fecha ASC
+        """, (eid,))
+        pagos_pendientes = cur.fetchall()
     
-    # 7. Procesar Unidades (JSON)
+    # 8. Procesar Unidades (JSON)
     u_proc = []
     for u in units:
         o = parse_json_field(u.get('owner_json'))
@@ -245,7 +259,8 @@ def panel_admin():
         new_credentials=session.pop('new_credentials_unidad', None),
         dias_restantes=dias_restantes,
         alerta_deuda=alerta_deuda,
-        indicadores=obtener_indicadores()
+        indicadores=obtener_indicadores(),
+        pagos_pendientes=pagos_pendientes
     )
 
 @admin_bp.route('/admin/gastos')
@@ -409,6 +424,45 @@ def registrar_pago_residente():
         cur.execute("INSERT INTO historial_pagos (edificio_id, unidad_id, monto, metodo, comprobante_url, mes_periodo, anio_periodo) VALUES (%s, %s, %s, 'TRANSFERENCIA', %s, %s, %s)", (eid, uid, monto, filename, mp, ap))
     
     flash("Pago registrado con comprobante.")
+    return redirect(url_for('admin.panel_admin'))
+
+@admin_bp.route('/admin/pagos/aprobar', methods=['POST'])
+def admin_aprobar_pago():
+    if session.get('rol') != 'admin': return redirect(url_for('auth.login'))
+    pid = request.form.get('pago_id')
+    eid = session.get('edificio_id')
+    
+    with get_db_cursor(commit=True) as cur:
+        # Obtener datos del pago pendiente
+        cur.execute("SELECT * FROM pagos_pendientes WHERE id = %s AND edificio_id = %s", (pid, eid))
+        pago = cur.fetchone()
+        
+        if pago:
+            # 1. Registrar en historial oficial
+            # Lógica de mes (igual que antes)
+            cur.execute("SELECT mes, anio FROM cierres_mes WHERE edificio_id = %s ORDER BY anio DESC, mes DESC LIMIT 1", (eid,))
+            uc = cur.fetchone()
+            if uc: mp, ap = (uc['mes']+1, uc['anio']) if uc['mes'] < 12 else (1, uc['anio']+1)
+            else: now = datetime.now(); mp, ap = now.month, now.year
+            
+            cur.execute("INSERT INTO historial_pagos (edificio_id, unidad_id, monto, metodo, comprobante_url, mes_periodo, anio_periodo) VALUES (%s, %s, %s, 'TRANSFERENCIA', %s, %s, %s)", (eid, pago['unidad_id'], pago['monto'], pago['comprobante_url'], mp, ap))
+            
+            # 2. Descontar deuda
+            cur.execute("UPDATE unidades SET deuda_monto = GREATEST(0, deuda_monto - %s) WHERE id = %s", (pago['monto'], pago['unidad_id']))
+            
+            # 3. Marcar como aprobado
+            cur.execute("UPDATE pagos_pendientes SET estado = 'APROBADO' WHERE id = %s", (pid,))
+            
+    flash("✅ Pago aprobado y registrado.")
+    return redirect(url_for('admin.panel_admin'))
+
+@admin_bp.route('/admin/pagos/rechazar/<int:id>')
+def admin_rechazar_pago(id):
+    if session.get('rol') != 'admin': return redirect(url_for('auth.login'))
+    eid = session.get('edificio_id')
+    with get_db_cursor(commit=True) as cur:
+        cur.execute("UPDATE pagos_pendientes SET estado = 'RECHAZADO' WHERE id = %s AND edificio_id = %s", (id, eid))
+    flash("❌ Pago rechazado.")
     return redirect(url_for('admin.panel_admin'))
 
 @admin_bp.route('/admin/residentes/multar', methods=['POST'])
@@ -768,3 +822,43 @@ def parking_maintenance():
     with get_db_cursor(commit=True) as cur:
         cur.execute("UPDATE estacionamientos_visita SET estado = %s WHERE id = %s", (nuevo_estado, sid))
     return redirect(url_for('admin.panel_admin'))
+
+@admin_bp.route('/admin/gemini/redactar', methods=['POST'])
+def admin_gemini_redactar():
+    if session.get('rol') not in ['admin', 'superadmin']: 
+        return jsonify({'status': 'error', 'message': 'No autorizado'})
+    
+    if Groq is None:
+        return jsonify({'status': 'error', 'message': 'Librería groq no instalada.'})
+
+    api_key = os.getenv('GROQ_API_KEY')
+    if not api_key:
+        return jsonify({'status': 'error', 'message': 'Falta API Key. Configura GROQ_API_KEY en .env'})
+
+    tema = request.json.get('tema')
+    if not tema: return jsonify({'status': 'error', 'message': 'Falta el tema'})
+
+    try:
+        client = Groq(api_key=api_key)
+        
+        prompt = f"""
+        Actúa como un administrador de edificios experto, cordial y profesional.
+        Redacta un comunicado oficial para la comunidad de residentes sobre el siguiente tema: "{tema}".
+        El tono debe ser formal pero cercano. Incluye un saludo y una despedida estándar.
+        Formato: Texto plano, listo para copiar y pegar en WhatsApp o Email.
+        """
+        
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="llama-3.3-70b-versatile",
+        )
+        
+        return jsonify({'status': 'success', 'texto': chat_completion.choices[0].message.content})
+            
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Error IA (Groq): {str(e)}'})

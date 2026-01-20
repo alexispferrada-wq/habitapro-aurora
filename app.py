@@ -1,6 +1,3 @@
-# ==========================================
-# 1. IMPORTACIONES Y CONFIGURACIÓN HABIPRO
-# ==========================================
 import smtplib
 import ssl
 from email.message import EmailMessage
@@ -9,8 +6,8 @@ from flask import send_file
 from io import BytesIO
 import os, json, random, calendar, io, csv, requests
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
-import psycopg2 # <--- ESTA LÍNEA ES LA QUE FALTA O ESTÁ MAL UBICADA
-from psycopg2.extras import RealDictCursor # <--- NECESARIA PARA RealDictCursor
+import psycopg2 
+from psycopg2.extras import RealDictCursor 
 from datetime import date, datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import abort
@@ -20,10 +17,9 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-import google.generativeai as genai
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
-# 1. CARGAR VARIABLES DE ENTORNO
+
 load_dotenv()
 
 # Fallback: Si no se cargó DB_URI, intentar cargar desde .env.txt (error común al crear el archivo)
@@ -89,28 +85,43 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# --- CONFIGURACIÓN GEMINI AI ---
-GEMINI_KEY = os.getenv('GEMINI_API_KEY')
-if GEMINI_KEY:
-    genai.configure(api_key=GEMINI_KEY)
-else:
-    print("⚠️ ADVERTENCIA: GEMINI_API_KEY no encontrada en variables de entorno.")
-
 # ==========================================
 # 2. MODELOS Y UTILIDADES CRÍTICAS
 # ==========================================
-class Usuario(UserMixin, db.Model): 
-    __tablename__ = 'usuarios'
-    rut = db.Column(db.String(20), primary_key=True)
-    nombre = db.Column(db.String(100)); email = db.Column(db.String(100))
-    rol = db.Column(db.String(50)); edificio_id = db.Column(db.Integer)
-    activo = db.Column(db.Boolean, default=True)
+class Usuario(UserMixin):
+    # Esta clase ya no depende de SQLAlchemy, es un objeto simple para Flask-Login.
+    def __init__(self, rut, nombre, rol, edificio_id, activo=True):
+        self.rut = rut
+        self.nombre = nombre
+        self.rol = rol
+        self.edificio_id = edificio_id
+        self.activo = activo
     def get_id(self): return self.rut
 
 @login_manager.user_loader
-def load_user(user_rut): 
-    # session.get es el estándar actual para SQLAlchemy 2.0
-    return db.session.get(Usuario, user_rut)
+def load_user(user_rut):
+    # Ahora usamos la conexión directa, igual que el resto de la app.
+    conn = get_db_connection()
+    if not conn: return None
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM usuarios WHERE rut = %s", (user_rut,))
+        user_data = cur.fetchone()
+        cur.close()
+        conn.close()
+        if user_data:
+            return Usuario(
+                rut=user_data['rut'],
+                nombre=user_data['nombre'],
+                rol=user_data['rol'],
+                edificio_id=user_data.get('edificio_id'),
+                activo=user_data.get('activo', True)
+            )
+        return None
+    except Exception as e:
+        print(f"Error en load_user: {e}")
+        if conn: conn.close()
+        return None
 
 def get_db_connection():
     return psycopg2.connect(app.config['SQLALCHEMY_DATABASE_URI'], cursor_factory=RealDictCursor)
@@ -198,9 +209,7 @@ def set_unidad(uid):
 @app.route('/logout')
 def logout(): session.clear(); return redirect(url_for('landing'))
 
-# --- UTILIDADES PARKING ---
-# --- LÓGICA DE PARKING REAL (CONECTADA A BD) ---
-# --- LÓGICA DE PARKING REAL (CORREGIDA) ---
+
 def obtener_estado_parking_real(edificio_id):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -349,6 +358,7 @@ def panel_conserje():
     
     # 3. UNIDADES (ORDENADAS Y COMPLETAS PARA EDITAR)
     cur.execute("SELECT id, numero, owner_json, tenant_json FROM unidades WHERE edificio_id = %s ORDER BY LENGTH(numero), numero ASC", (eid,))
+    cur.execute("SELECT id, numero, piso, prorrateo, owner_json, tenant_json FROM unidades WHERE edificio_id = %s ORDER BY LENGTH(numero), numero ASC", (eid,))
     raw = cur.fetchall()
     u_proc = []
     for u in raw:
@@ -357,7 +367,7 @@ def panel_conserje():
         fono = t.get('fono') or o.get('fono','')
         email = t.get('email') or o.get('email','')
         rut = t.get('rut') or o.get('rut','')
-        u_proc.append({'id': u['id'], 'numero': u['numero'], 'residente': nombre, 'fono': fono, 'email': email, 'rut': rut, 'owner': o, 'tenant': t})
+        u_proc.append({'id': u['id'], 'numero': u['numero'], 'piso': u['piso'], 'prorrateo': u['prorrateo'], 'residente': nombre, 'fono': fono, 'email': email, 'rut': rut, 'owner': o, 'tenant': t})
     
     cur.close(); conn.close()
     return render_template('dash_conserje.html', edificio=dict(edificio), parking=obtener_estado_parking_real(eid), encomiendas=encomiendas, unidades=u_proc, reservas_futuras=reservas_futuras)
@@ -632,7 +642,7 @@ def panel_admin():
     cur.execute("SELECT * FROM edificios WHERE id = %s", (eid,))
     ed = cur.fetchone()
     
-    cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (eid,))
+    cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY LENGTH(numero), numero ASC", (eid,))
     units = cur.fetchall()
     
     deuda_aexon = ed.get('deuda_omnisoft', 0)
@@ -1090,7 +1100,10 @@ def guardar_edicion_residente():
     t_json = json.dumps({'rut': tenant_rut, 'nombre': request.form.get('tenant_nombre'), 'email': request.form.get('tenant_email'), 'fono': request.form.get('tenant_fono')})
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute("UPDATE unidades SET piso=%s, prorrateo=%s, tenant_json=%s WHERE id=%s", (request.form.get('piso'), request.form.get('prorrateo'), t_json, request.form.get('unidad_id')))
-    conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_admin'))
+    conn.commit(); cur.close(); conn.close()
+    if session.get('rol') == 'conserje':
+        return redirect(url_for('panel_conserje'))
+    return redirect(url_for('panel_admin'))
 
 # --- CORREGIDO: GENERAR CLAVE Y GUARDAR EN BD ---
 @app.route('/admin/residentes/reset_clave', methods=['POST'])
@@ -1136,32 +1149,6 @@ def generar_clave_residente():
 def admin_auditoria(): return render_template('base.html')
 @app.route('/admin/difusion', methods=['POST'])
 def admin_difusion(): flash(f"📢 Alerta: {request.form.get('mensaje')}"); return redirect(url_for('panel_admin'))
-
-@app.route('/admin/gemini/redactar', methods=['POST'])
-def admin_gemini_redactar():
-    if session.get('rol') != 'admin': return jsonify({'status': 'error', 'message': 'No autorizado'})
-    
-    if not GEMINI_KEY:
-        return jsonify({'status': 'error', 'message': 'Falta API Key. Configura GEMINI_API_KEY en .env'})
-
-    tema = request.json.get('tema')
-    if not tema: return jsonify({'status': 'error', 'message': 'Falta el tema'})
-
-    try:
-        # Configuración del modelo: Usamos gemini-1.5-flash que es gratuito y rápido
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"""
-        Actúa como un administrador de edificios experto, cordial y profesional.
-        Redacta un comunicado oficial para la comunidad de residentes sobre el siguiente tema: "{tema}".
-        El tono debe ser formal pero cercano. Incluye un saludo y una despedida estándar.
-        Formato: Texto plano, listo para copiar y pegar en WhatsApp o Email.
-        """
-        
-        response = model.generate_content(prompt)
-        return jsonify({'status': 'success', 'texto': response.text})
-    except Exception as e:
-        print(f"Error Gemini: {e}")
-        return jsonify({'status': 'error', 'message': f'Error IA: {str(e)}'})
 
 # --- MÓDULO ESPACIOS COMUNES (NUEVO) ---
 @app.route('/admin/espacios/guardar', methods=['POST'])
@@ -1383,6 +1370,27 @@ def crear_unidad():
     cur.execute("INSERT INTO unidades (edificio_id, numero, piso, metraje, prorrateo, owner_json, tenant_json) VALUES (%s, %s, %s, %s, %s, %s, %s)", (request.form.get('edificio_id'), request.form.get('numero'), request.form.get('piso'), request.form.get('metraje'), request.form.get('prorrateo'), o, t))
     conn.commit(); cur.close(); conn.close(); return redirect(url_for('super_detalle_edificio', id=request.form.get('edificio_id')))
 
+@app.route('/superadmin/eliminar_unidad', methods=['POST'])
+def super_eliminar_unidad():
+    if session.get('rol') != 'superadmin': return jsonify({'status': 'error'})
+    uid = request.form.get('unidad_id')
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("DELETE FROM unidades WHERE id = %s", (uid,))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({'status': 'success'})
+
+@app.route('/superadmin/editar_unidad', methods=['POST'])
+def super_editar_unidad():
+    if session.get('rol') != 'superadmin': return redirect(url_for('login'))
+    eid = request.form.get('edificio_id')
+    uid = request.form.get('unidad_id')
+    o = json.dumps({'rut': formatear_rut(request.form.get('owner_rut')), 'nombre': request.form.get('owner_nombre'), 'email': request.form.get('owner_email'), 'fono': request.form.get('owner_fono')})
+    t = json.dumps({'rut': formatear_rut(request.form.get('tenant_rut')), 'nombre': request.form.get('tenant_nombre'), 'email': request.form.get('tenant_email'), 'fono': request.form.get('tenant_fono')})
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute("UPDATE unidades SET numero=%s, piso=%s, metraje=%s, prorrateo=%s, owner_json=%s, tenant_json=%s WHERE id=%s", (request.form.get('numero'), request.form.get('piso'), request.form.get('metraje'), request.form.get('prorrateo'), o, t, uid))
+    conn.commit(); cur.close(); conn.close()
+    return redirect(url_for('super_detalle_edificio', id=eid))
+
 @app.route('/superadmin/crear_admin_rapido', methods=['POST'])
 @login_required
 def crear_admin_rapido():
@@ -1511,14 +1519,13 @@ def login():
             is_valid = check_password_hash(pass_db, pass_input) if pass_db.startswith(('scrypt:', 'pbkdf2:')) else (pass_db == pass_input)
             
             if is_valid:
-                
                 # --- LOGIN EXITOSO ---
-                user_obj = Usuario()
-                user_obj.rut = user_data['rut']
-                user_obj.nombre = user_data['nombre']
-                user_obj.rol = user_data['rol']
-                user_obj.edificio_id = user_data.get('edificio_id')
-                
+                user_obj = Usuario(
+                    rut=user_data['rut'],
+                    nombre=user_data['nombre'],
+                    rol=user_data['rol'],
+                    edificio_id=user_data.get('edificio_id')
+                )
                 login_user(user_obj)
                 
                 session['user_id'] = user_data['rut']
@@ -1583,13 +1590,6 @@ def superadmin_toggle_edificio(edificio_id):
     
     cur.close(); conn.close()
     return jsonify({'status': 'success'})
-
-@app.route('/superadmin/eliminar_edificio', methods=['POST'])
-def eliminar_edificio():
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute("UPDATE edificios SET activo = FALSE WHERE id = %s", (request.form.get('edificio_id'),))
-    cur.execute("UPDATE usuarios SET activo = FALSE WHERE edificio_id = %s", (request.form.get('edificio_id'),))
-    conn.commit(); cur.close(); conn.close(); return redirect(url_for('panel_superadmin'))
 
 @app.route('/superadmin/toggle_acceso', methods=['POST'])
 def toggle_acceso():
@@ -2081,12 +2081,6 @@ def superadmin_buscar_global():
     # Convertimos los resultados a una lista de diccionarios limpia
     return jsonify([dict(r) for r in results])
 
-
-# ==========================================
-# MODO FANTASMA: BÚSQUEDA Y LOGIN (UNIFICADO)
-# ==========================================
-
-
 @app.route('/superadmin/ghost_login/<user_rut>', methods=['POST'])
 @login_required
 def superadmin_ghost_login(user_rut):
@@ -2125,11 +2119,12 @@ def superadmin_ghost_login(user_rut):
                     session['numero_unidad'] = unidad['numero']
 
             # Login oficial en el sistema
-            user_obj = Usuario()
-            user_obj.rut = user_data['rut']
-            user_obj.nombre = user_data['nombre']
-            user_obj.rol = user_data['rol']
-            user_obj.edificio_id = user_data.get('edificio_id')
+            user_obj = Usuario(
+                rut=user_data['rut'],
+                nombre=user_data['nombre'],
+                rol=user_data['rol'],
+                edificio_id=user_data.get('edificio_id')
+            )
             login_user(user_obj)
 
             flash(f"Modo Fantasma: {user_data['nombre']}", "info")
@@ -2176,10 +2171,12 @@ def superadmin_exit_ghost():
             session['edificio_id'] = None # El Superadmin no pertenece a un edificio fijo
             
             # 5. RE-AUTENTICACIÓN OFICIAL: Le avisamos a Flask-Login quién manda
-            god_obj = Usuario()
-            god_obj.rut = god_user['rut']
-            god_obj.nombre = god_user['nombre']
-            god_obj.rol = 'superadmin'
+            god_obj = Usuario(
+                rut=god_user['rut'],
+                nombre=god_user['nombre'],
+                rol='superadmin',
+                edificio_id=None
+            )
             login_user(god_obj) # <--- ESTO ROMPE EL BUCLE DE REDIRECCIONES
             
             flash(f"Saliendo del Modo Fantasma. Bienvenido de vuelta, {god_user['nombre']}", "info")
@@ -2240,72 +2237,6 @@ def super_crear_edificio():
         conn.close()
         
     return redirect(url_for('panel_superadmin'))
-
-@app.route('/superadmin/eliminar_edificio', methods=['POST'])
-@login_required
-def super_eliminar_edificio():
-    if current_user.rol != 'superadmin':
-        return redirect(url_for('login'))
-        
-    edificio_id = request.form.get('edificio_id')
-    edificio = Edificio.query.get(edificio_id)
-    
-    if edificio:
-        # OPCIÓN A: Borrado Lógico (Recomendado para no romper historiales)
-        edificio.activo = False 
-        flash(f'Edificio {edificio.nombre} desactivado y archivado.', 'warning')
-        
-        # OPCIÓN B: Borrado Físico (Descomentar si prefieres borrarlo de verdad)
-        # db.session.delete(edificio)
-        # flash('Edificio eliminado permanentemente.', 'error')
-        
-        db.session.commit()
-    
-    return redirect(url_for('super_dashboard'))
-
-
-
-# --- RUTA DE DETALLE ---
-@app.route('/superadmin/detalle_edificio/<int:id>')
-@login_required
-def super_detalle_edificio(id):
-    if current_user.rol != 'superadmin': return redirect(url_for('login'))
-    
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # 1. Traer Edificio
-    cur.execute("SELECT * FROM edificios WHERE id = %s", (id,))
-    edificio = cur.fetchone()
-    
-    if not edificio:
-        cur.close(); conn.close()
-        return "Edificio no encontrado", 404
-
-    # 2. Traer Admins
-    cur.execute("SELECT * FROM usuarios WHERE edificio_id = %s AND rol = 'admin' AND activo = TRUE", (id,))
-    admins = cur.fetchall()
-    
-    # 3. Traer Unidades y procesar JSONs (Owner/Tenant)
-    cur.execute("SELECT * FROM unidades WHERE edificio_id = %s ORDER BY numero ASC", (id,))
-    unidades_raw = cur.fetchall()
-    
-    unidades_procesadas = []
-    for u in unidades_raw:
-        # Usamos tu función parse_json_field que ya tienes en app.py
-        u['owner'] = parse_json_field(u.get('owner_json'))
-        u['tenant'] = parse_json_field(u.get('tenant_json'))
-        unidades_procesadas.append(u)
-
-    cur.close()
-    conn.close()
-
-    # 4. Renderizar pasando INDICADORES y nombre de archivo correcto
-    return render_template('super_detalle_edificio.html', 
-                           e=edificio, 
-                           admins=admins, 
-                           unidades=unidades_procesadas,
-                           indicadores=obtener_indicadores()) # <--- ESTO ES LO QUE FALTABA
 
 
 def send_notification_email(app, name, email, whatsapp, unidades):

@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, flash, current_app
 from app.database import get_db_cursor
 from datetime import date, datetime
 import json
 import secrets
+import os
+import random
 
 residente_bp = Blueprint('residente', __name__)
 
@@ -46,6 +48,27 @@ def manifest():
 def residente_editar_perfil():
     with get_db_cursor(commit=True) as cur:
         cur.execute("UPDATE usuarios SET email=%s, telefono=%s WHERE rut=%s", (request.form.get('email'), request.form.get('telefono'), session.get('user_id')))
+    return redirect(url_for('residente.panel_residente'))
+
+@residente_bp.route('/residente/subir_comprobante', methods=['POST'])
+def residente_subir_comprobante():
+    if session.get('rol') != 'residente': return redirect(url_for('auth.login'))
+    
+    uid = session.get('unidad_id_residente')
+    eid = session.get('edificio_id')
+    file = request.files.get('comprobante')
+    
+    if file:
+        filename = f"comprobante_residente_{uid}_{random.randint(1000,9999)}.jpg"
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads')
+        os.makedirs(upload_folder, exist_ok=True)
+        file.save(os.path.join(upload_folder, filename))
+        
+        with get_db_cursor(commit=True) as cur:
+            cur.execute("SELECT deuda_monto FROM unidades WHERE id = %s", (uid,))
+            monto = cur.fetchone()['deuda_monto']
+            cur.execute("INSERT INTO pagos_pendientes (edificio_id, unidad_id, monto, fecha, comprobante_url, estado) VALUES (%s, %s, %s, NOW(), %s, 'PENDIENTE')", (eid, uid, monto, filename))
+        flash("✅ Comprobante enviado. Esperando revisión.")
     return redirect(url_for('residente.panel_residente'))
 
 @residente_bp.route('/panel-residente', methods=['GET', 'POST'])
@@ -102,11 +125,25 @@ def panel_residente():
         except:
             multas = []
     
+        # 6. Marketplace (Avisos de la comunidad)
+        cur.execute("""
+            SELECT m.*, u.numero as unidad_numero 
+            FROM marketplace m 
+            JOIN unidades u ON m.unidad_id = u.id 
+            WHERE m.edificio_id = %s 
+            ORDER BY m.fecha DESC
+        """, (eid,))
+        marketplace = cur.fetchall()
+
+        # 7. Pago Pendiente (Para mostrar estado en revisión)
+        cur.execute("SELECT * FROM pagos_pendientes WHERE unidad_id = %s AND estado = 'PENDIENTE' ORDER BY fecha DESC LIMIT 1", (uid,))
+        pago_pendiente = cur.fetchone()
+    
     return render_template('dash_residente.html', 
                          u=u, user=user_data, edificio=edificio, 
                          espacios=espacios, encomiendas=encomiendas, 
                          mis_reservas=mis_reservas, visitas_activas=visitas_activas, 
-                         multas=multas, hoy=date.today())
+                         multas=multas, marketplace=marketplace, pago_pendiente=pago_pendiente, hoy=date.today())
 
 @residente_bp.route('/residente/invitar/generar', methods=['POST'])
 def generar_link_invitacion():
@@ -140,7 +177,7 @@ def public_invitacion(token):
     with get_db_cursor(commit=True) as cur:
         # Buscamos la invitación y datos del edificio
         cur.execute("""
-            SELECT i.*, u.numero as unidad_numero, e.nombre as edificio_nombre, e.direccion as edificio_direccion
+            SELECT i.*, u.numero as unidad_numero, u.tenant_json, u.owner_json, e.nombre as edificio_nombre, e.direccion as edificio_direccion
             FROM invitaciones i
             JOIN unidades u ON i.unidad_id = u.id
             JOIN edificios e ON i.edificio_id = e.id 
@@ -151,6 +188,12 @@ def public_invitacion(token):
         # --- CANDADO 1: SI NO EXISTE ---
         if not inv:
             return render_template('public_qr_exito.html', error="Invitación no encontrada o enlace roto.")
+
+        # Procesar nombre del anfitrión (Residente)
+        t = parse_json_field(inv.get('tenant_json'))
+        o = parse_json_field(inv.get('owner_json'))
+        # Prioridad: Arrendatario > Propietario > Genérico
+        inv['nombre_usuario'] = t.get('nombre') or o.get('nombre') or 'Residente'
 
         # --- CANDADO 2: SI YA FUE USADO ---
         if inv['estado'] == 'USADO':
@@ -229,4 +272,31 @@ def residente_crear_reserva():
                 
         flash(f"✅ Reserva: {espacio['nombre']} a las {hora}")
     except Exception as e: flash("❌ Error al reservar")
+    return redirect(url_for('residente.panel_residente'))
+
+@residente_bp.route('/residente/marketplace/guardar', methods=['POST'])
+def residente_guardar_aviso():
+    if session.get('rol') != 'residente': return redirect(url_for('auth.login'))
+    
+    uid = session.get('unidad_id_residente')
+    eid = session.get('edificio_id')
+    
+    with get_db_cursor(commit=True) as cur:
+        cur.execute("""
+            INSERT INTO marketplace (edificio_id, unidad_id, titulo, descripcion, precio, contacto, fecha)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+        """, (eid, uid, request.form.get('titulo'), request.form.get('descripcion'), request.form.get('precio'), request.form.get('contacto')))
+        
+    flash("✅ Aviso publicado en el Marketplace.")
+    return redirect(url_for('residente.panel_residente'))
+
+@residente_bp.route('/residente/marketplace/borrar/<int:id>', methods=['GET'])
+def residente_borrar_aviso(id):
+    if session.get('rol') != 'residente': return redirect(url_for('auth.login'))
+    uid = session.get('unidad_id_residente')
+    
+    with get_db_cursor(commit=True) as cur:
+        cur.execute("DELETE FROM marketplace WHERE id = %s AND unidad_id = %s", (id, uid))
+        
+    flash("🗑️ Aviso eliminado.")
     return redirect(url_for('residente.panel_residente'))

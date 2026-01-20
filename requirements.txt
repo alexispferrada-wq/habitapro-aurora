@@ -1,9 +1,1 @@
-Flask
-gunicorn
-psycopg2-binary
-python-dotenv
-Flask-SQLAlchemy
-Flask-Login
-google-generativeai
-requests
-reportlab
+groq

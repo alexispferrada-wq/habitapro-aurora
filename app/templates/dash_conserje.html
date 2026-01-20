@@ -149,6 +149,14 @@
         border: 1px dashed rgba(255, 255, 255, 0.3) !important;
     }
 
+    .bg-lost {
+        background: linear-gradient(135deg, #6f42c1, #a66cff); /* Purple */
+    }
+
+    .bg-market {
+        background: linear-gradient(135deg, #fd7e14, #e67e22); /* Orange */
+    }
+
     .table {
         color: white;
     }
@@ -288,6 +296,10 @@
                 data-bs-target="#modalTurno"><i class="bi bi-arrow-left-right"></i> Entrega Turno</button></div>
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-sos w-100" onclick="enviarAlerta()"><i
                     class="bi bi-megaphone"></i> Alerta SOS</button></div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-lost w-100" data-bs-toggle="modal"
+                data-bs-target="#modalObjetos"><i class="bi bi-search"></i> Objetos Perdidos</button></div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-market w-100" data-bs-toggle="modal"
+                data-bs-target="#modalMarketplace"><i class="bi bi-shop"></i> Marketplace</button></div>
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100"
                 onclick="abrirAcceso('Portón Vehicular')">
                 <i class="bi bi-p-circle-fill"></i> Abrir Portón
@@ -297,6 +309,18 @@
         <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100" 
                 onclick="abrirAcceso('Gimnasio')">
                 <i class="bi bi-bicycle"></i> Abrir Gimnasio
+                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 mt-1" style="font-size: 0.55rem;">NO CONTRATADO</span>
+            </button>
+        </div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100" 
+                onclick="abrirAcceso('Cámaras de Seguridad')">
+                <i class="bi bi-camera-video-fill"></i> Cámaras
+                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 mt-1" style="font-size: 0.55rem;">NO CONTRATADO</span>
+            </button>
+        </div>
+        <div class="col-6 col-md-3"><button class="btn-action-lg bg-access w-100" 
+                onclick="abrirAcceso('Citofonía Virtual')">
+                <i class="bi bi-telephone-forward-fill"></i> Citofonía
                 <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 mt-1" style="font-size: 0.55rem;">NO CONTRATADO</span>
             </button>
         </div>
@@ -416,7 +440,7 @@
                     <div class="list-group-item bg-transparent border-secondary px-0">
                         <div class="d-flex justify-content-between small">
                             <span class="text-white-50">Inicio Turno:</span>
-                            <span class="fw-bold" style="color: #66FCF1;">08:00 AM</span>
+                            <span class="fw-bold" style="color: #66FCF1;" id="relojTurno">--:--</span>
                         </div>
                     </div>
                 </div>
@@ -514,12 +538,12 @@
                                         </button>
 
                                         <button class="btn btn-sm btn-outline-danger"
-                                            onclick="abrirMulta({{ u.id }}, '{{ u.numero }}')" title="Multar">
+                                            onclick="abrirMulta('{{ u.id }}', '{{ u.numero }}')" title="Multar">
                                             <i class="bi bi-receipt"></i>
                                         </button>
 
                                         <button class="btn btn-sm" style="--bs-btn-border-color: #66FCF1; --bs-btn-hover-bg: #66FCF1; --bs-btn-hover-border-color: #66FCF1; --bs-btn-hover-color: #0B0C10; --bs-btn-color: #66FCF1;"
-                                            onclick="resetClave({{ u.id }}, '{{ u.tenant.rut if u.tenant.rut else u.owner.rut }}')"
+                                            onclick="resetClave('{{ u.id }}', '{{ u.tenant.rut if u.tenant.rut else u.owner.rut }}')"
                                             title="Reset Clave">
                                             <i class="bi bi-key-fill"></i>
                                         </button>
@@ -684,15 +708,83 @@
             </div>
             <div class="modal-body">
                 <form action="/conserje/turno/guardar" method="POST">
-                    <div class="mb-3"><label class="small text-white-50">Novedades Relevantes</label><textarea
-                            name="novedades" class="form-control bg-dark text-white" rows="3"
-                            placeholder="Ej: Se deja encargo de depto 204, portón con ruido..."></textarea></div>
-                    <div class="mb-3"><label class="small text-white-50">Efectivo en Caja ($)</label><input
-                            type="number" name="caja" class="form-control bg-dark text-white" value="0"></div>
-                    <div class="alert alert-info small py-2"><i class="bi bi-info-circle me-1"></i> Al confirmar, se
-                        generará un registro en la bitácora del administrador.</div>
-                    <button class="btn btn-info w-100 fw-bold text-dark">CONFIRMAR ENTREGA DE TURNO</button>
+                    
+                    <div class="bg-black bg-opacity-25 p-3 rounded mb-3 border border-secondary">
+                        <h6 class="text-info small fw-bold mb-2">1. Checklist de Activos</h6>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="check_llaves" id="checkLlaves" checked>
+                            <label class="form-check-label small text-white-50" for="checkLlaves">Llaves de Emergencia</label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="check_radio" id="checkRadio" checked>
+                            <label class="form-check-label small text-white-50" for="checkRadio">Radio / Teléfono</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small text-white-50 fw-bold">2. Novedades del Turno</label>
+                        <textarea name="novedades" class="form-control bg-dark text-white" rows="3" placeholder="Ej: Sin novedades, todo en orden." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-white-50 fw-bold">3. Recibe Turno (Relevo)</label>
+                        <input type="text" name="relevo" class="form-control bg-dark text-white" placeholder="Nombre de quien recibe" required>
+                    </div>
+                    
+                    <div class="alert alert-warning small py-2 border-0 bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-exclamation-circle me-1"></i> Se registrará el cierre de turno en la bitácora.
+                    </div>
+                    <button class="btn btn-info w-100 fw-bold text-dark"><i class="bi bi-save me-2"></i> REGISTRAR ENTREGA</button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalObjetos" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-search me-2"></i>Objetos Perdidos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/conserje/incidencias/guardar" method="POST">
+                    <input type="hidden" name="titulo" value="HALLAZGO OBJETO PERDIDO">
+                    <div class="mb-3">
+                        <label class="small text-white-50">Descripción del Objeto</label>
+                        <textarea name="descripcion" class="form-control bg-dark text-white" rows="3" placeholder="Ej: Llaves encontradas en el hall..." required></textarea>
+                    </div>
+                    <button class="btn btn-info w-100 fw-bold text-dark">REGISTRAR HALLAZGO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMarketplace" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-shop me-2 text-warning"></i>Marketplace (Vista)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if marketplace %}
+                    {% for item in marketplace %}
+                    <div class="card bg-dark border-secondary mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title fw-bold text-warning mb-0">{{ item.titulo }}</h6>
+                                <span class="badge bg-light text-dark">Depto {{ item.unidad_numero }}</span>
+                            </div>
+                            <p class="card-text small text-white-50">{{ item.descripcion }}</p>
+                            <div class="fw-bold text-success">${{ "{:,.0f}".format(item.precio).replace(',', '.') }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 text-white-50">No hay avisos activos.</div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -720,6 +812,12 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Reloj simple para el turno
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('relojTurno').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
+
         const slots = document.querySelectorAll('.slot-timer');
         slots.forEach(slot => {
             const elapsedStr = slot.getAttribute('data-elapsed');

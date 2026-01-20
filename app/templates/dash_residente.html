@@ -13,7 +13,7 @@
     body {
         padding-bottom: 90px;
         background: #0a0a0f;
-        font-family: 'Segoe UI', sans-serif;
+        font-family: 'Comfortaa', cursive;
     }
 
     .app-header {
@@ -339,6 +339,14 @@
                 <span class="text-white-50 small" style="font-size: 0.65rem;">Asigna Parking</span>
             </button>
         </div>
+        <div class="col-12">
+            <button class="btn-invite" style="flex-direction: row; justify-content: flex-start; gap: 15px; background: linear-gradient(135deg, #fd7e14, #e67e22);" 
+                    data-bs-toggle="modal" data-bs-target="#modalMarketplace">
+                <i class="bi bi-shop text-white fs-1"></i>
+                <div class="text-start"><span class="fw-bold d-block">Marketplace</span><span class="text-white-50 small">Compra y vende en tu comunidad</span></div>
+                <i class="bi bi-chevron-right text-white ms-auto"></i>
+            </button>
+        </div>
     </div>
 
     <div class="card-app p-4 text-center">
@@ -363,11 +371,15 @@
         {% endif %}
 
         {% if u.deuda_monto > 0 %}
-        <form action="/residente/pagar_deuda" method="POST">
-            <input type="hidden" name="unidad_id" value="{{ u.id }}">
-            <input type="hidden" name="monto" value="{{ u.deuda_monto }}">
-            <button class="btn-pay shadow">PAGAR AHORA <i class="bi bi-chevron-right"></i></button>
-        </form>
+            {% if pago_pendiente %}
+            <div class="alert alert-warning bg-warning bg-opacity-10 border border-warning border-opacity-25 text-warning mb-0 py-2">
+                <i class="bi bi-hourglass-split me-2"></i> Pago de <strong>${{ "{:,.0f}".format(pago_pendiente.monto).replace(',', '.') }}</strong> en revisión.
+            </div>
+            {% else %}
+            <button class="btn-pay shadow" data-bs-toggle="modal" data-bs-target="#modalSubirComprobante">
+                SUBIR COMPROBANTE <i class="bi bi-upload ms-2"></i>
+            </button>
+            {% endif %}
         {% endif %}
     </div>
 
@@ -457,6 +469,86 @@
                 <div class="text-center mt-3">
                     <small class="text-white-50" style="font-size: 0.6rem;"><i class="bi bi-shield-lock-fill me-1"></i>
                         Acceso encriptado y monitoreado</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalSubirComprobante" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cash-coin me-2 text-success"></i>Reportar Pago</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50 small mb-3">Sube una foto o captura de tu transferencia bancaria para que la administración valide tu pago.</p>
+                <form action="/residente/subir_comprobante" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="small text-white-50">Comprobante (Imagen)</label>
+                        <input type="file" name="comprobante" class="form-control bg-dark text-white" accept="image/*" required>
+                    </div>
+                    <button class="btn btn-success w-100 fw-bold text-white">ENVIAR PARA REVISIÓN</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMarketplace" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-shop me-2 text-warning"></i>Marketplace</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <ul class="nav nav-pills nav-fill p-2 bg-black bg-opacity-25" id="marketTab" role="tablist">
+                    <li class="nav-item"><button class="nav-link active btn-sm" data-bs-toggle="tab" data-bs-target="#tab-avisos">Ver Avisos</button></li>
+                    <li class="nav-item"><button class="nav-link btn-sm" data-bs-toggle="tab" data-bs-target="#tab-publicar">Publicar</button></li>
+                </ul>
+                
+                <div class="tab-content p-3">
+                    <!-- TAB VER AVISOS -->
+                    <div class="tab-pane fade show active" id="tab-avisos">
+                        {% if marketplace %}
+                            {% for item in marketplace %}
+                            <div class="card bg-dark border-secondary mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title fw-bold text-warning mb-0">{{ item.titulo }}</h6>
+                                        <span class="badge bg-light text-dark">Depto {{ item.unidad_numero }}</span>
+                                    </div>
+                                    <p class="card-text small text-white-50">{{ item.descripcion }}</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="fw-bold text-success fs-5">${{ "{:,.0f}".format(item.precio).replace(',', '.') }}</span>
+                                        {% if item.unidad_id == u.id %}
+                                            <a href="/residente/marketplace/borrar/{{ item.id }}" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('¿Borrar aviso?')"><i class="bi bi-trash"></i></a>
+                                        {% else %}
+                                            <a href="https://wa.me/{{ item.contacto }}" target="_blank" class="btn btn-sm btn-success"><i class="bi bi-whatsapp"></i> Contactar</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5 text-white-50"><i class="bi bi-shop fs-1 d-block mb-2"></i>No hay avisos publicados.</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- TAB PUBLICAR -->
+                    <div class="tab-pane fade" id="tab-publicar">
+                        <form action="/residente/marketplace/guardar" method="POST">
+                            <div class="mb-3"><label class="small text-white-50">Título</label><input type="text" name="titulo" class="form-control bg-dark text-white" required placeholder="Ej: Vendo Bicicleta"></div>
+                            <div class="mb-3"><label class="small text-white-50">Descripción</label><textarea name="descripcion" class="form-control bg-dark text-white" rows="3" required></textarea></div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6"><label class="small text-white-50">Precio ($)</label><input type="number" name="precio" class="form-control bg-dark text-white" required></div>
+                                <div class="col-6"><label class="small text-white-50">Contacto (WhatsApp)</label><input type="text" name="contacto" class="form-control bg-dark text-white" value="{{ user.telefono }}" required></div>
+                            </div>
+                            <button class="btn btn-warning w-100 fw-bold text-dark">PUBLICAR AVISO</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

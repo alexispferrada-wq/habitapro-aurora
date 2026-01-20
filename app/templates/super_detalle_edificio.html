@@ -98,6 +98,28 @@
         </div>
     </div>
 
+    <!-- NUEVA SECCIÓN: INDICADORES ECONÓMICOS CENTRALIZADOS -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-glass p-3 text-center">
+                <div class="d-flex justify-content-center gap-4 gap-md-5 align-items-center flex-wrap">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-warning fw-bold fs-4">UF:</span>
+                        <span class="text-white fs-4">${{ "{:,.2f}".format(indicadores.uf)|replace(',','X')|replace('.',',')|replace('X','.') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-success fw-bold fs-4">DÓLAR:</span>
+                        <span class="text-white fs-4">${{ "{:,.2f}".format(indicadores.dolar)|replace(',','X')|replace('.',',')|replace('X','.') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-info fw-bold fs-4">UTM:</span>
+                        <span class="text-white fs-4">${{ "{:,.0f}".format(indicadores.utm)|replace(',','.') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
         <div class="col-lg-5">
 
@@ -143,8 +165,6 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold text-warning m-0"><i class="bi bi-currency-exchange me-2"></i>Facturación HABITEX
                     </h5>
-                    <div class="badge bg-warning text-dark fw-bold">UF HOY: ${{ "{:,.0f}".format(indicadores.uf) |
-                        replace(',', '.') }}</div>
                 </div>
 
                 <div class="bg-black bg-opacity-25 p-3 rounded mb-3 border border-secondary">
@@ -330,35 +350,95 @@
                 <div
                     class="p-3 bg-black bg-opacity-25 border-bottom border-secondary d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold">Unidades / Departamentos</h5>
-                    <button class="btn btn-sm btn-outline-info fw-bold" data-bs-toggle="modal"
-                        data-bs-target="#modalCargaMasiva">
-                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>Carga CSV
-                    </button>
+                    <div>
+                        <button class="btn btn-sm btn-info text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#modalCrearUnidad" style="margin-right: 10px;">
+                            <i class="bi bi-plus-circle me-2"></i>Añadir Unidad
+                        </button>
+                        <button class="btn btn-sm btn-outline-info fw-bold" data-bs-toggle="modal"
+                            data-bs-target="#modalCargaMasiva">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Carga CSV
+                        </button>
+                    </div>
                 </div>
                 <div class="table-responsive" style="max-height: 800px;">
-                    <table class="table table-sm table-hover align-middle mb-0">
-                        <thead class="bg-dark">
-                            <tr class="small text-white-50">
-                                <th class="ps-3">Nº</th>
-                                <th>Propietario / Residente</th>
-                                <th class="text-end pe-3">% Prorrateo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for u in unidades %}
-                            <tr>
-                                <td class="ps-3 fw-bold text-info">{{ u.numero }}</td>
-                                <td>
-                                    <div class="small fw-bold">{{ u.owner.nombre or 'Sin Propietario' }}</div>
-                                    <div class="text-white-50" style="font-size: 0.7rem;">{{ u.tenant.nombre or 'Sin
-                                        Residente' }}</div>
-                                </td>
-                                <td class="text-end pe-3 font-monospace">{{ u.prorrateo }}%</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                            <table class="table table-sm table-hover align-middle mb-0">
+                                            <thead class="bg-dark">
+                                                <tr class="small text-white-50">
+                                                    <th class="ps-3">Nº</th>
+                                                    <th>Propietario / Residente</th>
+                                                    <th class="text-end">% Prorrateo</th>
+                                                    <th class="text-end pe-3">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for u in unidades %}
+                                                <tr id="unidad-row-{{ u.id }}">
+                                                    <td class="ps-3 fw-bold text-info">{{ u.numero }}</td>
+                                                    <td>
+                                                        <div class="small fw-bold">{{ u.owner.nombre or 'Sin Propietario' }}</div>
+                                                        <div class="text-white-50" style="font-size: 0.7rem;">{{ u.tenant.nombre or 'Sin Residente' }}</div>
+                                                    </td>
+                                                    <td class="text-end font-monospace">{{ u.prorrateo }}%</td>
+                                                    <td class="text-end pe-3">
+                                                        <button class="btn btn-sm btn-outline-info btn-action-admin" onclick='openEditModal({{ u | tojson | safe }})'>
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger btn-action-admin" onclick="deleteUnidad({{ u.id }})">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCrearUnidad" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content card-glass">
+            <div class="modal-header border-0">
+                <h5 class="fw-bold">Crear Nueva Unidad</h5><button class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/superadmin/crear_unidad" method="POST">
+                    <input type="hidden" name="edificio_id" value="{{ e.id }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info">Datos de la Unidad</h6>
+                            <div class="mb-2"><input name="numero" class="form-control" placeholder="Número (Ej: 101, A-2)" required></div>
+                            <div class="mb-2"><input name="piso" class="form-control" placeholder="Piso" type="number"></div>
+                            <div class="mb-2"><input name="metraje" class="form-control" placeholder="Metraje (m²)" type="number" step="0.01"></div>
+                            <div class="mb-3">
+                                <label class="form-label small text-white-50">Prorrateo (%)</label>
+                                <input name="prorrateo" class="form-control" placeholder="Ej: 1.25" type="number" step="0.001" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Datos del Propietario</h6>
+                            <div class="mb-2"><input name="owner_rut" class="form-control" placeholder="RUT Propietario"></div>
+                            <div class="mb-2"><input name="owner_nombre" class="form-control" placeholder="Nombre Propietario"></div>
+                            <div class="mb-2"><input name="owner_email" class="form-control" placeholder="Email Propietario" type="email"></div>
+                            <div class="mb-2"><input name="owner_fono" class="form-control" placeholder="Teléfono Propietario"></div>
+                        </div>
+                    </div>
+                    <hr class="border-secondary">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Datos del Arrendatario (Opcional)</h6>
+                            <div class="mb-2"><input name="tenant_rut" class="form-control" placeholder="RUT Arrendatario"></div>
+                            <div class="mb-2"><input name="tenant_nombre" class="form-control" placeholder="Nombre Arrendatario"></div>
+                            <div class="mb-2"><input name="tenant_email" class="form-control" placeholder="Email Arrendatario" type="email"></div>
+                            <div class="mb-2"><input name="tenant_fono" class="form-control" placeholder="Teléfono Arrendatario"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button class="btn btn-success w-100 fw-bold">Guardar Unidad</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -398,6 +478,59 @@
                         type="hidden" name="edificio_id_retorno" value="{{ e.id }}"><input type="file"
                         name="archivo_csv" class="form-control mb-3" required accept=".csv"><button
                         class="btn btn-success w-100 fw-bold">Procesar CSV</button></form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarUnidad" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content card-glass">
+            <div class="modal-header border-0">
+                <h5 class="fw-bold">Editar Unidad</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/superadmin/editar_unidad" method="POST">
+                    <input type="hidden" name="edificio_id" value="{{ e.id }}">
+                    <input type="hidden" name="unidad_id" id="edit_unidad_id">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info">Datos de la Unidad</h6>
+                            <div class="mb-2"><label class="small text-white-50">Número</label><input name="numero" id="edit_numero" class="form-control" required></div>
+                            <div class="mb-2"><label class="small text-white-50">Piso</label><input name="piso" id="edit_piso" class="form-control" type="number"></div>
+                            <div class="mb-2"><label class="small text-white-50">Metraje</label><input name="metraje" id="edit_metraje" class="form-control" type="number" step="0.01"></div>
+                            <div class="mb-3"><label class="small text-white-50">Prorrateo %</label><input name="prorrateo" id="edit_prorrateo" class="form-control" type="number" step="0.001" required></div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Propietario</h6>
+                            <div class="mb-2"><label class="small text-white-50">RUT</label><input name="owner_rut" id="edit_owner_rut" class="form-control"></div>
+                            <div class="mb-2"><label class="small text-white-50">Nombre</label><input name="owner_nombre" id="edit_owner_nombre" class="form-control"></div>
+                            <div class="mb-2"><label class="small text-white-50">Email</label><input name="owner_email" id="edit_owner_email" class="form-control"></div>
+                            <div class="mb-2"><label class="small text-white-50">Teléfono</label><input name="owner_fono" id="edit_owner_fono" class="form-control"></div>
+                        </div>
+                    </div>
+                    <hr class="border-secondary">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Residente</h6>
+                            <div class="mb-2">
+                                <label class="small text-white-50">Tipo de Ocupante</label>
+                                <select class="form-select" id="tipo_residente" onchange="copiarDatosPropietario()">
+                                    <option value="arrendatario">Arrendatario</option>
+                                    <option value="dueno">Dueño (Vive ahí)</option>
+                                    <option value="allegado">Allegado</option>
+                                </select>
+                            </div>
+                            <div class="mb-2"><label class="small text-white-50">RUT</label><input name="tenant_rut" id="edit_tenant_rut" class="form-control"></div>
+                            <div class="mb-2"><label class="small text-white-50">Nombre</label><input name="tenant_nombre" id="edit_tenant_nombre" class="form-control"></div>
+                            <div class="mb-2"><label class="small text-white-50">Email</label><input name="tenant_email" id="edit_tenant_email" class="form-control"></div>
+                            <div class="mb-2"><label class="small text-white-50">Teléfono</label><input name="tenant_fono" id="edit_tenant_fono" class="form-control"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button class="btn btn-warning w-100 fw-bold">Guardar Cambios</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -517,6 +650,65 @@
                 form.appendChild(i1); form.appendChild(i2);
                 document.body.appendChild(form);
                 form.submit();
+            }
+        })
+    }
+
+    // --- NUEVAS FUNCIONES PARA UNIDADES ---
+    function openEditModal(u) {
+        document.getElementById('edit_unidad_id').value = u.id;
+        document.getElementById('edit_numero').value = u.numero;
+        document.getElementById('edit_piso').value = u.piso;
+        document.getElementById('edit_metraje').value = u.metraje;
+        document.getElementById('edit_prorrateo').value = u.prorrateo;
+        
+        if(u.owner) {
+            document.getElementById('edit_owner_rut').value = u.owner.rut || '';
+            document.getElementById('edit_owner_nombre').value = u.owner.nombre || '';
+            document.getElementById('edit_owner_email').value = u.owner.email || '';
+            document.getElementById('edit_owner_fono').value = u.owner.fono || '';
+        }
+        if(u.tenant) {
+            document.getElementById('edit_tenant_rut').value = u.tenant.rut || '';
+            document.getElementById('edit_tenant_nombre').value = u.tenant.nombre || '';
+            document.getElementById('edit_tenant_email').value = u.tenant.email || '';
+            document.getElementById('edit_tenant_fono').value = u.tenant.fono || '';
+        }
+        new bootstrap.Modal(document.getElementById('modalEditarUnidad')).show();
+    }
+
+    function copiarDatosPropietario() {
+        if (document.getElementById('tipo_residente').value === 'dueno') {
+            document.getElementById('edit_tenant_rut').value = document.getElementById('edit_owner_rut').value;
+            document.getElementById('edit_tenant_nombre').value = document.getElementById('edit_owner_nombre').value;
+            document.getElementById('edit_tenant_email').value = document.getElementById('edit_owner_email').value;
+            document.getElementById('edit_tenant_fono').value = document.getElementById('edit_owner_fono').value;
+        }
+    }
+
+    function deleteUnidad(id) {
+        Swal.fire({
+            title: '¿Eliminar Unidad?',
+            text: "Esta acción no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar',
+            background: '#1a1d24', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let formData = new FormData();
+                formData.append('unidad_id', id);
+                fetch('/superadmin/eliminar_unidad', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.status === 'success') {
+                        document.getElementById('unidad-row-' + id).remove();
+                        Swal.fire({title: 'Eliminado', icon: 'success', timer: 1000, showConfirmButton: false, background: '#1a1d24', color: '#fff'});
+                    } else {
+                        Swal.fire('Error', 'No se pudo eliminar', 'error');
+                    }
+                });
             }
         })
     }

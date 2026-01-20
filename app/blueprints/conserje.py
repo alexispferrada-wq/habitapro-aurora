@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, flash
+from flask_login import logout_user
 from app.database import get_db_cursor
 from datetime import datetime
 import json
@@ -91,14 +92,14 @@ def panel_conserje():
         
         # 2. RESERVAS (SOLO HOY Y FUTURO)
         cur.execute("""
-            SELECT r.fecha_uso, r.hora_inicio, e.nombre as nombre_espacio, u.numero as numero_unidad 
+            SELECT r.id, r.estado, r.fecha_uso, r.hora_inicio, e.nombre as nombre_espacio, u.numero as numero_unidad 
             FROM reservas r 
             JOIN espacios e ON r.espacio_id = e.id 
             JOIN unidades u ON r.unidad_id = u.id 
             WHERE e.edificio_id = %s 
             AND r.fecha_uso >= CURRENT_DATE 
-            AND r.estado = 'CONFIRMADA'
-            ORDER BY r.fecha_uso ASC, r.hora_inicio ASC LIMIT 10
+            AND r.estado IN ('CONFIRMADA', 'EN_USO', 'FINALIZADA')
+            ORDER BY r.fecha_uso ASC, r.hora_inicio ASC, r.id ASC LIMIT 10
         """, (eid,))
         reservas_futuras = cur.fetchall()
         
@@ -106,6 +107,16 @@ def panel_conserje():
         cur.execute("SELECT id, numero, owner_json, tenant_json FROM unidades WHERE edificio_id = %s ORDER BY LENGTH(numero), numero ASC", (eid,))
         raw = cur.fetchall()
     
+        # 4. MARKETPLACE (SOLO LECTURA)
+        cur.execute("""
+            SELECT m.*, u.numero as unidad_numero 
+            FROM marketplace m 
+            JOIN unidades u ON m.unidad_id = u.id 
+            WHERE m.edificio_id = %s 
+            ORDER BY m.fecha DESC
+        """, (eid,))
+        marketplace = cur.fetchall()
+
     u_proc = []
     for u in raw:
         o = parse_json_field(u.get('owner_json'))
@@ -121,7 +132,8 @@ def panel_conserje():
                            parking=obtener_estado_parking_real(eid), 
                            encomiendas=encomiendas, 
                            unidades=u_proc, 
-                           reservas_futuras=reservas_futuras)
+                           reservas_futuras=reservas_futuras,
+                           marketplace=marketplace)
 
 @conserje_bp.route('/conserje/parking/toggle', methods=['POST'])
 def conserje_parking_toggle():
@@ -229,17 +241,43 @@ def conserje_ultima_lectura():
 def conserje_guardar_turno():
     if session.get('rol') != 'conserje': return redirect(url_for('auth.login'))
     novedades = request.form.get('novedades')
-    caja = request.form.get('caja', 0)
+    relevo = request.form.get('relevo')
     eid = session.get('edificio_id')
     nombre = session.get('nombre')
     
-    detalle = f"ENTREGA DE TURNO\nConserje: {nombre}\nCaja: ${'{:,.0f}'.format(int(caja)).replace(',', '.')}\nNovedades: {novedades}"
+    # Capturar checklist
+    check_llaves = "OK" if request.form.get('check_llaves') else "FALTA"
+    check_radio = "OK" if request.form.get('check_radio') else "FALTA"
+    
+    detalle = f"ENTREGA DE TURNO\nSaliente: {nombre}\nEntrante: {relevo}\n\n[CHECKLIST]\nLlaves: {check_llaves}\nRadio: {check_radio}\n\n[NOVEDADES]\n{novedades}"
     
     with get_db_cursor(commit=True) as cur:
         cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", 
                    (eid, "ENTREGA DE TURNO", detalle, nombre))
-    flash("✅ Turno finalizado y registrado en bitácora.")
-    return redirect(url_for('conserje.panel_conserje'))
+    
+    session.clear()
+    logout_user()
+    flash("✅ Turno entregado. Por favor, inicie sesión el relevo.")
+    return redirect(url_for('auth.login'))
+
+@conserje_bp.route('/conserje/reservas/cambiar_estado', methods=['POST'])
+def conserje_cambiar_estado_reserva():
+    if session.get('rol') != 'conserje':
+        return jsonify({'status': 'error', 'message': 'No autorizado'}), 403
+
+    reserva_id = request.form.get('reserva_id')
+    nuevo_estado = request.form.get('nuevo_estado')
+
+    if not reserva_id or not nuevo_estado:
+        return jsonify({'status': 'error', 'message': 'Faltan datos'}), 400
+
+    try:
+        with get_db_cursor(commit=True) as cur:
+            cur.execute("UPDATE reservas SET estado = %s WHERE id = %s", (nuevo_estado, reserva_id))
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        print(f"Error al cambiar estado de reserva: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @conserje_bp.route('/conserje/visitas/confirmar_vehiculo', methods=['POST'])
 def confirmar_ingreso_vehiculo():

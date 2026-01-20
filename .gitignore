@@ -1,10 +1,10 @@
 __pycache__/
-venv/
-.DS_Store
-.env
+*.py[cod]
+*$py.class
 .env
 .env.txt
-.venv/
-__pycache__/
-.DS_Store
-static/uploads/
+venv/
+env/
+.vscode/
+.idea/
+static/uploads/*
