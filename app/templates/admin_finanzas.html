@@ -3,15 +3,16 @@
 
 {% block content %}
 <nav class="navbar navbar-glass fixed-top">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2 text-white" href="/admin">
-            <i class="bi bi-arrow-left-circle text-info"></i> Volver
+    <div class="container-fluid px-3 px-md-4">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2 text-white" href="#">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png" alt="HABITEX" height="30">
+            <span>Finanzas</span>
         </a>
-        <span class="text-white opacity-75 small d-none d-md-block">Gestión Financiera</span>
+        <a href="/panel-admin" class="btn btn-sm btn-outline-light border-0"><i class="bi bi-arrow-left me-1"></i> Volver</a>
     </div>
 </nav>
 
-<div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
+<div class="container px-3 px-md-4" style="margin-top: 100px; padding-bottom: 50px;">
     
     {% with messages = get_flashed_messages() %}
         {% if messages %}{% for message in messages %}<div class="alert alert-success border-0 bg-success bg-opacity-25 text-white mb-4">{{ message }}</div>{% endfor %}{% endif %}

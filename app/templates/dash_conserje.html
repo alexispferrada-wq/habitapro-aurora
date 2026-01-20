@@ -254,10 +254,10 @@
 
 {% block content %}
 <nav class="navbar navbar-glass fixed-top">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#" style="--bs-info-rgb: 102, 252, 241;">
-            <i class="bi bi-shield-lock-fill text-info fs-3" style="color: var(--accent-primary) !important;"></i>
-            <span class="fw-bold fs-4">Conserjería <span class="fw-light opacity-50">{{ edificio.nombre }}</span></span>
+    <div class="container-fluid px-3 px-md-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png" alt="HABITEX" height="35">
+            <span class="fw-bold fs-5 d-none d-sm-inline">Conserjería <span class="fw-light opacity-50 small">{{ edificio.nombre }}</span></span>
         </a>
         <div class="d-flex align-items-center gap-3">
             <button id="theme-toggle" class="btn btn-outline-secondary border-0 fs-4" style="width: 48px; height: 48px;">
@@ -269,7 +269,7 @@
     </div>
 </nav>
 
-<div class="container-fluid px-4" style="margin-top: 100px; padding-bottom: 50px;">
+<div class="container-fluid px-3 px-md-4" style="margin-top: 100px; padding-bottom: 50px;">
     {% with msgs = get_flashed_messages() %}
     {% if msgs %}
     <div
@@ -334,7 +334,7 @@
 
         <!-- LEYENDA SEPARADA (MEJORA SOLICITADA) -->
         <div
-            class="d-flex gap-4 mb-4 p-2 rounded bg-black bg-opacity-25 border border-secondary justify-content-center text-white-50 small">
+            class="d-flex flex-wrap gap-3 gap-md-4 mb-4 p-2 rounded bg-black bg-opacity-25 border border-secondary justify-content-center text-white-50 small">
             <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-success me-2"></i> Libre</span>
             <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-warning me-2"></i> Ocupado</span>
             <span class="d-flex align-items-center"><i class="bi bi-circle-fill me-2" style="color: #66FCF1;"></i> Mantención</span>

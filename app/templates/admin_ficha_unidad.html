@@ -60,15 +60,16 @@
 
 {% block content %}
 <nav class="navbar navbar-dark navbar-glass fixed-top">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/admin">
-            <i class="bi bi-arrow-left-circle text-info"></i> Volver al Panel
+    <div class="container-fluid px-3 px-md-4">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png" alt="HABITEX" height="30">
+            <span class="d-none d-sm-inline">Ficha Unidad</span>
         </a>
-        <span class="text-white opacity-75 small font-monospace">{{ edificio.nombre }}</span>
+        <a href="/panel-admin" class="btn btn-sm btn-outline-light border-0"><i class="bi bi-arrow-left me-1"></i> Volver</a>
     </div>
 </nav>
 
-<div class="container px-4" style="margin-top: 100px; padding-bottom: 50px;">
+<div class="container px-3 px-md-4" style="margin-top: 100px; padding-bottom: 50px;">
     
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}

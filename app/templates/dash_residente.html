@@ -263,7 +263,7 @@
     </div>
     <div
         class="building-info p-2 rounded border border-secondary bg-black bg-opacity-25 d-flex align-items-center justify-content-between">
-        <span class="text-white small fw-bold"><i class="bi bi-building me-1 text-info"></i> {{ edificio.nombre
+        <span class="text-white small fw-bold d-flex align-items-center"><img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png" height="16" class="me-2"> {{ edificio.nombre
             }}</span>
         <span class="text-success small fw-bold"><i class="bi bi-wifi"></i> Online</span>
     </div>
@@ -339,12 +339,20 @@
                 <span class="text-white-50 small" style="font-size: 0.65rem;">Asigna Parking</span>
             </button>
         </div>
-        <div class="col-12">
-            <button class="btn-invite" style="flex-direction: row; justify-content: flex-start; gap: 15px; background: linear-gradient(135deg, #fd7e14, #e67e22);" 
+        <div class="col-6">
+            <button class="btn-invite" style="background: linear-gradient(135deg, #fd7e14, #e67e22);" 
                     data-bs-toggle="modal" data-bs-target="#modalMarketplace">
-                <i class="bi bi-shop text-white fs-1"></i>
-                <div class="text-start"><span class="fw-bold d-block">Marketplace</span><span class="text-white-50 small">Compra y vende en tu comunidad</span></div>
-                <i class="bi bi-chevron-right text-white ms-auto"></i>
+                <i class="bi bi-shop text-white fs-1 mb-2"></i>
+                <span class="fw-bold">Marketplace</span>
+                <span class="text-white-50 small" style="font-size: 0.65rem;">Avisos</span>
+            </button>
+        </div>
+        <div class="col-6">
+            <button class="btn-invite" style="background: linear-gradient(135deg, #6f42c1, #a66cff);" 
+                    data-bs-toggle="modal" data-bs-target="#modalReportar">
+                <i class="bi bi-tools text-white fs-1 mb-2"></i>
+                <span class="fw-bold">Reportar</span>
+                <span class="text-white-50 small" style="font-size: 0.65rem;">Mantención</span>
             </button>
         </div>
     </div>
@@ -470,6 +478,25 @@
                     <small class="text-white-50" style="font-size: 0.6rem;"><i class="bi bi-shield-lock-fill me-1"></i>
                         Acceso encriptado y monitoreado</small>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReportar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:#1a1d24; color:white;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-tools me-2 text-info"></i>Reportar Problema</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-white-50 small mb-3">Notifica a la administración sobre averías o problemas en áreas comunes.</p>
+                <form action="/residente/reportar_problema" method="POST">
+                    <div class="mb-3"><label class="small text-white-50">Título</label><input type="text" name="titulo" class="form-control bg-dark text-white" placeholder="Ej: Luz quemada en pasillo" required></div>
+                    <div class="mb-3"><label class="small text-white-50">Descripción</label><textarea name="descripcion" class="form-control bg-dark text-white" rows="3" placeholder="Detalles de la ubicación o problema..." required></textarea></div>
+                    <button class="btn btn-info w-100 fw-bold text-dark">ENVIAR REPORTE</button>
+                </form>
             </div>
         </div>
     </div>

@@ -300,3 +300,22 @@ def residente_borrar_aviso(id):
         
     flash("🗑️ Aviso eliminado.")
     return redirect(url_for('residente.panel_residente'))
+
+@residente_bp.route('/residente/reportar_problema', methods=['POST'])
+def residente_reportar_problema():
+    if session.get('rol') != 'residente': return redirect(url_for('auth.login'))
+    
+    eid = session.get('edificio_id')
+    numero = session.get('numero_unidad')
+    nombre = session.get('nombre')
+    titulo = request.form.get('titulo')
+    descripcion = request.form.get('descripcion')
+    
+    autor_fmt = f"Depto {numero} - {nombre}"
+    
+    with get_db_cursor(commit=True) as cur:
+        cur.execute("INSERT INTO incidencias (edificio_id, titulo, descripcion, fecha, autor) VALUES (%s, %s, %s, NOW(), %s)", 
+                   (eid, titulo, descripcion, autor_fmt))
+        
+    flash("✅ Reporte enviado a la administración.")
+    return redirect(url_for('residente.panel_residente'))

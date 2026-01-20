@@ -47,15 +47,16 @@
 {% block content %}
 <nav class="navbar navbar-dark fixed-top"
     style="background: rgba(20,20,30,0.95); border-bottom: 1px solid rgba(255,255,255,0.1);">
-    <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/panel-superadmin">
-            <i class="bi bi-arrow-left-circle text-secondary"></i> Volver al Panel
+    <div class="container-fluid px-3 px-md-4">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png" alt="HABITEX" height="30">
+            <span class="d-none d-sm-inline">{{ e.nombre }}</span>
         </a>
-        <span class="text-white-50">Gestionando: <strong class="text-white">{{ e.nombre }}</strong></span>
+        <a href="/panel-superadmin" class="btn btn-sm btn-outline-light border-0"><i class="bi bi-arrow-left me-1"></i> Volver</a>
     </div>
 </nav>
 
-<div class="container-fluid px-4" style="margin-top: 80px; padding-bottom: 50px;">
+<div class="container-fluid px-3 px-md-4" style="margin-top: 80px; padding-bottom: 50px;">
 
     <div class="row mb-4">
         <div class="col-12">
