@@ -29,3 +29,15 @@ def conserje_reservas_estado():
         return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
+
+@main_bp.route('/manual/conserje')
+def manual_conserje():
+    return render_template('manual_conserje.html')
+
+@main_bp.route('/manual/administrador')
+def manual_admin():
+    return render_template('manual_admin.html')
+
+@main_bp.route('/manual/residente')
+def manual_residente():
+    return render_template('manual_residente.html')

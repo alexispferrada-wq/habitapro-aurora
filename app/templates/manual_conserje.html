@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}| Manual de Usuario - Conserje{% endblock %}
+
+{% block styles %}
+<style>
+    .manual-content h2 {
+        color: var(--accent-primary);
+        border-bottom: 2px solid var(--accent-secondary);
+        padding-bottom: 10px;
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .manual-content h3 {
+        color: var(--accent-secondary);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .manual-content .card-glass {
+        padding: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-landing fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('main.landing') }}">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png"
+                alt="HABITEX" height="60">
+        </a>
+        <div class="ms-auto">
+            <a href="{{ url_for('main.landing') }}#faq" class="btn btn-outline-light btn-sm fw-bold">
+                <i class="bi bi-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container" style="margin-top: 120px; padding-bottom: 50px;">
+    <div class="card-glass manual-content">
+        <div class="text-center mb-5">
+            <h1 class="section-title">Manual de Usuario: Conserjería</h1>
+            <p class="section-subtitle">Plataforma HABITEX</p>
+        </div>
+
+        <h2>1. Introducción</h2>
+        <p>¡Bienvenido a HABITEX! Esta guía está diseñada para ayudarte a utilizar todas las herramientas del panel de conserjería de forma eficiente. Tu rol es fundamental para la seguridad y el orden de la comunidad, y esta plataforma te dará el poder para gestionarlo todo digitalmente.</p>
+
+        <h2>2. Acceso al Sistema</h2>
+        <p>Para comenzar, debes iniciar sesión en la plataforma.</p>
+        <ol>
+            <li>Abre el portal de HABITEX en tu navegador.</li>
+            <li>Ingresa tu <strong>Usuario</strong> (generalmente tu RUT) y la <strong>Contraseña</strong> que te proporcionó el administrador.</li>
+            <li>Haz clic en el botón <strong>"INGRESAR"</strong>.</li>
+        </ol>
+        <p>Serás redirigido automáticamente a tu panel de conserjería.</p>
+
+        <h2>3. Panel Principal (Dashboard)</h2>
+        <p>Tu panel está organizado en módulos para un acceso rápido a todas tus tareas:</p>
+        <ul>
+            <li><strong>Botones de Acción Rápida:</strong> Un conjunto de botones grandes para las tareas más comunes (Escanear Pase, Recepción de paquetes, Bitácora, etc.).</li>
+            <li><strong>Control de Estacionamiento:</strong> Una vista en tiempo real de los estacionamientos de visita.</li>
+            <li><strong>Agenda y Control de Llaves:</strong> Muestra las próximas reservas de espacios comunes.</li>
+            <li><strong>Paquetes por Entregar:</strong> Una lista de la paquetería que ha llegado y está pendiente de ser retirada por los residentes.</li>
+            <li><strong>Directorio de Residentes:</strong> Un listado completo y con buscador de todos los habitantes.</li>
+        </ul>
+
+        <h2>4. Módulo 1: Control de Acceso y Visitas</h2>
+        <p>Gestionar quién entra y sale es una de tus tareas más importantes.</p>
+        <h3>4.1. Ingreso con Pase QR (Método Preferido)</h3>
+        <p>Este es el método más seguro y rápido para registrar visitas.</p>
+        <ol>
+            <li>La visita te mostrará un código QR en su celular.</li>
+            <li>Haz clic en el botón <strong><i class="bi bi-qr-code-scan"></i> Escanear Pase</strong>.</li>
+            <li>Se activará la cámara de tu dispositivo. Apunta la cámara al código QR.</li>
+            <li>El sistema validará el QR automáticamente:
+                <ul>
+                    <li><strong>Si es peatón:</strong> Mostrará un mensaje de éxito con el nombre de la visita y el departamento al que se dirige. El ingreso queda registrado.</li>
+                    <li><strong>Si es vehículo:</strong> Mostrará los datos del vehículo y te pedirá que selecciones un estacionamiento libre de una lista. Al confirmar, el ingreso y la ocupación del parking quedan registrados.</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>4.2. Ingreso Manual de una Visita (sin QR)</h3>
+        <p>Si una visita llega sin un pase QR, puedes registrarla manualmente a través del panel de estacionamiento.</p>
+        <ol>
+            <li>En la sección <strong>Control de Estacionamiento</strong>, busca un puesto que diga <strong>"LIBRE"</strong>.</li>
+            <li>Haz clic sobre ese puesto.</li>
+            <li>Aparecerá una ventana donde deberás ingresar la <strong>patente</strong> del vehículo y seleccionar la <strong>unidad/departamento</strong> al que se dirige.</li>
+            <li>Haz clic en <strong>"Registrar"</strong>. El puesto cambiará a estado "Ocupado" y el sistema comenzará a contar el tiempo de estadía.</li>
+        </ol>
+
+        <h3>4.3. Registrar la Salida de una Visita</h3>
+        <ol>
+            <li>En la sección <strong>Control de Estacionamiento</strong>, ubica el puesto <strong>"Ocupado"</strong> que deseas liberar.</li>
+            <li>Haz clic sobre él.</li>
+            <li>El sistema te preguntará si deseas confirmar la salida.</li>
+            <li>Al confirmar, el puesto volverá al estado <strong>"LIBRE"</strong> y la hora de salida quedará registrada en la bitácora.</li>
+        </ol>
+
+        <h2>5. Módulo 2: Gestión de Paquetería</h2>
+        <p>Digitaliza la recepción y entrega de encomiendas para no perder ningún registro.</p>
+        <h3>5.1. Registrar un Paquete Nuevo</h3>
+        <ol>
+            <li>Haz clic en el botón <strong><i class="bi bi-box-seam"></i> Recepción</strong>.</li>
+            <li>En la ventana que aparece, selecciona la <strong>Unidad de Destino</strong>.</li>
+            <li>Escribe el <strong>Remitente</strong> (Ej: Mercado Libre, Correos de Chile, etc.).</li>
+            <li>Haz clic en <strong>"Registrar"</strong>. El paquete aparecerá inmediatamente en la lista de "Por Entregar" y el residente recibirá una notificación.</li>
+        </ol>
+
+        <h3>5.2. Entregar un Paquete a un Residente</h3>
+        <ol>
+            <li>En la sección <strong>"Por Entregar"</strong>, busca el paquete en la lista.</li>
+            <li>Cuando el residente lo retire, haz clic en el botón verde con el ícono <strong><i class="bi bi-check-lg"></i></strong> que corresponde a ese paquete.</li>
+            <li>El paquete desaparecerá de la lista de pendientes y el sistema guardará la hora de entrega.</li>
+        </ol>
+
+        <h2>6. Módulo 3: Bitácora y Novedades del Turno</h2>
+        <p>Mantén un registro claro de todo lo que ocurre durante tu jornada.</p>
+        <h3>6.1. Registrar un Evento en la Bitácora</h3>
+        <p>Para dejar constancia de cualquier suceso relevante (un ruido molesto, una luz quemada, una situación sospechosa, etc.).</p>
+        <ol>
+            <li>Haz clic en el botón <strong><i class="bi bi-journal-text"></i> Bitácora</strong>.</li>
+            <li>Escribe un <strong>Título</strong> breve y claro (Ej: "Falla en portón vehicular").</li>
+            <li>En <strong>Descripción</strong>, detalla lo ocurrido.</li>
+            <li>Haz clic en <strong>"Guardar"</strong>. El evento quedará registrado en la bitácora general del edificio, visible para la administración.</li>
+        </ol>
+
+        <h3>6.2. Entrega de Turno</h3>
+        <p>Al finalizar tu jornada, es crucial que realices la entrega de turno formalmente.</p>
+        <ol>
+            <li>Haz clic en el botón <strong><i class="bi bi-arrow-left-right"></i> Entrega Turno</strong>.</li>
+            <li>Completa el <strong>Checklist</strong> de activos (revisar que las llaves y radios estén en su lugar).</li>
+            <li>Escribe las <strong>Novedades del Turno</strong> en el campo de texto, informando a tu relevo de cualquier pendiente o situación importante.</li>
+            <li>Escribe el <strong>nombre del conserje que recibe</strong> el turno.</li>
+            <li>Haz clic en <strong>"REGISTRAR ENTREGA"</strong>. Esto guardará la información en la bitácora y <strong>cerrará tu sesión automáticamente</strong>.</li>
+        </ol>
+
+        <h2>7. Módulo 4: Tareas Administrativas</h2>
+        <h3>7.1. Registrar Lectura de Medidores</h3>
+        <ol>
+            <li>Haz clic en el botón <strong><i class="bi bi-speedometer"></i> Medidores</strong>.</li>
+            <li>Selecciona la <strong>Unidad</strong> y el <strong>Tipo</strong> de medidor (Agua Caliente, Gas, etc.).</li>
+            <li>El sistema te mostrará la última lectura registrada para esa unidad como referencia.</li>
+            <li>Ingresa el <strong>valor actual</strong> que marca el medidor.</li>
+            <li>Haz clic en <strong>"REGISTRAR LECTURA"</strong>.</li>
+        </ol>
+
+        <h3>7.2. Gestionar Reservas de Espacios Comunes</h3>
+        <p>En la sección <strong>"Agenda & Control de Llaves"</strong>, puedes ver las próximas reservas.</p>
+        <ul>
+            <li><strong>Entregar Llave:</strong> Cuando un residente venga a buscar la llave de un espacio que reservó, busca la reserva en la agenda y haz clic en el botón <strong><i class="bi bi-key"></i> ENTREGAR</strong>. El estado cambiará a "EN CURSO".</li>
+            <li><strong>Finalizar Uso:</strong> Cuando el residente devuelva la llave, haz clic en <strong><i class="bi bi-stop-circle"></i> FINALIZAR</strong>. El estado cambiará a "POR REVISAR".</li>
+            <li><strong>Confirmar Estado:</strong> Una vez que hayas verificado que el espacio común fue entregado en buenas condiciones, haz clic en <strong><i class="bi bi-check-lg"></i> LUGAR OK</strong>.</li>
+        </ul>
+
+        <h2>8. Módulo 5: Directorio de Residentes</h2>
+        <p>Utiliza esta herramienta para encontrar rápidamente a cualquier persona de la comunidad.</p>
+        <ol>
+            <li>Usa la <strong>barra de búsqueda</strong> para filtrar por número de departamento o nombre del residente.</li>
+            <li>La tabla te mostrará la información de contacto.</li>
+            <li>Puedes usar los botones de acción para:
+                <ul>
+                    <li><strong><i class="bi bi-whatsapp"></i> Contactar por WhatsApp.</strong></li>
+                    <li><strong><i class="bi bi-pencil-square"></i> Editar la ficha</strong> si necesitas corregir un dato.</li>
+                    <li><strong><i class="bi bi-receipt"></i> Aplicar una multa</strong> (con autorización de la administración).</li>
+                    <li><strong><i class="bi bi-key-fill"></i> Resetear la contraseña</strong> de un residente si la ha olvidado.</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>9. Módulo 6: Emergencias</h2>
+        <h3>9.1. Enviar una Alerta SOS</h3>
+        <p>Este botón es <strong>solo para emergencias reales</strong> (incendios, problemas médicos graves, robos, etc.).</p>
+        <ol>
+            <li>Haz clic en el botón rojo <strong><i class="bi bi-megaphone"></i> Alerta SOS</strong>.</li>
+            <li>El sistema te pedirá una confirmación.</li>
+            <li>Al confirmar, se enviará una notificación de emergencia a <strong>todos los residentes</strong> y a la <strong>administración</strong> de forma inmediata.</li>
+        </ol>
+
+        <h2>10. Cierre de Sesión</h2>
+        <p>Para salir de tu cuenta de forma segura, haz clic en el ícono de <strong><i class="bi bi-power"></i></strong> ubicado en la esquina superior derecha de la pantalla.</p>
+    </div>
+</div>
+{% endblock %}

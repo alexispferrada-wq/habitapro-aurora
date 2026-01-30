@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}| Manual de Usuario - Residente{% endblock %}
+
+{% block styles %}
+<style>
+    .manual-content h2 {
+        color: var(--accent-primary);
+        border-bottom: 2px solid var(--accent-secondary);
+        padding-bottom: 10px;
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .manual-content h3 {
+        color: var(--accent-secondary);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .manual-content .card-glass {
+        padding: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-landing fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('main.landing') }}">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png"
+                alt="HABITEX" height="60">
+        </a>
+        <div class="ms-auto">
+            <a href="{{ url_for('main.landing') }}#faq" class="btn btn-outline-light btn-sm fw-bold">
+                <i class="bi bi-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container" style="margin-top: 120px; padding-bottom: 50px;">
+    <div class="card-glass manual-content">
+        <div class="text-center mb-5">
+            <h1 class="section-title">Manual de Usuario: Residente</h1>
+            <p class="section-subtitle">Plataforma HABITEX</p>
+        </div>
+
+        <h2>1. Introducción</h2>
+        <p>¡Bienvenido a tu hogar digital con HABITEX! Esta aplicación móvil está diseñada para que gestiones todo lo relacionado con tu vida en la comunidad desde la palma de tu mano. Esta guía te mostrará cómo usar cada función.</p>
+
+        <h2>2. Pantalla de Inicio (Tu Hogar)</h2>
+        <p>La pantalla principal te da un resumen de lo más importante:</p>
+        <ul>
+            <li><strong>Resumen de Hoy:</strong> Tarjetas que te alertan si tienes paquetes por retirar, multas pendientes o visitas activas dentro del condominio.</li>
+            <li><strong>Gestionar Accesos:</strong> Botones para crear invitaciones QR para tus visitas.</li>
+            <li><strong>Total a Pagar:</strong> Muestra tu deuda actual de gastos comunes y multas.</li>
+            <li><strong>Espacios Comunes:</strong> Un formulario para reservar quinchos, salones y otras áreas.</li>
+        </ul>
+
+        <h2>3. Gestionar Invitaciones (Accesos QR)</h2>
+        <p>La forma más segura y moderna de recibir a tus visitas.</p>
+        <h3>3.1. Invitación Peatonal (A Pie)</h3>
+        <ol>
+            <li>Presiona el botón <strong><i class="bi bi-person-walking"></i> A Pie</strong>.</li>
+            <li>Ingresa el nombre de tu visita (opcional) y presiona "Generar Acceso Digital".</li>
+            <li>Se creará un enlace único. Compártelo con tu visita por WhatsApp o cualquier otro medio.</li>
+            <li>Tu visita mostrará el código QR del enlace en conserjería para un ingreso rápido y registrado.</li>
+        </ol>
+
+        <h3>3.2. Invitación Vehicular (En Auto)</h3>
+        <ol>
+            <li>Presiona el botón <strong><i class="bi bi-car-front-fill"></i> En Auto</strong>.</li>
+            <li>Al generar el acceso, tu visita deberá ingresar su patente en el enlace que le compartas.</li>
+            <li>Cuando llegue a conserjería y escaneen su QR, el conserje le asignará un estacionamiento de visita disponible.</li>
+        </ol>
+
+        <h2>4. Pagos de Gastos Comunes</h2>
+        <p>Mantén tus cuentas al día de forma transparente.</p>
+        <ul>
+            <li>La sección <strong>"Total a Pagar"</strong> te muestra el monto exacto de tu deuda.</li>
+            <li>Si tienes multas, el detalle aparecerá justo debajo del monto total.</li>
+            <li>Una vez que realices la transferencia a la cuenta de la comunidad, presiona el botón <strong>SUBIR COMPROBANTE</strong>.</li>
+            <li>Adjunta la foto o captura de pantalla de la transferencia.</li>
+            <li>La administración recibirá una notificación para validar tu pago. Mientras tanto, verás un mensaje de "Pago en revisión". Una vez aprobado, tu deuda se actualizará.</li>
+        </ul>
+
+        <h2>5. Reserva de Espacios Comunes</h2>
+        <ol>
+            <li>En la sección <strong>"Espacios Comunes"</strong>, selecciona el lugar que deseas reservar.</li>
+            <li>Elige la fecha y la hora.</li>
+            <li>El sistema te mostrará el valor de la reserva. Si estás de acuerdo, presiona <strong>"Reservar"</strong>.</li>
+            <li>El costo de la reserva se sumará automáticamente a tu próximo gasto común.</li>
+            <li>Podrás ver tus próximas reservas en la misma tarjeta.</li>
+        </ol>
+
+        <h2>6. Marketplace y Reportes</h2>
+        <ul>
+            <li><strong>Marketplace:</strong> Usa este botón para ver y publicar avisos de compra/venta con tus vecinos. Es un mercado interno y seguro.</li>
+            <li><strong>Reportar Mantención:</strong> ¿Viste una ampolleta quemada o un problema en un área común? Usa este botón para notificar directamente a la administración, detallando el problema.</li>
+        </ul>
+
+        <h2>7. Menú de Navegación Inferior</h2>
+        <ul>
+            <li><strong><i class="bi bi-house-door-fill"></i> Inicio:</strong> Te lleva a la pantalla principal.</li>
+            <li><strong><i class="bi bi-receipt"></i> Historial:</strong> (Próximamente) Aquí podrás ver el historial de tus pagos, visitas y más.</li>
+            <li><strong><i class="bi bi-chat-dots-fill"></i> Ayuda:</strong> (Próximamente) Un centro de ayuda para resolver dudas.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

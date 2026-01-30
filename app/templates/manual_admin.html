@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}| Manual de Usuario - Administrador{% endblock %}
+
+{% block styles %}
+<style>
+    .manual-content h2 {
+        color: var(--accent-primary);
+        border-bottom: 2px solid var(--accent-secondary);
+        padding-bottom: 10px;
+        margin-top: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .manual-content h3 {
+        color: var(--accent-secondary);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .manual-content .card-glass {
+        padding: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-landing fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('main.landing') }}">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png"
+                alt="HABITEX" height="60">
+        </a>
+        <div class="ms-auto">
+            <a href="{{ url_for('main.landing') }}#faq" class="btn btn-outline-light btn-sm fw-bold">
+                <i class="bi bi-arrow-left me-1"></i> Volver
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container" style="margin-top: 120px; padding-bottom: 50px;">
+    <div class="card-glass manual-content">
+        <div class="text-center mb-5">
+            <h1 class="section-title">Manual de Usuario: Administración</h1>
+            <p class="section-subtitle">Plataforma HABITEX</p>
+        </div>
+
+        <h2>1. Introducción</h2>
+        <p>Bienvenido al panel de Administración de HABITEX. Esta guía te proporcionará una visión completa de todas las herramientas a tu disposición para gestionar tu comunidad de manera eficiente, transparente y segura.</p>
+
+        <h2>2. Panel Principal (Dashboard)</h2>
+        <p>Tu dashboard es el centro de control. Aquí encontrarás:</p>
+        <ul>
+            <li><strong>Resumen Financiero:</strong> Un vistazo rápido al balance del mes, con ingresos, egresos y saldo.</li>
+            <li><strong>Calendario de Mantenciones:</strong> Visualiza las mantenciones programadas para el mes actual.</li>
+            <li><strong>Control de Estacionamientos:</strong> Monitorea en tiempo real los estacionamientos de visita.</li>
+            <li><strong>Directorio de Residentes:</strong> Acceso rápido a la información de todas las unidades.</li>
+            <li><strong>Botones de Acción Rápida:</strong> Accesos directos a módulos como Gastos, Conserjes, Bitácora y Soporte.</li>
+        </ul>
+
+        <h2>3. Módulo de Finanzas</h2>
+        <p>La gestión financiera es crucial. HABITEX la simplifica.</p>
+        <h3>3.1. Gestión de Gastos e Ingresos</h3>
+        <ol>
+            <li>Ve al módulo de <strong>Gastos</strong>.</li>
+            <li>Puedes navegar entre meses para revisar historiales.</li>
+            <li>Para registrar un nuevo gasto (egreso), completa el formulario indicando fecha, categoría, descripción y monto.</li>
+            <li>Los ingresos por pagos de gastos comunes se registran automáticamente cuando apruebas un pago.</li>
+        </ol>
+
+        <h3>3.2. Cierre de Mes</h3>
+        <ol>
+            <li>En la página de <strong>Gastos</strong>, si el mes está abierto, verás el botón <strong>"Cerrar Mes Contable"</strong>.</li>
+            <li>Al hacer clic, el sistema tomará el total de gastos del periodo y lo distribuirá entre las unidades según su prorrateo.</li>
+            <li>Esta acción es irreversible y actualizará la deuda de cada residente.</li>
+        </ol>
+
+        <h3>3.3. Aprobación de Pagos</h3>
+        <p>En el dashboard principal, verás una tarjeta de "Pagos por Revisar".</p>
+        <ol>
+            <li>Revisa los pagos que los residentes han subido.</li>
+            <li>Haz clic en el ícono del ojo <i class="bi bi-eye"></i> para ver el comprobante.</li>
+            <li>Si todo es correcto, haz clic en el botón de check <i class="bi bi-check-lg"></i> para aprobar. El monto se abonará a la deuda de la unidad y se registrará como ingreso.</li>
+            <li>Si hay un error, haz clic en la 'X' <i class="bi bi-x-lg"></i> para rechazarlo.</li>
+        </ol>
+
+        <h2>4. Gestión de Residentes</h2>
+        <p>El directorio de residentes en el dashboard es tu herramienta principal.</p>
+        <ul>
+            <li><strong>Buscar:</strong> Usa el buscador para encontrar rápidamente una unidad por número.</li>
+            <li><strong>Editar Ficha:</strong> Haz clic en el ícono de lápiz <i class="bi bi-pencil-fill"></i> para actualizar datos del propietario o arrendatario.</li>
+            <li><strong>Registrar Pago Manual:</strong> Usa el ícono de moneda <i class="bi bi-cash-coin"></i> para registrar un pago que recibiste por otro medio.</li>
+            <li><strong>Multar:</strong> Con el ícono de recibo <i class="bi bi-receipt"></i>, puedes aplicar un cargo extra a la deuda de una unidad, especificando el motivo y monto.</li>
+            <li><strong>Resetear Clave:</strong> Si un residente olvida su contraseña, usa el ícono de llave <i class="bi bi-key-fill"></i> para generar una nueva clave temporal.</li>
+        </ul>
+
+        <h2>5. Módulo de Activos y Mantenciones</h2>
+        <ol>
+            <li>Accede desde el botón <strong>Activos</strong> en el dashboard.</li>
+            <li>Registra los equipos importantes de la comunidad (bombas, ascensores, etc.), especificando su nombre, costo de mantención y periodicidad en días.</li>
+            <li>Ingresa la fecha de la <strong>última mantención</strong>. El sistema calculará y proyectará automáticamente las próximas fechas.</li>
+            <li>El calendario del dashboard y el gasto proyectado se alimentan de esta información.</li>
+        </ol>
+
+        <h2>6. Gestión de Personal (Conserjes)</h2>
+        <ol>
+            <li>Haz clic en el botón <strong>Conserjes</strong>.</li>
+            <li>Puedes crear nuevos usuarios para tu equipo de conserjería, asignando RUT y nombre. El sistema generará una clave temporal.</li>
+            <li>También puedes resetear la clave de un conserje existente o eliminar su cuenta.</li>
+        </ol>
+
+        <h2>7. Bitácora y Comunicados</h2>
+        <ul>
+            <li><strong>Bitácora:</strong> Accede desde el botón en el dashboard para ver un log de todos los eventos importantes: registros de conserjería, visitas, pagos, etc. Puedes filtrar por fecha y unidad.</li>
+            <li><strong>Redactor IA:</strong> Usa el asistente de IA para redactar comunicados formales. Simplemente describe la idea y la IA generará el texto.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
