@@ -3,9 +3,7 @@
 
 {% block styles %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC08hIbpWi529l6GN6Q4BWknbJV4saTJPM&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -170,26 +168,56 @@
         display: inline-block;
         margin-right: 8px;
     }
+
     .led-active {
         background-color: #2ecc71;
         box-shadow: 0 0 10px #2ecc71, 0 0 20px rgba(46, 204, 113, 0.5);
         animation: pulse-green 2s infinite;
     }
+
     .led-inactive {
         background-color: #e74c3c;
         box-shadow: 0 0 10px #e74c3c;
     }
-    @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    @keyframes pulse-blue { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+    @keyframes pulse-green {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    @keyframes pulse-blue {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.4;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
 
     /* EFECTO DE PULSO PARA MARCADOR RESALTADO */
     @keyframes marker-pulse-effect {
         0% {
             filter: drop-shadow(0 0 0px #0dcaf0);
         }
+
         50% {
             filter: drop-shadow(0 0 15px #0dcaf0);
         }
+
         100% {
             filter: drop-shadow(0 0 0px #0dcaf0);
         }
@@ -205,6 +233,7 @@
         background: none;
         border: none;
     }
+
     .building-marker-inner {
         background: #0dcaf0;
         color: #050505;
@@ -218,6 +247,7 @@
         box-shadow: 0 4px 15px rgba(13, 202, 240, 0.4);
         border: 2px solid white;
     }
+
     .building-marker-inner i {
         transform: rotate(45deg);
         font-size: 1.1rem;
@@ -239,44 +269,54 @@
     /* LIGHT THEME OVERRIDES */
     html[data-bs-theme="light"] .global-status-card {
         background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.1);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     }
+
     html[data-bs-theme="light"] .stat-card {
         background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.1);
+        border: 1px solid rgba(0, 0, 0, 0.1);
         color: #000;
     }
+
     html[data-bs-theme="light"] .user-count-card {
         background: #ffffff;
-        border: 1px solid rgba(0,0,0,0.1);
+        border: 1px solid rgba(0, 0, 0, 0.1);
         color: #000;
     }
+
     html[data-bs-theme="light"] .user-count-card:hover {
         background: #f8f9fa;
     }
+
     html[data-bs-theme="light"] .log-row:hover {
-        background: rgba(0,0,0,0.05);
+        background: rgba(0, 0, 0, 0.05);
     }
+
     html[data-bs-theme="light"] .header-dark {
         background-color: #f8f9fa !important;
-        border-bottom: 1px solid rgba(0,0,0,0.1);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         color: #000;
     }
+
     html[data-bs-theme="light"] .pac-container {
         background-color: #fff;
         color: #000;
     }
+
     html[data-bs-theme="light"] .pac-item {
         color: #666;
         border-top-color: #eee;
     }
+
     html[data-bs-theme="light"] .pac-item:hover {
         background-color: #f0f0f0;
     }
+
     html[data-bs-theme="light"] .pac-item-query {
         color: #000;
     }
+
     html[data-bs-theme="light"] .bg-black {
         background-color: #f8f9fa !important;
     }
@@ -287,11 +327,13 @@
 <nav class="navbar navbar-glass fixed-top">
     <div class="container-fluid px-3 px-md-4">
         <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
-            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png" alt="AEXON" height="30">
+            <img src="https://res.cloudinary.com/dqsz4ua73/image/upload/v1768769650/logo_habitex_w9gykr.png" alt="AEXON"
+                height="30">
             <span class="fw-bold">AEXON <span class="fw-light opacity-75 small">Overlord</span></span>
         </a>
         <div class="d-flex align-items-center gap-3">
-            <button id="theme-toggle" class="btn btn-outline-secondary border-0 fs-4" style="width: 48px; height: 48px;">
+            <button id="theme-toggle" class="btn btn-outline-secondary border-0 fs-4"
+                style="width: 48px; height: 48px;">
                 <i class="bi bi-sun-fill"></i>
             </button>
             <button class="btn btn-sm btn-outline-warning fw-bold" data-bs-toggle="modal"
@@ -310,11 +352,13 @@
         </div>
         <div class="d-flex align-items-center">
             <i class="bi bi-bank text-success me-1"></i>
-            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.dolar) | replace(',', '.') }}</span>
+            Dólar: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.dolar) | replace(',', '.')
+                }}</span>
         </div>
         <div class="d-flex align-items-center d-none d-md-flex">
             <i class="bi bi-file-earmark-text text-info me-1"></i>
-            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) | replace(',', '.') }}</span>
+            UTM: <span class="text-white fw-bold ms-1">${{ "{:,.0f}".format(indicadores.utm) | replace(',', '.')
+                }}</span>
         </div>
     </div>
 </div>
@@ -331,7 +375,8 @@
                         <p class="text-white-50 small mb-0">Monitoreo de infraestructura y servicios en tiempo real</p>
                     </div>
                     <div class="text-end">
-                        <div class="text-white fw-bold fs-3 font-monospace" id="server-time" style="letter-spacing: 2px;">00:00:00</div>
+                        <div class="text-white fw-bold fs-3 font-monospace" id="server-time"
+                            style="letter-spacing: 2px;">00:00:00</div>
                         <div class="text-white-50 small">Hora Servidor (CL)</div>
                     </div>
                 </div>
@@ -351,10 +396,11 @@
                         <div class="p-3 rounded bg-black bg-opacity-25 border border-white border-opacity-10">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-cloud-check-fill text-primary"></i>
-                                <span class="small fw-bold text-white-50">RENDER HOSTING</span>
-                            </div>
-                                <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.5rem;">LIVE</span>
+                                    <i class="bi bi-cloud-check-fill text-primary"></i>
+                                    <span class="small fw-bold text-white-50">RENDER HOSTING</span>
+                                </div>
+                                <span class="badge bg-primary bg-opacity-10 text-primary"
+                                    style="font-size: 0.5rem;">LIVE</span>
                             </div>
                             <div class="fw-bold text-success fs-5">OPERATIONAL</div>
                             <div style="height: 40px; position: relative; margin-top: 5px;">
@@ -397,9 +443,9 @@
         </div>
     </div>
 
+    <!-- SECCIÓN 2: USUARIOS POR EDIFICIO -->
     <h6 class="text-white-50 text-uppercase fw-bold mb-3 ps-2 border-start border-4 border-info">Usuarios por Edificio
     </h6>
-
     <div class="row g-4 mb-4">
         {% for e in edificios %}
         <div class="col-lg-6">
@@ -410,20 +456,24 @@
                             <span class="led-indicator {{ 'led-active' if e.activo else 'led-inactive' }}"></span>
                             <h4 class="fw-bold text-white m-0">{{ e.nombre }}</h4>
                         </div>
-                        <p class="text-white-50 small text-truncate mb-3"><i class="bi bi-geo-alt me-1"></i>{{ e.direccion }}</p>
-                        
+                        <p class="text-white-50 small text-truncate mb-3"><i class="bi bi-geo-alt me-1"></i>{{
+                            e.direccion }}</p>
+
                         <div class="d-flex gap-2">
-                            <a href="/superadmin/detalle_edificio/{{ e.id }}" class="btn btn-sm btn-info text-dark fw-bold px-3">
+                            <a href="/superadmin/detalle_edificio/{{ e.id }}"
+                                class="btn btn-sm btn-info text-dark fw-bold px-3">
                                 <i class="bi bi-gear-fill me-1"></i> GESTIONAR
                             </a>
-                            <div class="form-check form-switch d-flex align-items-center bg-black bg-opacity-25 px-3 py-1 rounded border border-white border-opacity-10">
+                            <div
+                                class="form-check form-switch d-flex align-items-center bg-black bg-opacity-25 px-3 py-1 rounded border border-white border-opacity-10">
                                 <input class="form-check-input ms-0 me-2" type="checkbox" role="switch"
                                     onchange="toggleEdificio('{{ e.id }}', this)" {{ 'checked' if e.activo else '' }}>
-                                <label class="small text-white-50 fw-bold" style="font-size: 0.65rem;">{{ 'ACTIVO' if e.activo else 'OFF' }}</label>
+                                <label class="small text-white-50 fw-bold" style="font-size: 0.65rem;">{{ 'ACTIVO' if
+                                    e.activo else 'OFF' }}</label>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-5 border-start border-white border-opacity-10 ps-md-4 mt-3 mt-md-0">
                         <div class="bg-black bg-opacity-25 rounded p-3 border border-white border-opacity-10 mb-2">
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -434,13 +484,16 @@
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="text-white-50 fw-bold" style="font-size: 0.65rem;">ESTADO</span>
-                                <span class="badge {{ 'bg-success' if e.estado_pago == 'PAGADO' else 'bg-warning text-dark' }}" style="font-size: 0.55rem;">{{ e.estado_pago }}</span>
+                                <span
+                                    class="badge {{ 'bg-success' if e.estado_pago == 'PAGADO' else 'bg-warning text-dark' }}"
+                                    style="font-size: 0.55rem;">{{ e.estado_pago }}</span>
                             </div>
                         </div>
-                        
+
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="text-start">
-                                <div class="user-badge {{ 'text-muted' if not e.activo else '' }} lh-1">{{ e.cantidad_usuarios }}</div>
+                                <div class="user-badge {{ 'text-muted' if not e.activo else '' }} lh-1">{{
+                                    e.cantidad_usuarios }}</div>
                                 <div class="text-white-50" style="font-size: 0.6rem;">USUARIOS</div>
                             </div>
                             <button class="btn btn-sm btn-outline-danger border-0 opacity-50"
@@ -468,13 +521,14 @@
         </div>
     </div>
 
+    <!-- SECCIÓN 3: COMUNICADO GLOBAL Y LOGS DEL SISTEMA -->
     <div class="row mb-4">
         <div class="col-lg-4">
             <div class="card-glass p-4 h-100">
                 <h6 class="text-white fw-bold mb-3"><i class="bi bi-megaphone-fill me-2 text-warning"></i> Comunicado
                     Global</h6>
                 <p class="small text-white-50 mb-3">Envía un mensaje a la bitácora de todos los edificios activos.</p>
-                <form action="/superadmin/broadcast" method="POST">
+                <form action="{{ url_for('superadmin.superadmin_broadcast') }}" method="POST">
                     <div class="mb-3">
                         <input type="text" name="titulo" class="form-control form-control-sm mb-2"
                             placeholder="Título del mensaje" required>
@@ -523,232 +577,252 @@
         </div>
     </div>
 
+    <!-- SECCIÓN 4: MAPA DE OPERACIONES -->
+    <h6 class="text-white-50 text-uppercase fw-bold mb-3 ps-2 border-start border-4 border-info">Mapa de Operaciones
+    </h6>
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card-glass p-0 overflow-hidden d-flex flex-column" style="height: 450px;">
+            <div class="card-glass p-0 overflow-hidden d-flex flex-column">
                 <div class="header-dark">
-                    <h6 class="m-0 fw-bold"><i class="bi bi-map-fill me-2"></i> Mapa de Operaciones</h6>
+                    <h6 class="m-0 fw-bold"><i class="bi bi-map-fill me-2"></i> Vista Geográfica de Edificios</h6>
                 </div>
-                <div id="map" class="flex-grow-1" style="width: 100%;"></div>
+                <div id="map" style="width: 100%; height: 500px; background-color: #1a1d24;"></div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="modalCrearEdificio" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 bg-dark">
-                <h5 class="fw-bold text-white">Nuevo Condominio</h5><button class="btn-close btn-close-white"
-                    data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body bg-dark">
-                <form action="/superadmin/crear_edificio" method="POST">
-                    <label class="small text-muted mb-1">Nombre</label>
-                    <input type="text" name="nombre" class="form-control mb-3" required>
-                    <label class="small text-muted mb-1">Dirección (Google)</label>
-                    <input type="text" name="direccion" id="googleAddressInput" class="form-control mb-3" required
-                        placeholder="Escribe para buscar...">
-                    <input type="hidden" name="lat" id="latInput">
-                    <input type="hidden" name="lon" id="lonInput">
-                    <button class="btn btn-primary w-100 fw-bold">Crear y Activar</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalGhostLogin" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content card-glass" style="border-color: #ffc107;">
-            <div class="modal-header border-0 bg-warning bg-opacity-10">
-                <h5 class="fw-bold text-warning"><i class="bi bi-incognito me-2"></i>Modo Fantasma</h5>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-white-50 small mb-3">Busca un administrador o conserje para tomar control de su sesión.
-                </p>
-                <div class="input-group mb-3">
-                    <span class="input-group-text bg-dark border-secondary text-white"><i
-                            class="bi bi-search"></i></span>
-                    <input type="text" id="ghostSearchInput" class="form-control bg-dark text-white border-secondary"
-                        placeholder="Nombre o RUT..." onkeyup="buscarUsuarioGhost()">
+    <div class="modal fade" id="modalCrearEdificio" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 bg-dark">
+                    <h5 class="fw-bold text-white">Nuevo Condominio</h5><button class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
                 </div>
-                <div id="ghostResults" style="max-height: 200px; overflow-y: auto;">
-                    <div class="text-center text-white-50 py-3 small">Escribe para buscar...</div>
+                <div class="modal-body bg-dark">
+                    <form action="/superadmin/crear_edificio" method="POST">
+                        <label class="small text-muted mb-1">Nombre</label>
+                        <input type="text" name="nombre" class="form-control mb-3" required>
+                        <label class="small text-muted mb-1">Dirección (Google)</label>
+                        <input type="text" name="direccion" id="googleAddressInput" class="form-control mb-3" required
+                            placeholder="Escribe para buscar...">
+                        <input type="hidden" name="lat" id="latInput">
+                        <input type="hidden" name="lon" id="lonInput">
+                        <button class="btn btn-primary w-100 fw-bold">Crear y Activar</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<form id="formEliminarEdificio" action="/superadmin/eliminar_edificio" method="POST">
-    <input type="hidden" name="edificio_id" id="deleteId">
-</form>
+    <div class="modal fade" id="modalGhostLogin" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card-glass" style="border-color: #ffc107;">
+                <div class="modal-header border-0 bg-warning bg-opacity-10">
+                    <h5 class="fw-bold text-warning"><i class="bi bi-incognito me-2"></i>Modo Fantasma</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-white-50 small mb-3">Busca un administrador o conserje para tomar control de su
+                        sesión.
+                    </p>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-dark border-secondary text-white"><i
+                                class="bi bi-search"></i></span>
+                        <input type="text" id="ghostSearchInput"
+                            class="form-control bg-dark text-white border-secondary" placeholder="Nombre o RUT..."
+                            onkeyup="buscarUsuarioGhost()">
+                    </div>
+                    <div id="ghostResults" style="max-height: 200px; overflow-y: auto;">
+                        <div class="text-center text-white-50 py-3 small">Escribe para buscar...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<script>
-    function updateServerTime() { document.getElementById('server-time').textContent = new Date().toLocaleTimeString('es-CL'); }
-    setInterval(updateServerTime, 1000); updateServerTime();
+    <form id="formEliminarEdificio" action="/superadmin/eliminar_edificio" method="POST">
+        <input type="hidden" name="edificio_id" id="deleteId">
+    </form>
 
-    function initGoogleAutocomplete() {
-        const input = document.getElementById('googleAddressInput');
-        if (!input || typeof google === 'undefined') return;
-        const autocomplete = new google.maps.places.Autocomplete(input);
-        autocomplete.addListener('place_changed', function () {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-                document.getElementById('latInput').value = place.geometry.location.lat();
-                document.getElementById('lonInput').value = place.geometry.location.lng();
-            }
-        });
-    }
+    <script>
+        function updateServerTime() { document.getElementById('server-time').textContent = new Date().toLocaleTimeString('es-CL'); }
+        setInterval(updateServerTime, 1000); updateServerTime();
 
-    document.addEventListener("DOMContentLoaded", function () {
-        // 1. Inicializar Autocomplete
-        initGoogleAutocomplete();
-
-        // 2. Inicializar Sparkline (Solo si existe Chart.js)
-        if (typeof Chart !== 'undefined') {
-            const ctxSpark = document.getElementById('renderSparkline').getContext('2d');
-            const renderChart = new Chart(ctxSpark, {
-                type: 'line',
-                data: {
-                    labels: Array(20).fill(''),
-                    datasets: [{
-                        data: Array(20).fill(0).map(() => Math.random() * 100),
-                        borderColor: '#0d6efd',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        fill: true,
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { display: false }, y: { display: false, min: 0, max: 120 } },
-                    animation: { duration: 0 }
+        function initGoogleAutocomplete() {
+            const input = document.getElementById('googleAddressInput');
+            if (!input || typeof google === 'undefined') return;
+            const autocomplete = new google.maps.places.Autocomplete(input);
+            autocomplete.addListener('place_changed', function () {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    document.getElementById('latInput').value = place.geometry.location.lat();
+                    document.getElementById('lonInput').value = place.geometry.location.lng();
                 }
             });
-
-            setInterval(() => {
-                renderChart.data.datasets[0].data.shift();
-                const lastVal = renderChart.data.datasets[0].data[renderChart.data.datasets[0].data.length - 1];
-                const newVal = Math.max(10, Math.min(100, lastVal + (Math.random() * 40 - 20)));
-                renderChart.data.datasets[0].data.push(newVal);
-                renderChart.update();
-            }, 2000);
         }
 
-        // 3. Inicializar Mapa
-        var map = L.map('map').setView([-33.437, -70.650], 12);
-        
-        setTimeout(() => { map.invalidateSize(); }, 200);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-        
-        var data = {{ edificios | tojson | safe }};
-    var bounds = [];
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Inicializar Autocomplete
+            initGoogleAutocomplete();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const highlightId = urlParams.get('highlight');
-    let highlightMarker = null;
+            // 2. Inicializar Sparkline (Solo si existe Chart.js)
+            if (typeof Chart !== 'undefined') {
+                const ctxSpark = document.getElementById('renderSparkline').getContext('2d');
+                const renderChart = new Chart(ctxSpark, {
+                    type: 'line',
+                    data: {
+                        labels: Array(20).fill(''),
+                        datasets: [{
+                            data: Array(20).fill(0).map(() => Math.random() * 100),
+                            borderColor: '#0d6efd',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: true,
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { display: false }, y: { display: false, min: 0, max: 120 } },
+                        animation: { duration: 0 }
+                    }
+                });
 
-    // Definir el icono personalizado de edificio
-    const buildingIcon = L.divIcon({
-        className: 'custom-building-icon',
-        html: `<div class="building-marker-inner"><i class="bi bi-buildings-fill"></i></div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
-        popupAnchor: [0, -36]
-    });
-
-    data.forEach(e => {
-        // CORRECCIÓN: Buscamos latitud O lat, longitud O lon
-        let lat = e.latitud || e.lat;
-        let lon = e.longitud || e.lon;
-
-        if (lat && lon) {
-            let marker = L.marker([lat, lon], { icon: buildingIcon }).addTo(map)
-                .bindPopup(`<b>${e.nombre}</b><br>${e.cantidad_usuarios} Usuarios<br><a href="/superadmin/detalle_edificio/${e.id}" class="btn btn-sm btn-primary mt-1 text-white">Ver Panel</a>`);
-            bounds.push([lat, lon]);
-
-            if (highlightId && e.id == highlightId) {
-                highlightMarker = { lat, lon, marker };
-                    // Esperar a que el marcador esté en el DOM para aplicar la clase
-                    setTimeout(() => {
-                        const el = marker.getElement();
-                        if (el) el.classList.add('highlight-pulse');
-                    }, 300);
+                setInterval(() => {
+                    renderChart.data.datasets[0].data.shift();
+                    const lastVal = renderChart.data.datasets[0].data[renderChart.data.datasets[0].data.length - 1];
+                    const newVal = Math.max(10, Math.min(100, lastVal + (Math.random() * 40 - 20)));
+                    renderChart.data.datasets[0].data.push(newVal);
+                    renderChart.update();
+                }, 2000);
             }
-        }
-    });
 
-    if (highlightMarker) {
-        map.setView([highlightMarker.lat, highlightMarker.lon], 16);
-        highlightMarker.marker.openPopup();
-    } else if (bounds.length) {
-        map.fitBounds(bounds, { padding: [50, 50] });
-    }
-    });
+            // 3. Inicializar Mapa
+            var mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                var map = L.map('map').setView([-33.437, -70.650], 12);
 
-    function confirmarEliminarEdificio(id, nombre) {
-        Swal.fire({
-            title: '¿ELIMINAR EDIFICIO?', text: `Se desactivará "${nombre}". Ingrese la CONTRASEÑA MAESTRA:`,
-            input: 'password', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff'
-        }).then((result) => {
-            if (result.isConfirmed && result.value === "T3t1n53m$") {
-                document.getElementById('deleteId').value = id;
-                document.getElementById('formEliminarEdificio').submit();
-            } else if (result.isConfirmed) {
-                Swal.fire({ title: 'ACCESO DENEGADO', icon: 'error', background: '#1a1d24', color: '#fff' });
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+                    attribution: '© OpenStreetMap',
+                    maxZoom: 19
+                }).addTo(map);
+
+                // Solución definitiva para renderizado de mapa: Observador de tamaño
+                const resizeObserver = new ResizeObserver(() => { map.invalidateSize(); });
+                resizeObserver.observe(mapContainer);
+                
+                // Forzar redibujado en varios momentos para asegurar visibilidad
+                setTimeout(() => { map.invalidateSize(); }, 100);
+                setTimeout(() => { map.invalidateSize(); }, 500);
+                setTimeout(() => { map.invalidateSize(); }, 1000);
+
+                var data = {{ edificios | tojson | safe }};
+                if (!Array.isArray(data)) data = [];
+                
+                var bounds = [];
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const highlightId = urlParams.get('highlight');
+                let highlightMarker = null;
+
+                // Definir el icono personalizado de edificio
+                const buildingIcon = L.divIcon({
+                    className: 'custom-building-icon',
+                    html: `<div class="building-marker-inner"><i class="bi bi-buildings-fill"></i></div>`,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36],
+                    popupAnchor: [0, -36]
+                });
+
+                data.forEach(e => {
+                    // CORRECCIÓN: Buscamos latitud O lat, longitud O lon
+                    let lat = e.latitud || e.lat;
+                    let lon = e.longitud || e.lon;
+
+                    if (lat && lon) {
+                        let marker = L.marker([lat, lon], { icon: buildingIcon }).addTo(map)
+                            .bindPopup(`<b>${e.nombre}</b><br>${e.cantidad_usuarios} Usuarios<br><a href="/superadmin/detalle_edificio/${e.id}" class="btn btn-sm btn-primary mt-1 text-white">Ver Panel</a>`);
+                        bounds.push([lat, lon]);
+
+                        if (highlightId && e.id == highlightId) {
+                            highlightMarker = { lat, lon, marker };
+                            // Esperar a que el marcador esté en el DOM para aplicar la clase
+                            setTimeout(() => {
+                                const el = marker.getElement();
+                                if (el) el.classList.add('highlight-pulse');
+                            }, 300);
+                        }
+                    }
+                });
+
+                if (highlightMarker) {
+                    map.setView([highlightMarker.lat, highlightMarker.lon], 16);
+                    highlightMarker.marker.openPopup();
+                } else if (bounds.length) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
             }
         });
-    }
 
-    function toggleEdificio(id, checkbox) {
-        const estado = checkbox.checked;
-        fetch(`/superadmin/toggle_edificio/${id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ activo: estado })
-        })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    Swal.fire({
-                        toast: true, position: 'top-end', icon: 'success',
-                        title: 'Estado actualizado', showConfirmButton: false, timer: 2000,
-                        background: '#1a1d24', color: '#fff'
-                    }).then(() => location.reload());
-                } else {
-                    checkbox.checked = !estado;
-                    Swal.fire('Error', 'No se pudo cambiar el estado', 'error');
+        function confirmarEliminarEdificio(id, nombre) {
+            Swal.fire({
+                title: '¿ELIMINAR EDIFICIO?', text: `Se desactivará "${nombre}". Ingrese la CONTRASEÑA MAESTRA:`,
+                input: 'password', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', background: '#1a1d24', color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed && result.value === "T3t1n53m$") {
+                    document.getElementById('deleteId').value = id;
+                    document.getElementById('formEliminarEdificio').submit();
+                } else if (result.isConfirmed) {
+                    Swal.fire({ title: 'ACCESO DENEGADO', icon: 'error', background: '#1a1d24', color: '#fff' });
                 }
             });
-    }
+        }
 
-    // --- LÓGICA MODO DIOS (GHOST) ---
-    let debounceTimer;
-    function buscarUsuarioGhost() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            let q = document.getElementById('ghostSearchInput').value;
-            if (q.length < 2) return;
-
-            let resDiv = document.getElementById('ghostResults');
-            resDiv.innerHTML = '<div class="text-center text-info"><div class="spinner-border spinner-border-sm"></div> Buscando...</div>';
-
-            fetch(`/superadmin/buscar_usuarios_global?q=${q}`)
+        function toggleEdificio(id, checkbox) {
+            const estado = checkbox.checked;
+            fetch(`/superadmin/toggle_edificio/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo: estado })
+            })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.length === 0) {
-                        resDiv.innerHTML = '<div class="text-center text-white-50 py-2">No se encontraron usuarios activos.</div>';
-                        return;
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            toast: true, position: 'top-end', icon: 'success',
+                            title: 'Estado actualizado', showConfirmButton: false, timer: 2000,
+                            background: '#1a1d24', color: '#fff'
+                        }).then(() => location.reload());
+                    } else {
+                        checkbox.checked = !estado;
+                        Swal.fire('Error', 'No se pudo cambiar el estado', 'error');
                     }
-                    let html = '';
-                    data.forEach(u => {
-                        html += `
+                });
+        }
+
+        // --- LÓGICA MODO DIOS (GHOST) ---
+        let debounceTimer;
+        function buscarUsuarioGhost() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                let q = document.getElementById('ghostSearchInput').value;
+                if (q.length < 2) return;
+
+                let resDiv = document.getElementById('ghostResults');
+                resDiv.innerHTML = '<div class="text-center text-info"><div class="spinner-border spinner-border-sm"></div> Buscando...</div>';
+
+                fetch(`/superadmin/buscar_usuarios_global?q=${q}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            resDiv.innerHTML = '<div class="text-center text-white-50 py-2">No se encontraron usuarios activos.</div>';
+                            return;
+                        }
+                        let html = '';
+                        data.forEach(u => {
+                            html += `
                         <div class="ghost-result-item animate__animated animate__fadeIn">
         <div>
             <div class="fw-bold text-white">${u.nombre}</div>
@@ -761,10 +835,10 @@
             </button>
         </form>
     </div>`;
+                        });
+                        resDiv.innerHTML = html;
                     });
-                    resDiv.innerHTML = html;
-                });
-        }, 300);
-    }
-</script>
-{% endblock %}
+            }, 300);
+        }
+    </script>
+    {% endblock %}

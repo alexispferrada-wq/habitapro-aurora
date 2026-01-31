@@ -1,10 +1,16 @@
+# Python
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
+
+# Variables de entorno y secretos (¡MUY IMPORTANTE NO SUBIR ESTO!)
 .env
 .env.txt
+
+# Sistema Operativo y Entorno Virtual
+.DS_Store
 venv/
 env/
-.vscode/
-.idea/
-static/uploads/*
+
+# Archivos subidos por usuarios (opcional, para no llenar el repo de fotos de prueba)
+app/static/uploads/*
+!app/static/uploads/.gitkeep

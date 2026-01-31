@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}| Contrato de Servicios{% endblock %}
+{% block content %}
+<div class="container" style="margin-top: 100px; padding-bottom: 50px;">
+    <div class="card-glass p-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-info">CONTRATO DE PRESTACIÓN DE SERVICIOS SAAS</h2>
+            <p class="text-white-50">HABITEX - Plataforma de Gestión de Comunidades</p>
+        </div>
+
+        <div class="text-white-50" style="font-size: 0.9rem; line-height: 1.6;">
+            <h5 class="text-white fw-bold mt-4">1. PARTES</h5>
+            <p>Por una parte, <strong>AEXON SPA</strong> (en adelante "EL PROVEEDOR"), y por otra parte, la
+                <strong>COMUNIDAD</strong> (en adelante "EL CLIENTE") identificada en la cotización adjunta.</p>
+
+            <h5 class="text-white fw-bold mt-4">2. OBJETO</h5>
+            <p>El presente contrato tiene por objeto la prestación de servicios de software en la nube (SaaS) denominado
+                <strong>HABITEX</strong>, para la gestión administrativa, seguridad y comunicación de la comunidad.</p>
+
+            <h5 class="text-white fw-bold mt-4">3. ALCANCE DEL SERVICIO</h5>
+            <ul class="list-unstyled">
+                <li><i class="bi bi-check2 text-success me-2"></i> Acceso a plataforma web para administración y
+                    conserjería.</li>
+                <li><i class="bi bi-check2 text-success me-2"></i> Aplicación móvil para residentes (Android/iOS).</li>
+                <li><i class="bi bi-check2 text-success me-2"></i> Módulos de control de acceso, gastos comunes,
+                    reservas y encomiendas.</li>
+                <li><i class="bi bi-check2 text-success me-2"></i> Soporte técnico integrado y actualizaciones
+                    continuas.</li>
+            </ul>
+
+            <h5 class="text-white fw-bold mt-4">4. OBLIGACIONES DEL PROVEEDOR</h5>
+            <p>Garantizar una disponibilidad del servicio del 99.5% anual, resguardar la confidencialidad de los datos y
+                proporcionar soporte técnico ante incidencias.</p>
+
+            <h5 class="text-white fw-bold mt-4">5. VIGENCIA Y PAGO</h5>
+            <p>El servicio se contrata bajo modalidad de suscripción mensual. El no pago del servicio por un periodo
+                superior a 30 días facultará al PROVEEDOR para suspender el acceso.</p>
+
+            <div class="mt-5 text-center">
+                <button class="btn btn-outline-light" onclick="window.print()"><i class="bi bi-printer me-2"></i>
+                    Imprimir Contrato</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

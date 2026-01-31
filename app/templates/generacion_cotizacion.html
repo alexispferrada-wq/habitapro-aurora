@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}| Generador de Cotización{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 100px; padding-bottom: 50px;">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h2 class="fw-bold text-white">Propuesta Comercial <span class="text-info">HABITEX</span></h2>
+        <p class="text-white-50">Configura el plan a medida para tu comunidad</p>
+        <div class="small text-white-50" id="fecha-hoy"></div>
+    </div>
+
+    <div class="row g-4">
+        <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN -->
+        <div class="col-lg-7">
+            <div class="card-glass p-4 h-100">
+                <h5 class="text-white fw-bold mb-4"><i class="bi bi-sliders me-2 text-warning"></i> Configuración del
+                    Plan</h5>
+
+                <form id="cotizacionForm">
+                    <!-- Datos Cliente -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="small text-white-50 mb-1">Cliente / Comunidad</label>
+                            <input type="text" id="cliente_nombre"
+                                class="form-control bg-dark text-white border-secondary" value="{{ nombre }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-white-50 mb-1">Unidades (Deptos/Casas)</label>
+                            <input type="number" id="unidades"
+                                class="form-control bg-dark text-white border-secondary fw-bold text-info"
+                                value="{{ unidades }}" onchange="calcularTotal()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-white-50 mb-1">Email</label>
+                            <input type="email" class="form-control bg-dark text-white border-secondary"
+                                value="{{ email }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-white-50 mb-1">WhatsApp</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary"
+                                value="{{ whatsapp }}">
+                        </div>
+                    </div>
+
+                    <hr class="border-secondary opacity-25 my-4">
+
+                    <!-- Parámetros Económicos -->
+                    <h6 class="text-white fw-bold mb-3">Parámetros Económicos</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="small text-white-50 mb-1">Valor UF (Hoy)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-dark border-secondary text-white-50">$</span>
+                                <input type="number" id="valor_uf"
+                                    class="form-control bg-dark text-white border-secondary"
+                                    value="{{ indicadores.uf }}" onchange="calcularTotal()">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-white-50 mb-1">Plan Base (UF)</label>
+                            <input type="number" id="base_uf"
+                                class="form-control bg-dark text-white border-secondary form-control-sm" value="1.32"
+                                step="0.01" onchange="calcularTotal()">
+                            <div class="form-text text-white-50 x-small">Hasta 50 unidades</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-white-50 mb-1">Extra p/Unidad (UF)</label>
+                            <input type="number" id="extra_uf"
+                                class="form-control bg-dark text-white border-secondary form-control-sm" value="0.008"
+                                step="0.001" onchange="calcularTotal()">
+                            <div class="form-text text-white-50 x-small">Sobre 50 unidades</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small text-white-50 mb-1">Setup Fee (UF)</label>
+                            <input type="number" id="setup_fee"
+                                class="form-control bg-dark text-white border-secondary form-control-sm" value="5"
+                                onchange="calcularTotal()">
+                            <div class="form-text text-white-50 x-small">Pago único</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: RESUMEN VISUAL -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-lg"
+                style="background: linear-gradient(145deg, #1a1d24, #0f1014); border-radius: 20px; overflow: hidden;">
+                <div class="p-4 text-center border-bottom border-secondary border-opacity-25 bg-primary bg-opacity-10">
+                    <h6 class="text-uppercase text-primary fw-bold ls-2 mb-1">Cotización Estimada</h6>
+                    <div class="display-4 fw-bold text-white mb-0" id="total_mensual_clp">$0</div>
+                    <small class="text-white-50"><span id="total_mensual_uf">0 UF</span> + IVA Mensual</small>
+                </div>
+
+                <div class="p-4">
+                    <!-- Desglose -->
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white-50">Plan Base (50u)</span>
+                        <span class="text-white fw-bold" id="resumen_base_uf">0 UF</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-white-50">Unidades Extra</span>
+                        <span class="text-white fw-bold" id="resumen_extra_uf">0 UF</span>
+                    </div>
+
+                    <div class="p-3 rounded bg-black bg-opacity-25 mb-4 border border-secondary border-opacity-25">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-white fw-bold">Puesta en Marcha</div>
+                                <small class="text-white-50">Configuración e Importación</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-warning fw-bold" id="setup_clp">$0</div>
+                                <small class="text-white-50" id="setup_uf">0 UF</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LO GRATUITO / INCLUIDO -->
+                    <h6
+                        class="text-white fw-bold mb-3 small text-uppercase border-bottom border-secondary border-opacity-25 pb-2">
+                        Beneficios Incluidos (Sin Costo)</h6>
+                    <ul class="list-unstyled mb-4">
+                        <li class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-white-50 small"><i
+                                    class="bi bi-check-circle-fill text-success me-2"></i>Soporte Técnico
+                                Integrado</span>
+                            <span
+                                class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">GRATIS</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-white-50 small"><i
+                                    class="bi bi-check-circle-fill text-success me-2"></i>Actualizaciones de
+                                Software</span>
+                            <span
+                                class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">GRATIS</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-white-50 small"><i
+                                    class="bi bi-check-circle-fill text-success me-2"></i>Hosting & Seguridad SSL</span>
+                            <span
+                                class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">GRATIS</span>
+                        </li>
+                        <li class="d-flex justify-content-between align-items-center">
+                            <span class="text-white-50 small"><i
+                                    class="bi bi-check-circle-fill text-success me-2"></i>Capacitación Inicial</span>
+                            <span
+                                class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">GRATIS</span>
+                        </li>
+                    </ul>
+
+                    <!-- DOCUMENTACIÓN LEGAL -->
+                    <h6
+                        class="text-white fw-bold mb-3 small text-uppercase border-bottom border-secondary border-opacity-25 pb-2">
+                        Documentación Legal</h6>
+                    <div class="d-grid gap-2 mb-4">
+                        <a href="{{ url_for('main.ver_contrato_servicios') }}" target="_blank"
+                            class="btn btn-outline-secondary btn-sm text-start text-white-50 border-secondary border-opacity-25">
+                            <i class="bi bi-file-earmark-text me-2 text-info"></i> Contrato de Prestación de Servicios
+                        </a>
+                        <a href="{{ url_for('main.ver_licencia_uso') }}" target="_blank"
+                            class="btn btn-outline-secondary btn-sm text-start text-white-50 border-secondary border-opacity-25">
+                            <i class="bi bi-file-earmark-check me-2 text-warning"></i> Licencia de Uso de Software
+                        </a>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success fw-bold py-3 shadow-lg" onclick="enviarCotizacion()">
+                            <i class="bi bi-whatsapp me-2"></i> ENVIAR PROPUESTA
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="window.print()">
+                            <i class="bi bi-printer me-2"></i> Descargar PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN: QUÉ INCLUYE (MODERNA) -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h5 class="text-white fw-bold mb-4 text-center">Ecosistema HABITEX Contratado</h5>
+        </div>
+
+        <div class="col-md-3">
+            <div class="p-3 rounded text-center h-100"
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                <i class="bi bi-phone-fill fs-1 text-primary mb-3"></i>
+                <h6 class="text-white fw-bold">App Residentes</h6>
+                <p class="text-white-50 small mb-0">Control de visitas QR, reservas, pagos y reportes.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 rounded text-center h-100"
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                <i class="bi bi-laptop fs-1 text-info mb-3"></i>
+                <h6 class="text-white fw-bold">Panel Administración</h6>
+                <p class="text-white-50 small mb-0">Gestión financiera, residentes, multas y comunicados.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 rounded text-center h-100"
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                <i class="bi bi-shield-check fs-1 text-warning mb-3"></i>
+                <h6 class="text-white fw-bold">Módulo Conserjería</h6>
+                <p class="text-white-50 small mb-0">Control de acceso, paquetería y bitácora digital.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 rounded text-center h-100"
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                <i class="bi bi-cloud-check-fill fs-1 text-success mb-3"></i>
+                <h6 class="text-white fw-bold">Respaldo Cloud</h6>
+                <p class="text-white-50 small mb-0">Datos seguros, encriptados y accesibles 24/7.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('fecha-hoy').textContent = new Date().toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    function calcularTotal() {
+        const unidades = parseFloat(document.getElementById('unidades').value) || 0;
+        const valorUF = parseFloat(document.getElementById('valor_uf').value) || 0;
+        const baseUF = parseFloat(document.getElementById('base_uf').value) || 0;
+        const extraUF = parseFloat(document.getElementById('extra_uf').value) || 0;
+        const setupUF = parseFloat(document.getElementById('setup_fee').value) || 0;
+
+        // Cálculos Mensuales
+        const unidadesExtra = Math.max(0, unidades - 50);
+        const totalExtraUF = unidadesExtra * extraUF;
+        const totalMensualUF = baseUF + totalExtraUF;
+
+        const totalMensualCLP = totalMensualUF * valorUF;
+
+        // Cálculos Setup
+        const totalSetupCLP = setupUF * valorUF;
+
+        // Actualizar DOM
+        document.getElementById('resumen_base_uf').textContent = baseUF.toFixed(2) + ' UF';
+        document.getElementById('resumen_extra_uf').textContent = totalExtraUF.toFixed(3) + ' UF';
+
+        document.getElementById('total_mensual_uf').textContent = totalMensualUF.toFixed(2) + ' UF';
+        document.getElementById('total_mensual_clp').textContent = '$' + Math.round(totalMensualCLP).toLocaleString('es-CL');
+
+        document.getElementById('setup_uf').textContent = setupUF.toFixed(2) + ' UF';
+        document.getElementById('setup_clp').textContent = '$' + Math.round(totalSetupCLP).toLocaleString('es-CL');
+    }
+
+    function enviarCotizacion() {
+        const nombre = document.getElementById('cliente_nombre').value;
+        const totalCLP = document.getElementById('total_mensual_clp').textContent;
+        const setupCLP = document.getElementById('setup_clp').textContent;
+        const unidades = document.getElementById('unidades').value;
+
+        const mensaje = `Hola ${nombre}, te envío la propuesta de Habitex para ${unidades} unidades:%0A%0A` +
+            `✅ *Plan Mensual:* ${totalCLP} + IVA%0A` +
+            `🚀 *Puesta en Marcha:* ${setupCLP} (Pago único)%0A%0A` +
+            `Incluye App Móvil, Control de Acceso QR y Gestión Financiera.%0A` +
+            `¿Te gustaría agendar una demo?`;
+
+        const whatsapp = "{{ whatsapp }}".replace('+', '');
+        window.open(`https://wa.me/${whatsapp}?text=${mensaje}`, '_blank');
+    }
+
+    // Calcular al cargar
+    document.addEventListener('DOMContentLoaded', calcularTotal);
+</script>
+{% endblock %}

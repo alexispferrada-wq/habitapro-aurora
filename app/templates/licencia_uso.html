@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}| Licencia de Uso{% endblock %}
+{% block content %}
+<div class="container" style="margin-top: 100px; padding-bottom: 50px;">
+    <div class="card-glass p-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-warning">LICENCIA DE USO DE SOFTWARE (EULA)</h2>
+            <p class="text-white-50">Términos y Condiciones de Uso - HABITEX</p>
+        </div>
+
+        <div class="text-white-50" style="font-size: 0.9rem; line-height: 1.6;">
+            <h5 class="text-white fw-bold mt-4">1. CONCESIÓN DE LICENCIA</h5>
+            <p>AEXON SPA otorga al CLIENTE una licencia no exclusiva, intransferible y revocable para utilizar el
+                software HABITEX únicamente para la gestión interna de su comunidad.</p>
+
+            <h5 class="text-white fw-bold mt-4">2. RESTRICCIONES</h5>
+            <p>Queda prohibido:</p>
+            <ul>
+                <li>Realizar ingeniería inversa, descompilar o desensamblar el software.</li>
+                <li>Subarrendar, alquilar o prestar el software a terceros.</li>
+                <li>Utilizar el software para actividades ilícitas o que vulneren derechos de terceros.</li>
+            </ul>
+
+            <h5 class="text-white fw-bold mt-4">3. PROPIEDAD INTELECTUAL</h5>
+            <p>El software, incluyendo su código fuente, diseño, logotipos y documentación, es propiedad exclusiva de
+                AEXON SPA y está protegido por las leyes de propiedad intelectual.</p>
+
+            <h5 class="text-white fw-bold mt-4">4. DATOS Y PRIVACIDAD</h5>
+            <p>El CLIENTE conserva la titularidad de los datos ingresados. AEXON SPA se compromete a no utilizar dichos
+                datos para fines distintos a la prestación del servicio y su mejora.</p>
+
+            <h5 class="text-white fw-bold mt-4">5. LIMITACIÓN DE RESPONSABILIDAD</h5>
+            <p>El software se entrega "tal cual". AEXON SPA no será responsable por daños indirectos o pérdida de datos
+                derivados del mal uso de la plataforma.</p>
+
+            <div class="mt-5 text-center">
+                <button class="btn btn-outline-light" onclick="window.print()"><i class="bi bi-printer me-2"></i>
+                    Imprimir Licencia</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
