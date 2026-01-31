@@ -7,6 +7,7 @@ from email.message import EmailMessage
 import os
 import requests
 from datetime import date
+import socket
 
 main_bp = Blueprint('main', __name__)
 
@@ -123,7 +124,18 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
                 smtp.sendmail(mail_sender, mail_receiver, em.as_string())
         else:
             # Para puerto 587 o cualquier otro que use STARTTLS
-            with smtplib.SMTP(mail_server, mail_port, timeout=15) as smtp:
+            # FIX: Resolver DNS a IPv4 explícitamente para evitar errores de red en Render (IPv6 unreachable)
+            try:
+                addr_info = socket.getaddrinfo(mail_server, mail_port, socket.AF_INET, socket.SOCK_STREAM)
+                mail_server_ip = addr_info[0][4][0]
+                print(f"🔍 DNS Resuelto (IPv4): {mail_server} -> {mail_server_ip}")
+            except Exception as e:
+                print(f"⚠️ Falló resolución DNS IPv4: {e}")
+                mail_server_ip = mail_server
+
+            with smtplib.SMTP(mail_server_ip, mail_port, timeout=15) as smtp:
+                # Restaurar hostname original para validación SSL correcta
+                smtp._host = mail_server
                 smtp.starttls(context=context)
                 smtp.login(mail_sender, mail_password)
                 smtp.sendmail(mail_sender, mail_receiver, em.as_string())
