@@ -125,15 +125,29 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
         else:
             # Para puerto 587 o cualquier otro que use STARTTLS
             # FIX: Resolver DNS a IPv4 explícitamente para evitar errores de red en Render (IPv6 unreachable)
+            # FIX 2: Iterar sobre IPs y aumentar timeout para evitar TimeoutError
+            smtp_conn = None
+            ips = []
             try:
                 addr_info = socket.getaddrinfo(mail_server, mail_port, socket.AF_INET, socket.SOCK_STREAM)
-                mail_server_ip = addr_info[0][4][0]
-                print(f"🔍 DNS Resuelto (IPv4): {mail_server} -> {mail_server_ip}")
+                ips = list(dict.fromkeys([ai[4][0] for ai in addr_info]))
+                print(f"🔍 DNS Resuelto (IPv4): {ips}")
             except Exception as e:
                 print(f"⚠️ Falló resolución DNS IPv4: {e}")
-                mail_server_ip = mail_server
+                ips = [mail_server]
 
-            with smtplib.SMTP(mail_server_ip, mail_port, timeout=15) as smtp:
+            for ip in ips:
+                try:
+                    print(f"⏳ Conectando a {ip}:{mail_port}...")
+                    smtp_conn = smtplib.SMTP(ip, mail_port, timeout=30)
+                    break
+                except Exception as e:
+                    print(f"⚠️ Falló conexión a {ip}: {e}")
+            
+            if not smtp_conn:
+                raise Exception("No se pudo establecer conexión SMTP con ninguna IP.")
+
+            with smtp_conn as smtp:
                 # Restaurar hostname original para validación SSL correcta
                 smtp._host = mail_server
                 smtp.starttls(context=context)
