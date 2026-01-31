@@ -102,6 +102,10 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
         mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
         mail_port = int(os.getenv('MAIL_PORT', 587))
 
+        # FIX: Forzar puerto 587 para Gmail en Render para evitar "Network is unreachable"
+        if mail_server == 'smtp.gmail.com' and mail_port == 465:
+            mail_port = 587
+
         # FIX: Lógica robusta para soportar tanto SSL (465) como STARTTLS (587)
         if mail_port == 465:
             with smtplib.SMTP_SSL(mail_server, mail_port, context=context, timeout=15) as smtp:
