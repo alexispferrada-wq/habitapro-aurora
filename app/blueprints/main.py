@@ -99,12 +99,20 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
         em.set_content(body)
 
         context = ssl.create_default_context()
-        mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-        mail_port = int(os.getenv('MAIL_PORT', 587))
+        mail_server = os.getenv('MAIL_SERVER') or 'smtp.gmail.com'
+        mail_server = mail_server.strip()
+        
+        try:
+            mail_port = int(os.getenv('MAIL_PORT', 587))
+        except ValueError:
+            mail_port = 587
 
         # FIX: Forzar puerto 587 para Gmail en Render para evitar "Network is unreachable"
-        if mail_server == 'smtp.gmail.com' and mail_port == 465:
+        if 'gmail.com' in mail_server.lower() and mail_port == 465:
+            print("⚠️ Ajustando puerto Gmail a 587 para compatibilidad Cloud.")
             mail_port = 587
+            
+        print(f"📧 Intentando conectar a SMTP: {mail_server}:{mail_port}")
 
         # FIX: Lógica robusta para soportar tanto SSL (465) como STARTTLS (587)
         if mail_port == 465:
