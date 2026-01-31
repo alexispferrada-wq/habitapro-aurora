@@ -100,7 +100,7 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
 
         context = ssl.create_default_context()
         mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-        mail_port = int(os.getenv('MAIL_PORT', 465))
+        mail_port = int(os.getenv('MAIL_PORT', 587))
 
         # FIX: Lógica robusta para soportar tanto SSL (465) como STARTTLS (587)
         if mail_port == 465:
@@ -121,7 +121,7 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
 
 @main_bp.route('/send_contact_form', methods=['GET', 'POST'])
 def send_contact_form():
-    if request.method == 'GET':
+    if request.method != 'POST':
         return redirect(url_for('main.landing'))
 
     name = request.form.get('name')
