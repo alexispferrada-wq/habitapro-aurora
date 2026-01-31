@@ -42,6 +42,9 @@ app = Flask(__name__)
 # 2. CONFIGURACIÓN MANUAL FORZADA
 # Intentamos obtener la URI desde el archivo .env
 database_uri = os.getenv('DB_URI')
+# Si no existe DB_URI, intentamos con DATABASE_URL (Estándar de Render/Heroku)
+if not database_uri:
+    database_uri = os.getenv('DATABASE_URL')
 
 # Si la URI está vacía, usamos el valor directo para que no falle (SOLO PARA PRUEBAS)
 if not database_uri:

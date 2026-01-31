@@ -102,7 +102,8 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
         mail_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
         mail_port = int(os.getenv('MAIL_PORT', 465))
 
-        with smtplib.SMTP_SSL(mail_server, mail_port, context=context) as smtp:
+        # FIX: Agregamos timeout=10 para evitar WORKER TIMEOUT si la conexión es lenta
+        with smtplib.SMTP_SSL(mail_server, mail_port, context=context, timeout=10) as smtp:
             smtp.login(mail_sender, mail_password)
             smtp.sendmail(mail_sender, mail_receiver, em.as_string())
         

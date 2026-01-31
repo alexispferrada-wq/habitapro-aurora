@@ -22,6 +22,9 @@ if not os.getenv('DB_URI') and os.path.exists('.env.txt'):
 
 # --- CONFIGURACIÓN NEON (POSTGRESQL) ---
 DB_URI = os.environ.get('DB_URI')
+# Si no existe DB_URI, intentamos con DATABASE_URL (Estándar de Render/Heroku)
+if not DB_URI:
+    DB_URI = os.environ.get('DATABASE_URL')
 
 # --- FIX: CORRECCIÓN DE URI PARA PSYCOPG2 ---
 if DB_URI:
