@@ -100,16 +100,18 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
 
         context = ssl.create_default_context()
         mail_server = os.getenv('MAIL_SERVER') or 'smtp.gmail.com'
-        mail_server = mail_server.strip()
+        # Limpieza robusta de la URL del servidor
+        mail_server = mail_server.replace("http://", "").replace("https://", "").replace("ssl://", "").strip()
         
         try:
             mail_port = int(os.getenv('MAIL_PORT', 587))
         except ValueError:
             mail_port = 587
 
-        # FIX: Forzar puerto 587 para Gmail en Render para evitar "Network is unreachable"
-        if 'gmail.com' in mail_server.lower() and mail_port == 465:
-            print("⚠️ Ajustando puerto Gmail a 587 para compatibilidad Cloud.")
+        # FIX CRÍTICO RENDER: El puerto 465 suele estar bloqueado (Errno 101). 
+        # Forzamos 587 (STARTTLS) que es el estándar para entornos Cloud.
+        if mail_port == 465:
+            print("⚠️ Puerto 465 detectado. Cambiando a 587 para evitar bloqueo de red en Render.")
             mail_port = 587
             
         print(f"📧 Intentando conectar a SMTP: {mail_server}:{mail_port}")
@@ -129,6 +131,8 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
         return True
     except Exception as e:
         print(f"🔥 Error enviando correo: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 @main_bp.route('/send_contact_form', methods=['GET', 'POST'])
