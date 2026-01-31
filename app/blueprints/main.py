@@ -117,42 +117,57 @@ def enviar_correo_contacto(name, email, whatsapp, unidades):
             
         print(f"📧 Intentando conectar a SMTP: {mail_server}:{mail_port}")
 
-        # FIX: Lógica robusta para soportar tanto SSL (465) como STARTTLS (587)
-        if mail_port == 465:
-            with smtplib.SMTP_SSL(mail_server, mail_port, context=context, timeout=15) as smtp:
-                smtp.login(mail_sender, mail_password)
-                smtp.sendmail(mail_sender, mail_receiver, em.as_string())
-        else:
-            # Para puerto 587 o cualquier otro que use STARTTLS
-            # FIX: Resolver DNS a IPv4 explícitamente para evitar errores de red en Render (IPv6 unreachable)
-            # FIX 2: Iterar sobre IPs y aumentar timeout para evitar TimeoutError
-            smtp_conn = None
-            ips = []
+        # ESTRATEGIA DE CONEXIÓN ROBUSTA (Hostname -> IPv4 -> Fallback Puerto 25)
+        smtp_conn = None
+        last_error = None
+        
+        # Puertos a probar: El configurado (idealmente 587) y 25 como fallback
+        ports_to_try = [mail_port]
+        if mail_port == 587 and 25 not in ports_to_try:
+            ports_to_try.append(25)
+
+        for port in ports_to_try:
+            if smtp_conn: break
+            print(f"🔄 Probando conexión SMTP en puerto {port}...")
+
+            # 1. Intento Estándar (Hostname)
             try:
-                addr_info = socket.getaddrinfo(mail_server, mail_port, socket.AF_INET, socket.SOCK_STREAM)
-                ips = list(dict.fromkeys([ai[4][0] for ai in addr_info]))
-                print(f"🔍 DNS Resuelto (IPv4): {ips}")
+                smtp_conn = smtplib.SMTP(mail_server, port, timeout=20)
+                print(f"✅ Conexión establecida con {mail_server}:{port}")
             except Exception as e:
-                print(f"⚠️ Falló resolución DNS IPv4: {e}")
-                ips = [mail_server]
-
-            for ip in ips:
-                try:
-                    print(f"⏳ Conectando a {ip}:{mail_port}...")
-                    smtp_conn = smtplib.SMTP(ip, mail_port, timeout=30)
-                    break
-                except Exception as e:
-                    print(f"⚠️ Falló conexión a {ip}: {e}")
+                print(f"⚠️ Falló conexión estándar: {e}")
+                last_error = e
             
+            # 2. Intento IPv4 Forzado (Si falló estándar)
             if not smtp_conn:
-                raise Exception("No se pudo establecer conexión SMTP con ninguna IP.")
+                try:
+                    print(f"🔍 Resolviendo IPs IPv4 para {mail_server}...")
+                    addr_info = socket.getaddrinfo(mail_server, port, socket.AF_INET, socket.SOCK_STREAM)
+                    ips = list(dict.fromkeys([ai[4][0] for ai in addr_info]))
+                    for ip in ips:
+                        try:
+                            print(f"⏳ Probando IP {ip}:{port}...")
+                            smtp_conn = smtplib.SMTP(ip, port, timeout=20)
+                            smtp_conn._host = mail_server # Restaurar host para SSL
+                            print(f"✅ Conexión establecida a IP {ip}:{port}")
+                            break
+                        except Exception as e:
+                            print(f"⚠️ Falló IP {ip}: {e}")
+                            last_error = e
+                except Exception as e:
+                    print(f"⚠️ Error resolución DNS: {e}")
 
-            with smtp_conn as smtp:
-                # Restaurar hostname original para validación SSL correcta
-                smtp._host = mail_server
+        if not smtp_conn:
+            raise Exception(f"No se pudo conectar a SMTP. Último error: {last_error}")
+
+        with smtp_conn as smtp:
+            try:
                 smtp.starttls(context=context)
                 smtp.login(mail_sender, mail_password)
                 smtp.sendmail(mail_sender, mail_receiver, em.as_string())
+            except Exception as e:
+                print(f"🔥 Error en sesión SMTP: {e}")
+                raise e
         
         return True
     except Exception as e:
